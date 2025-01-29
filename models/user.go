@@ -14,6 +14,7 @@ type User struct {
 	AvatarURL string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	IsActive  bool `gorm:"default:true"`
 }
 
 // GetUser fetches a user by email from the database
