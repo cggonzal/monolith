@@ -1,0 +1,1 @@
+A skeleton app for Go web projects. Has foundations for Google auth, User model, ORM (gorm), etc.
