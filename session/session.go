@@ -8,6 +8,11 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
+// session keys
+const SESSION_NAME_KEY = "session"
+const LOGGED_IN_KEY = "logged_in"
+const EMAIL_KEY = "email"
+
 // Session store
 var store = sessions.NewCookieStore([]byte("super-secret-key"))
 
@@ -25,21 +30,21 @@ func GetGoogleOAuthConfig() *oauth2.Config {
 }
 
 func SetLoggedIn(w http.ResponseWriter, r *http.Request, email string) {
-	session, _ := store.Get(r, "session")
-	session.Values["logged_in"] = true
-	session.Values["email"] = email
+	session, _ := store.Get(r, SESSION_NAME_KEY)
+	session.Values[LOGGED_IN_KEY] = true
+	session.Values[EMAIL_KEY] = email
 	session.Save(r, w)
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	session, _ := store.Get(r, "session")
-	delete(session.Values, "logged_in")
-	delete(session.Values, "email")
+	session, _ := store.Get(r, SESSION_NAME_KEY)
+	delete(session.Values, LOGGED_IN_KEY)
+	delete(session.Values, EMAIL_KEY)
 	session.Save(r, w)
 }
 
 func IsLoggedIn(r *http.Request) bool {
-	session, _ := store.Get(r, "session")
-	loggedIn, ok := session.Values["logged_in"].(bool)
+	session, _ := store.Get(r, SESSION_NAME_KEY)
+	loggedIn, ok := session.Values[LOGGED_IN_KEY].(bool)
 	return ok && loggedIn
 }
