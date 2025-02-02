@@ -15,6 +15,7 @@ type User struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	IsActive  bool `gorm:"default:true"`
+	IsAdmin   bool `gorm:"default:false"`
 }
 
 // GetUser fetches a user by email from the database
