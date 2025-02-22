@@ -74,16 +74,7 @@ func main() {
 	go func() {
 		for sig := range sigChan { // block until a signal is received
 			switch sig {
-			case syscall.SIGHUP:
-				// Graceful restart
-				slog.Info("Received SIGHUP. Graceful restarting...")
-				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-				defer cancel()
-				if err := server.Shutdown(ctx); err != nil {
-					slog.Error("Error during graceful restart:", err)
-				}
-				// The process will exit, and systemd will start a new instance
-			case syscall.SIGINT, syscall.SIGTERM:
+			case syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP:
 				// Graceful shutdown
 				slog.Info("Received termination signal. Shutting down...")
 				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -91,7 +82,7 @@ func main() {
 				if err := server.Shutdown(ctx); err != nil {
 					slog.Error("Error during graceful shutdown:", err)
 				}
-				os.Exit(0)
+				os.Exit(0) // Exit the process to allow systemd to start a new instance
 			}
 		}
 	}()
