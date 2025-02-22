@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"log"
 	"log/slog"
 	"net/http"
@@ -15,6 +16,9 @@ import (
 	"crudapp/handlers"
 	"crudapp/middleware"
 )
+
+//go:embed static/*
+var staticFiles embed.FS
 
 func main() {
 	// Initialize database
@@ -33,8 +37,9 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	// Serve static files (keeping /static/ in URL)
-	mux.Handle("GET /static/", http.FileServer(http.Dir(".")))
+	// Serve static files from embedded filesystem
+	staticFileServer := http.FileServer(http.FS(staticFiles))
+	mux.Handle("GET /static/", staticFileServer)
 
 	// OAuth routes
 	mux.HandleFunc("GET /auth/google", handlers.HandleGoogleLogin)
