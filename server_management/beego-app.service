@@ -1,0 +1,15 @@
+# systemd service file, /etc/systemd/system/beego-app.service
+[Unit]
+Description=Beego Application
+After=network.target
+
+[Service]
+Type=simple
+User=myuser
+WorkingDirectory=/path/to/your/app
+ExecStart=/path/to/your/app/executable
+Restart=always
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target

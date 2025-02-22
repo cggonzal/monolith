@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"log"
 	"log/slog"
 	"net/http"
 	"net/http/pprof"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"crudapp/db"
 	"crudapp/handlers"
@@ -20,7 +24,12 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	slog.Info("Starting server", "address", ":8080")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	slog.Info("Starting server", "address", ":"+port)
 
 	mux := http.NewServeMux()
 
@@ -51,6 +60,44 @@ func main() {
 	// Wrap with structured logging middleware
 	loggedRouter := middleware.LoggingMiddleware(mux)
 
-	slog.Info("Server running", "address", ":8080")
-	log.Fatal(http.ListenAndServe(":8080", loggedRouter))
+	server := &http.Server{
+		Addr:    ":" + port,
+		Handler: loggedRouter,
+	}
+
+	// Block waiting for SIGHUP so the app can have a zero downtime deploy when it
+	// is running as a systemd service and we do a systemctl reload <service_name>
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+
+	go func() {
+		for sig := range sigChan { // block until a signal is received
+			switch sig {
+			case syscall.SIGHUP:
+				// Graceful restart
+				slog.Info("Received SIGHUP. Graceful restarting...")
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				defer cancel()
+				if err := server.Shutdown(ctx); err != nil {
+					slog.Error("Error during graceful restart:", err)
+				}
+				// The process will exit, and systemd will start a new instance
+			case syscall.SIGINT, syscall.SIGTERM:
+				// Graceful shutdown
+				slog.Info("Received termination signal. Shutting down...")
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				defer cancel()
+				if err := server.Shutdown(ctx); err != nil {
+					slog.Error("Error during graceful shutdown:", err)
+				}
+				os.Exit(0)
+			}
+		}
+	}()
+
+	slog.Info("Server running", "address", ":"+port)
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatal(err)
+	}
 }
