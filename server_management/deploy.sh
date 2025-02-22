@@ -3,11 +3,11 @@
 # Configuration
 REMOTE_USER="your_username"            # Your remote server username
 REMOTE_HOST="your_server_ip"           # Remote server IP or hostname
-REMOTE_DIR="/path/to/remote/beego/app" # Path to your Beego project on the remote server
-LOCAL_DIR="/path/to/local/beego/app"   # Path to your local Beego project
+REMOTE_DIR="/path/to/remote/beego/app" # Path to your crudapp project on the remote server
+LOCAL_DIR="/path/to/local/beego/app"   # Path to your local crudapp project
 SSH_KEY="/path/to/your/private/key"    # Path to your SSH private key (optional, if using SSH keys)
-SERVICE_NAME="beego-app"               # The name of the systemd service (optional)
-APP_NAME="app_name"                    # The Beego app binary name
+SERVICE_NAME="crudapp"               # The name of the systemd service (optional)
+APP_NAME="crudapp"                    # The app binary name
 
 # Optional: Build the Beego app locally
 echo "Building the Beego app locally..."
