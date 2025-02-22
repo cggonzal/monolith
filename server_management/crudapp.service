@@ -1,6 +1,6 @@
-# systemd service file, /etc/systemd/system/beego-app.service
+# systemd service file, /etc/systemd/system/crudapp.service
 [Unit]
-Description=Beego Application
+Description=Barebones crud app
 After=network.target
 
 [Service]
