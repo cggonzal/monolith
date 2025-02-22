@@ -65,8 +65,8 @@ func main() {
 		Handler: loggedRouter,
 	}
 
-	// Block waiting for SIGHUP so the app can have a zero downtime deploy when it
-	// is running as a systemd service and we do a systemctl reload <service_name>
+	// Block waiting for SIGTERM so the app can have a zero downtime deploy when it
+	// is running as a systemd service and we do a systemctl restart <service_name>
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
