@@ -20,6 +20,9 @@ import (
 //go:embed static/*
 var staticFiles embed.FS
 
+//go:embed templates/*
+var templateFiles embed.FS
+
 func main() {
 	// Initialize database
 	db.Connect()
@@ -40,6 +43,9 @@ func main() {
 	// Serve static files from embedded filesystem
 	staticFileServer := http.FileServer(http.FS(staticFiles))
 	mux.Handle("GET /static/", staticFileServer)
+
+	// put the static templates into the handlers package so that the embedded filesystem is accessible
+	handlers.TemplateFiles = templateFiles
 
 	// OAuth routes
 	mux.HandleFunc("GET /auth/google", handlers.HandleGoogleLogin)
