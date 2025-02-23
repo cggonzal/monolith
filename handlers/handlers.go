@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"embed"
 	"html/template"
 	"net/http"
 	"strings"
@@ -8,8 +9,11 @@ import (
 	"crudapp/session"
 )
 
-// Template cache (loads all HTML templates)
-var tmpl = template.Must(template.ParseGlob("templates/*.html"))
+//go:embed templates/*
+var templateFiles embed.FS
+
+// Template cache (loads all HTML templates from embedded filesystem)
+var tmpl = template.Must(template.ParseFS(templateFiles, "templates/*.html"))
 
 // Home renders the main page
 func Home(w http.ResponseWriter, r *http.Request) {
