@@ -1,136 +1,18 @@
+// An implementation of a job queue.
+// All new jobs should be placed in jobs/jobs.go
+// jobs/jobs_queue.go is just the job queue implementation.
+// To add a new job, do the following steps:
+// 1. add a function to jobs/jobs.go with the signature: func NameOfJob(payload string) error
+// 2. add a JobType to the JobType enum in models/jobs.go (not that this file is in the models/ directory)
 package jobs
 
 import (
-	"crudapp/models"
 	"encoding/json"
-	"errors"
 	"log"
-	"time"
-
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
-// JobFunc defines the signature for functions that process jobs.
-type JobFunc func(payload string) error
-
-// JobQueue handles enqueuing and processing jobs.
-// It uses a registry to map job types to their processing functions.
-type JobQueue struct {
-	db         *gorm.DB
-	numWorkers int
-	registry   map[models.JobType]JobFunc
-	quit       chan struct{}
-}
-
-// NewJobQueue creates a new JobQueue with a database connection and number of workers.
-func NewJobQueue(db *gorm.DB, numWorkers int) *JobQueue {
-	return &JobQueue{
-		db:         db,
-		numWorkers: numWorkers,
-		registry:   make(map[models.JobType]JobFunc),
-		quit:       make(chan struct{}),
-	}
-}
-
-// Register associates a job type with its processing function.
-func (jq *JobQueue) Register(jobType models.JobType, jobFunc JobFunc) {
-	jq.registry[jobType] = jobFunc
-}
-
-// Start launches worker goroutines to process jobs.
-func (jq *JobQueue) Start() {
-	for i := 0; i < jq.numWorkers; i++ {
-		go jq.worker(i)
-	}
-}
-
-// Stop signals the job queue to stop processing.
-func (jq *JobQueue) Stop() {
-	close(jq.quit)
-}
-
-// worker continuously fetches and processes jobs.
-func (jq *JobQueue) worker(workerID int) {
-	log.Printf("Worker %d started", workerID)
-	for {
-		select {
-		case <-jq.quit:
-			log.Printf("Worker %d stopping", workerID)
-			return
-		default:
-			job, err := jq.fetchJob()
-			if err != nil {
-				log.Printf("Worker %d encountered error fetching job: %v", workerID, err)
-				time.Sleep(2 * time.Second)
-				continue
-			}
-			if job == nil {
-				// No pending job found; wait before polling again.
-				time.Sleep(2 * time.Second)
-				continue
-			}
-
-			log.Printf("Worker %d processing job %d of type %d", workerID, job.ID, job.Type)
-			jobFunc, exists := jq.registry[job.Type]
-			if !exists {
-				log.Printf("Worker %d: no registered function for job type %d", workerID, job.Type)
-				job.Status = models.JobStatusFailed
-			} else {
-				err = jobFunc(job.Payload)
-				if err != nil {
-					log.Printf("Worker %d: job %d failed: %v", workerID, job.ID, err)
-					job.Status = models.JobStatusFailed
-				} else {
-					job.Status = models.JobStatusCompleted
-				}
-			}
-			// Update the job status in the database.
-			if err := jq.db.Save(job).Error; err != nil {
-				log.Printf("Worker %d: failed to update job %d: %v", workerID, job.ID, err)
-			}
-		}
-	}
-}
-
-// fetchJob retrieves one pending job and marks it as processing in a transaction.
-func (jq *JobQueue) fetchJob() (*models.Job, error) {
-	var job models.Job
-	err := jq.db.Transaction(func(tx *gorm.DB) error {
-		// Lock the row so no other worker picks it up.
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("status = ?", models.JobStatusPending).
-			Order("created_at").
-			Limit(1).
-			First(&job).Error; err != nil {
-			return err
-		}
-		// Mark the job as processing.
-		job.Status = models.JobStatusProcessing
-		return tx.Save(&job).Error
-	})
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &job, nil
-}
-
-// AddJob enqueues a new job with status "pending".
-// The payload should be a JSON-encoded string representing the arguments.
-func (jq *JobQueue) AddJob(jobType models.JobType, payload string) error {
-	job := models.Job{
-		Type:    jobType,
-		Payload: payload,
-		Status:  models.JobStatusPending,
-	}
-	return jq.db.Create(&job).Error
-}
-
 // printJob is an example job function that expects a JSON payload with a "message" field.
-func printJob(payload string) error {
+func PrintJob(payload string) error {
 	var data struct {
 		Message string `json:"message"`
 	}
@@ -142,7 +24,7 @@ func printJob(payload string) error {
 }
 
 // sumJob is an example job function that expects a JSON payload with "a" and "b" fields.
-func sumJob(payload string) error {
+func SumJob(payload string) error {
 	var data struct {
 		A int `json:"a"`
 		B int `json:"b"`
