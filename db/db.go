@@ -21,5 +21,8 @@ func Connect() {
 	}
 
 	// Auto-migrate the User model
-	DB.AutoMigrate(&models.User{})
+	DB.AutoMigrate(
+		&models.User{},
+		&models.Job{},
+	)
 }
