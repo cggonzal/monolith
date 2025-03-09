@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"crudapp/models"
 	"encoding/json"
 	"errors"
 	"log"
@@ -10,34 +11,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// JobType defines an enum for job types.
-type JobType int
-
-const (
-	JobTypePrint JobType = iota
-	JobTypeSum
-)
-
-// jobStatus defines an enum for job status
-type jobStatus int
-
-const (
-	jobStatusPending jobStatus = iota
-	jobStatusProcessing
-	jobStatusCompleted
-	jobStatusFailed
-)
-
-// Job represents a unit of work.
-type Job struct {
-	ID        uint      `gorm:"primaryKey"`
-	Type      JobType   // Using our enum for job types.
-	Payload   string    // JSON encoded arguments.
-	Status    jobStatus // "pending", "processing", "completed", "failed".
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
 // JobFunc defines the signature for functions that process jobs.
 type JobFunc func(payload string) error
 
@@ -46,7 +19,7 @@ type JobFunc func(payload string) error
 type JobQueue struct {
 	db         *gorm.DB
 	numWorkers int
-	registry   map[JobType]JobFunc
+	registry   map[models.JobType]JobFunc
 	quit       chan struct{}
 }
 
@@ -55,13 +28,13 @@ func NewJobQueue(db *gorm.DB, numWorkers int) *JobQueue {
 	return &JobQueue{
 		db:         db,
 		numWorkers: numWorkers,
-		registry:   make(map[JobType]JobFunc),
+		registry:   make(map[models.JobType]JobFunc),
 		quit:       make(chan struct{}),
 	}
 }
 
 // Register associates a job type with its processing function.
-func (jq *JobQueue) Register(jobType JobType, jobFunc JobFunc) {
+func (jq *JobQueue) Register(jobType models.JobType, jobFunc JobFunc) {
 	jq.registry[jobType] = jobFunc
 }
 
@@ -102,14 +75,14 @@ func (jq *JobQueue) worker(workerID int) {
 			jobFunc, exists := jq.registry[job.Type]
 			if !exists {
 				log.Printf("Worker %d: no registered function for job type %d", workerID, job.Type)
-				job.Status = jobStatusFailed
+				job.Status = models.JobStatusFailed
 			} else {
 				err = jobFunc(job.Payload)
 				if err != nil {
 					log.Printf("Worker %d: job %d failed: %v", workerID, job.ID, err)
-					job.Status = jobStatusFailed
+					job.Status = models.JobStatusFailed
 				} else {
-					job.Status = jobStatusCompleted
+					job.Status = models.JobStatusCompleted
 				}
 			}
 			// Update the job status in the database.
@@ -121,19 +94,19 @@ func (jq *JobQueue) worker(workerID int) {
 }
 
 // fetchJob retrieves one pending job and marks it as processing in a transaction.
-func (jq *JobQueue) fetchJob() (*Job, error) {
-	var job Job
+func (jq *JobQueue) fetchJob() (*models.Job, error) {
+	var job models.Job
 	err := jq.db.Transaction(func(tx *gorm.DB) error {
 		// Lock the row so no other worker picks it up.
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("status = ?", jobStatusPending).
+			Where("status = ?", models.JobStatusPending).
 			Order("created_at").
 			Limit(1).
 			First(&job).Error; err != nil {
 			return err
 		}
 		// Mark the job as processing.
-		job.Status = jobStatusProcessing
+		job.Status = models.JobStatusProcessing
 		return tx.Save(&job).Error
 	})
 	if err != nil {
@@ -147,11 +120,11 @@ func (jq *JobQueue) fetchJob() (*Job, error) {
 
 // AddJob enqueues a new job with status "pending".
 // The payload should be a JSON-encoded string representing the arguments.
-func (jq *JobQueue) AddJob(jobType JobType, payload string) error {
-	job := Job{
+func (jq *JobQueue) AddJob(jobType models.JobType, payload string) error {
+	job := models.Job{
 		Type:    jobType,
 		Payload: payload,
-		Status:  jobStatusPending,
+		Status:  models.JobStatusPending,
 	}
 	return jq.db.Create(&job).Error
 }
