@@ -6,6 +6,8 @@ import (
 	"log"
 	"time"
 
+	"crudapp/db"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -22,8 +24,22 @@ type JobQueue struct {
 	quit       chan struct{}
 }
 
+var JOB_QUEUE *JobQueue
+
+// number of workers in the job queue. Modify as needed.
+const NUM_WORKERS = 4
+
+func init() {
+	JOB_QUEUE = newJobQueue(db.DB, NUM_WORKERS)
+}
+
+// Use this function to access the job queue. returns a pointer to the job queue.
+func GetJobQueue() *JobQueue {
+	return JOB_QUEUE
+}
+
 // NewJobQueue creates a new JobQueue with a database connection and number of workers.
-func NewJobQueue(db *gorm.DB, numWorkers int) *JobQueue {
+func newJobQueue(db *gorm.DB, numWorkers int) *JobQueue {
 	return &JobQueue{
 		db:         db,
 		numWorkers: numWorkers,
@@ -33,19 +49,19 @@ func NewJobQueue(db *gorm.DB, numWorkers int) *JobQueue {
 }
 
 // Register associates a job type with its processing function.
-func (jq *JobQueue) Register(jobType models.JobType, jobFunc JobFunc) {
+func (jq *JobQueue) register(jobType models.JobType, jobFunc JobFunc) {
 	jq.registry[jobType] = jobFunc
 }
 
 // Start launches worker goroutines to process jobs.
-func (jq *JobQueue) Start() {
+func (jq *JobQueue) start() {
 	for i := 0; i < jq.numWorkers; i++ {
 		go jq.worker(i)
 	}
 }
 
 // Stop signals the job queue to stop processing.
-func (jq *JobQueue) Stop() {
+func (jq *JobQueue) stop() {
 	close(jq.quit)
 }
 
