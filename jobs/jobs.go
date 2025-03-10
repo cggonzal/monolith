@@ -3,7 +3,8 @@
 // jobs/jobs_queue.go is just the job queue implementation.
 // To add a new job, do the following steps:
 // 1. add a function to jobs/jobs.go with the signature: func NameOfJob(payload string) error
-// 2. add a JobType to the JobType enum in models/jobs.go (not that this file is in the models/ directory)
+// 2. add a JobType to the JobType enum in models/jobs.go (note that this file is in the models/ directory)
+// 3. register the job inside the init() function of jobs/job_queue.go
 package jobs
 
 import (

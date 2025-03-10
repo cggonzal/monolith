@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"crudapp/config"
 	"crudapp/db"
 
 	"gorm.io/gorm"
@@ -24,18 +25,23 @@ type JobQueue struct {
 	quit       chan struct{}
 }
 
-var JOB_QUEUE *JobQueue
-
-// number of workers in the job queue. Modify as needed.
-const NUM_WORKERS = 4
+// to access the job queue, use GetJobQueue(). DO NOT use this variable directly except for inside the init()
+var jobQueue *JobQueue
 
 func init() {
-	JOB_QUEUE = newJobQueue(db.DB, NUM_WORKERS)
+	jobQueue = newJobQueue(db.DB, config.JOB_QUEUE_NUM_WORKERS)
+
+	// register all jobs
+	jobQueue.register(models.JobTypePrint, PrintJob)
+	jobQueue.register(models.JobTypeSum, SumJob)
+
+	// start the job queue!
+	jobQueue.start()
 }
 
-// Use this function to access the job queue. returns a pointer to the job queue.
+// Use this function to access the job queue.
 func GetJobQueue() *JobQueue {
-	return JOB_QUEUE
+	return jobQueue
 }
 
 // NewJobQueue creates a new JobQueue with a database connection and number of workers.
