@@ -16,11 +16,6 @@ func InitTemplates(templateFiles embed.FS) {
 	tmpl = template.Must(template.ParseFS(templateFiles, "templates/*.html.tmpl"))
 }
 
-// Home renders the main page
-func Home(w http.ResponseWriter, r *http.Request) {
-	tmpl.ExecuteTemplate(w, "index.html.tmpl", nil)
-}
-
 // ShowLoginForm renders the login page
 func ShowLoginForm(w http.ResponseWriter, r *http.Request) {
 	tmpl.ExecuteTemplate(w, "login.html.tmpl", nil)
