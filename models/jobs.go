@@ -12,7 +12,7 @@ const (
 	JobTypeSum
 )
 
-// jobStatus defines an enum for job status
+// JobStatus defines an enum for job status
 type JobStatus int
 
 const (
