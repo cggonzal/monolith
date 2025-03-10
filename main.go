@@ -24,12 +24,15 @@ var staticFiles embed.FS
 var templateFiles embed.FS
 
 func main() {
-	// Initialize database
-	db.Connect()
-
 	// Configure global structured logging
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
+
+	// Initialize database
+	db.Connect()
+
+	// initialize templates
+	handlers.InitTemplates(templateFiles)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -43,9 +46,6 @@ func main() {
 	// Serve static files from embedded filesystem
 	staticFileServer := http.FileServer(http.FS(staticFiles))
 	mux.Handle("GET /static/", staticFileServer)
-
-	// put the static templates into the handlers package so that the embedded filesystem is accessible
-	handlers.TemplateFiles = templateFiles
 
 	// OAuth routes
 	mux.HandleFunc("GET /auth/google", handlers.HandleGoogleLogin)

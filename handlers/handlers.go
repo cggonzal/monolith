@@ -8,11 +8,13 @@ import (
 	"strings"
 )
 
-// this gets set by the main package when main() starts
-var TemplateFiles embed.FS
+// Template cache. InitTemplates() fills this with all HTML templates from embedded filesystem
+var tmpl *template.Template
 
-// Template cache (loads all HTML templates from embedded filesystem)
-var tmpl = template.Must(template.ParseFS(TemplateFiles, "templates/*.html"))
+// parse all templates and store them in the template cache
+func InitTemplates(templateFiles embed.FS) {
+	tmpl = template.Must(template.ParseFS(templateFiles, "templates/*.html"))
+}
 
 // Home renders the main page
 func Home(w http.ResponseWriter, r *http.Request) {
