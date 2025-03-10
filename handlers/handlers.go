@@ -13,17 +13,17 @@ var tmpl *template.Template
 
 // parse all templates and store them in the template cache
 func InitTemplates(templateFiles embed.FS) {
-	tmpl = template.Must(template.ParseFS(templateFiles, "templates/*.html"))
+	tmpl = template.Must(template.ParseFS(templateFiles, "templates/*.html.tmpl"))
 }
 
 // Home renders the main page
 func Home(w http.ResponseWriter, r *http.Request) {
-	tmpl.ExecuteTemplate(w, "index.html", nil)
+	tmpl.ExecuteTemplate(w, "index.html.tmpl", nil)
 }
 
 // ShowLoginForm renders the login page
 func ShowLoginForm(w http.ResponseWriter, r *http.Request) {
-	tmpl.ExecuteTemplate(w, "login.html", nil)
+	tmpl.ExecuteTemplate(w, "login.html.tmpl", nil)
 }
 
 // Logout clears the session and redirects to home
@@ -38,7 +38,7 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	tmpl.ExecuteTemplate(w, "dashboard.html", nil)
+	tmpl.ExecuteTemplate(w, "dashboard.html.tmpl", nil)
 }
 
 // EditItemHandler handles displaying an edit form (simulated)
@@ -51,7 +51,7 @@ func EditItemHandler(w http.ResponseWriter, r *http.Request) {
 		ID:   id,
 		Name: "Example Item " + id,
 	}
-	tmpl.ExecuteTemplate(w, "edit.html", data)
+	tmpl.ExecuteTemplate(w, "edit.html.tmpl", data)
 }
 
 // DeleteItemHandler simulates deleting an item
