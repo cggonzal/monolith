@@ -91,7 +91,7 @@ func main() {
 				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 				defer cancel()
 				if err := server.Shutdown(ctx); err != nil {
-					slog.Error("Error during graceful shutdown:", err)
+					slog.Error("Error during graceful shutdown: " + err.Error())
 				}
 				os.Exit(0) // Exit the process to allow systemd to start a new instance
 			}
