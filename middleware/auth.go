@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"crudapp/session"
+	"monolith/session"
 	"net/http"
 )
 

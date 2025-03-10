@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"crudapp/session"
 	"embed"
 	"html/template"
+	"monolith/session"
 	"net/http"
 	"strings"
 )

@@ -1,13 +1,13 @@
 package jobs
 
 import (
-	"crudapp/models"
 	"errors"
 	"log"
+	"monolith/models"
 	"time"
 
-	"crudapp/config"
-	"crudapp/db"
+	"monolith/config"
+	"monolith/db"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

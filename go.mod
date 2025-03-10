@@ -1,4 +1,4 @@
-module crudapp
+module monolith
 
 go 1.23
 

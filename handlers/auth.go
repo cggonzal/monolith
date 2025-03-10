@@ -6,9 +6,9 @@ import (
 	"errors"
 	"net/http"
 
-	"crudapp/db"
-	"crudapp/models"
-	"crudapp/session"
+	"monolith/db"
+	"monolith/models"
+	"monolith/session"
 
 	"gorm.io/gorm"
 )

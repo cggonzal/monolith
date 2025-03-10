@@ -1,4 +1,4 @@
-# systemd service file, /etc/systemd/system/crudapp.service
+# systemd service file, /etc/systemd/system/monolith.service
 [Unit]
 Description=Barebones crud app
 After=network.target

@@ -12,9 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	"crudapp/db"
-	"crudapp/handlers"
-	"crudapp/middleware"
+	"monolith/db"
+	"monolith/handlers"
+	"monolith/middleware"
 )
 
 //go:embed static/*
