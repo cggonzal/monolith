@@ -52,7 +52,6 @@ func main() {
 	mux.HandleFunc("GET /auth/google/callback", handlers.HandleGoogleCallback)
 
 	// Public routes
-	mux.HandleFunc("GET /", handlers.Home)
 	mux.HandleFunc("GET /login", handlers.ShowLoginForm)
 	mux.HandleFunc("GET /logout", handlers.Logout)
 
