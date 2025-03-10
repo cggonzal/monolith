@@ -20,7 +20,7 @@ func Connect() {
 		log.Fatal("Failed to connect to the database:", err)
 	}
 
-	// Auto-migrate the User model
+	// Auto-migrate all registered models
 	DB.AutoMigrate(
 		&models.User{},
 		&models.Job{},
