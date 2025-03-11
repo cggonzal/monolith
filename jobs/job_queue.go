@@ -22,7 +22,6 @@ type JobQueue struct {
 	db         *gorm.DB
 	numWorkers int
 	registry   map[models.JobType]JobFunc
-	quit       chan struct{}
 }
 
 // to access the job queue, use GetJobQueue(). DO NOT use this variable directly except for inside the init()
@@ -50,7 +49,6 @@ func newJobQueue(db *gorm.DB, numWorkers int) *JobQueue {
 		db:         db,
 		numWorkers: numWorkers,
 		registry:   make(map[models.JobType]JobFunc),
-		quit:       make(chan struct{}),
 	}
 }
 
@@ -66,51 +64,42 @@ func (jq *JobQueue) start() {
 	}
 }
 
-// Stop signals the job queue to stop processing.
-func (jq *JobQueue) stop() {
-	close(jq.quit)
-}
-
 // worker continuously fetches and processes jobs.
 func (jq *JobQueue) worker(workerID int) {
 	log.Printf("Worker %d started", workerID)
 	for {
-		select {
-		case <-jq.quit:
-			log.Printf("Worker %d stopping", workerID)
-			return
-		default:
-			job, err := jq.fetchJob()
-			if err != nil {
-				log.Printf("Worker %d encountered error fetching job: %v", workerID, err)
-				time.Sleep(2 * time.Second)
-				continue
-			}
-			if job == nil {
-				// No pending job found; wait before polling again.
-				time.Sleep(2 * time.Second)
-				continue
-			}
 
-			log.Printf("Worker %d processing job %d of type %d", workerID, job.ID, job.Type)
-			jobFunc, exists := jq.registry[job.Type]
-			if !exists {
-				log.Printf("Worker %d: no registered function for job type %d", workerID, job.Type)
+		job, err := jq.fetchJob()
+		if err != nil {
+			log.Printf("Worker %d encountered error fetching job: %v", workerID, err)
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		if job == nil {
+			// No pending job found; wait before polling again.
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		log.Printf("Worker %d processing job %d of type %d", workerID, job.ID, job.Type)
+		jobFunc, exists := jq.registry[job.Type]
+		if !exists {
+			log.Printf("Worker %d: no registered function for job type %d", workerID, job.Type)
+			job.Status = models.JobStatusFailed
+		} else {
+			err = jobFunc(job.Payload)
+			if err != nil {
+				log.Printf("Worker %d: job %d failed: %v", workerID, job.ID, err)
 				job.Status = models.JobStatusFailed
 			} else {
-				err = jobFunc(job.Payload)
-				if err != nil {
-					log.Printf("Worker %d: job %d failed: %v", workerID, job.ID, err)
-					job.Status = models.JobStatusFailed
-				} else {
-					job.Status = models.JobStatusCompleted
-				}
-			}
-			// Update the job status in the database.
-			if err := jq.db.Save(job).Error; err != nil {
-				log.Printf("Worker %d: failed to update job %d: %v", workerID, job.ID, err)
+				job.Status = models.JobStatusCompleted
 			}
 		}
+		// Update the job status in the database.
+		if err := jq.db.Save(job).Error; err != nil {
+			log.Printf("Worker %d: failed to update job %d: %v", workerID, job.ID, err)
+		}
+
 	}
 }
 
