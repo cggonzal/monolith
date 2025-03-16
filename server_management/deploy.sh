@@ -1,7 +1,13 @@
 #!/bin/bash
 
 # This should be run from the root of the monolith project: ./server_management/deploy.sh
-# This script will cross compile the app, copy the necessary files to the remote server, and restart the application on the remote server.
+# This script will do the following:
+# 1. Ensure the relevant directories exist on the remote server
+# 2. Copy the monolith.service systemd file to the server
+# 3. Cross compile the app
+# 4. Copy the built app to the remote server. This assumes the app binary has static files embedded in the binary.
+# 5. Restart the monolith app on the remote server
+# 6. Clean up
 
 # Configuration
 REMOTE_USER="your_username"            # Your remote server username
