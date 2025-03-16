@@ -12,6 +12,10 @@ Otherwise, just run the app with:
 go run main.go
 ```
 
+## Tests
+Run the following from the root of the repo:
+`go test -v ./...`
+
 ## Deployment
 Run the following from the root of the repo:
 `./server_management/deploy.sh`
