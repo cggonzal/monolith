@@ -13,4 +13,5 @@ go run main.go
 ```
 
 ## Deployment
-Not set up yet. See `server_management/deploy.sh` for a place to start.
+Run the following from the root of the repo:
+`./server_management/deploy.sh`
