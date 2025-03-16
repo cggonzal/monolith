@@ -19,6 +19,6 @@ test:
 
 # Deploy using the deploy script
 deploy:
-	./server_management/deploy.sh
+	chmod +x ./server_management/deploy.sh && ./server_management/deploy.sh
 
 .PHONY: dev run build test deploy
