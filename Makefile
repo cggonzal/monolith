@@ -1,8 +1,13 @@
 # Default target - run with air for development
-.DEFAULT_GOAL := run
+.DEFAULT_GOAL := dev
 
-run:
+# Run the application with air for development to allow for hot reloading
+dev:
 	air
+
+# Run the application
+run:
+	go run main.go
 
 # Build the application
 build:
@@ -16,4 +21,4 @@ test:
 deploy:
 	./server_management/deploy.sh
 
-.PHONY: run build test deploy
+.PHONY: dev run build test deploy
