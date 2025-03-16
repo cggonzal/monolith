@@ -55,6 +55,9 @@ ssh -i $SSH_KEY $REMOTE_USER@$REMOTE_HOST << EOF
     # Navigate to the application directory
     cd $REMOTE_DIR
 
+    # make sure the daemon reloads the latest version of the service file
+    sudo systemctl daemon-reload
+
     # this assumes that the service file is already set up inside of /etc/systemd/system/ , and that 
     # the application handles gracefully shutting down, and
     # systemd will buffer the connections that come between the time the app shuts down and restarts so that no connections are dropped (my understanding is that systemd will do this buffering automatically).
