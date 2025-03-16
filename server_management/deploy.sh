@@ -39,7 +39,9 @@ if [ $? -ne 0 ]; then
 fi
 
 
-# Step 4: Copy the built app to the remote server. This assumes the app binary has static files embedded in the binary.
+# Step 4: Copy the built app to the remote server. 
+# This assumes the only file that needs to be transferred to the server is the app binary 
+# since static files can be embedded in the binary.
 echo "Copying app to the remote server..."
 scp -i $SSH_KEY $LOCAL_DIR/$APP_NAME $REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR/
 
