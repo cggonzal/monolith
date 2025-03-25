@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"monolith/db"
+	"monolith/models"
 	"net/http"
 	"sync"
 	"time"
@@ -11,14 +12,6 @@ import (
 	"github.com/gorilla/websocket"
 	"gorm.io/gorm"
 )
-
-// Message is the GORM model used to store incoming messages.
-type Message struct {
-	ID        uint `gorm:"primaryKey"`
-	Channel   string
-	Content   string
-	CreatedAt time.Time
-}
 
 // Hub manages channels, subscriptions, and broadcasts.
 type Hub struct {
@@ -87,7 +80,7 @@ func (h *Hub) Run() {
 		case msg := <-h.broadcast:
 			h.mu.Lock()
 			// Persist the message in the database.
-			messageRecord := Message{
+			messageRecord := models.Message{
 				Channel:   msg.channel,
 				Content:   string(msg.data),
 				CreatedAt: time.Now(),

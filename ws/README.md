@@ -1,7 +1,7 @@
 ### How It Works
 
 1. **Database Setup (GORM):**  
-   The `main` function opens a SQLite database and runs auto-migration on the `Message` model. This model stores the channel, content, and creation time for each message.
+   The `Message` model stores the channel, content, and creation time for each message.
 
 2. **Hub:**  
    The `Hub` struct keeps track of active channels and client subscriptions. It listens for three types of events:
