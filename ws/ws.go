@@ -53,10 +53,8 @@ func (h *Hub) Run() {
 		select {
 		case sub := <-h.register:
 			h.mu.Lock()
-			clients, ok := h.channels[sub.channel]
-			if !ok {
-				clients = make(map[*Client]bool)
-				h.channels[sub.channel] = clients
+			if _, ok := h.channels[sub.channel]; !ok {
+				h.channels[sub.channel] = make(map[*Client]bool)
 			}
 			h.channels[sub.channel][sub.client] = true
 			sub.client.subscriptions[sub.channel] = true
