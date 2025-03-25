@@ -15,6 +15,7 @@ import (
 	"monolith/db"
 	"monolith/handlers"
 	"monolith/middleware"
+	"monolith/ws"
 )
 
 //go:embed static/*
@@ -59,6 +60,9 @@ func main() {
 	mux.HandleFunc("GET /dashboard", middleware.RequireLogin(handlers.Dashboard))
 	mux.HandleFunc("GET /edit/{id}", middleware.RequireLogin(handlers.EditItemHandler))
 	mux.HandleFunc("POST /delete/{id}", middleware.RequireLogin(handlers.DeleteItemHandler))
+
+	// serve websockets routes at "/ws" endpoint
+	mux.HandleFunc("GET /ws", middleware.RequireLogin(ws.ServeWs))
 
 	// pprof routes
 	mux.HandleFunc("GET /debug/pprof/", pprof.Index)
