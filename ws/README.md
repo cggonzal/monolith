@@ -1,3 +1,15 @@
+### Example
+
+You can test the server using a WebSocket client. For example, you can send the following JSON commands:
+- **Subscribe to a channel:**
+  ```json
+  {"command": "subscribe", "identifier": "ChatChannel"}
+  ```
+- **Broadcast a message to the channel:**
+  ```json
+  {"command": "message", "identifier": "ChatChannel", "data": "Hello from Go!"}
+  ```
+
 ### How It Works
 
 1. **Database Setup (GORM):**  
@@ -19,14 +31,3 @@
 
 5. **Running the Server:**  
    Finally, the server listens on port 8080.
-
-You can test the server using a WebSocket client. For example, you can send the following JSON commands:
-
-- **Subscribe to a channel:**
-  ```json
-  {"command": "subscribe", "identifier": "ChatChannel"}
-  ```
-- **Broadcast a message to the channel:**
-  ```json
-  {"command": "message", "identifier": "ChatChannel", "data": "Hello from Go!"}
-  ```
