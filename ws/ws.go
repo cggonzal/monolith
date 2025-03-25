@@ -218,7 +218,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-// ServeWs handles websocket requests from clients.
+// serveWs handles websocket requests from clients.
 func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
