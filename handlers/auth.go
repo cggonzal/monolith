@@ -48,10 +48,10 @@ func HandleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(resp.Body).Decode(&userInfo)
 
 	// Try to get user from DB
-	user, err := models.GetUser(db.DB, userInfo.Email)
+	user, err := models.GetUser(db.GetDB(), userInfo.Email)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		// If user does not exist, create a new one
-		user, err = models.CreateUser(db.DB, userInfo.Email, userInfo.Name, userInfo.AvatarURL)
+		user, err = models.CreateUser(db.GetDB(), userInfo.Email, userInfo.Name, userInfo.AvatarURL)
 		if err != nil {
 			http.Error(w, "Failed to create user", http.StatusInternalServerError)
 			return

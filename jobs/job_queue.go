@@ -28,7 +28,7 @@ type JobQueue struct {
 var jobQueue *JobQueue
 
 func init() {
-	jobQueue = newJobQueue(db.DB, config.JOB_QUEUE_NUM_WORKERS)
+	jobQueue = newJobQueue(db.GetDB(), config.JOB_QUEUE_NUM_WORKERS)
 
 	// register all jobs
 	jobQueue.register(models.JobTypePrint, PrintJob)
