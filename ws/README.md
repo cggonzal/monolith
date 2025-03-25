@@ -15,7 +15,7 @@
    - The `writePump` sends messages (including periodic pings) back to the client.
 
 4. **WebSocket Upgrade:**  
-   The `/cable` HTTP endpoint upgrades HTTP connections to WebSocket connections using gorilla/websocket.
+   The `/ws` HTTP endpoint upgrades HTTP connections to WebSocket connections using gorilla/websocket.
 
 5. **Running the Server:**  
    Finally, the server listens on port 8080.
