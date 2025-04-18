@@ -32,5 +32,5 @@ EOF
 
 rm "$BIN"
 
-echo "✅ Deployment complete!"
 echo "✅ Deployed release $TS"
+echo "✅ Deployment complete!"
