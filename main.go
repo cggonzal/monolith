@@ -5,6 +5,7 @@ import (
 	"embed"
 	"log"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -15,6 +16,7 @@ import (
 	"monolith/db"
 	"monolith/handlers"
 	"monolith/middleware"
+	"monolith/server_management"
 	"monolith/ws"
 )
 
@@ -35,9 +37,25 @@ func main() {
 	// initialize templates
 	handlers.InitTemplates(templateFiles)
 
-	port := os.Getenv("PORT")
+	// get the port from the environment variable or default to 9000
+	port := os.Getenv("BIN_PORT")
 	if port == "" {
-		port = "8080"
+		port = "9000"
+	}
+
+	// Grab the listener from systemd (fall back to a normal port if run
+	// without socket activation — handy for local dev).
+	listeners, err := server_management.SdListeners()
+	var ln net.Listener
+	if err == nil && len(listeners) > 0 {
+		ln = listeners[0]
+		log.Printf("using systemd listener on %s", ln.Addr())
+	} else {
+		ln, err = net.Listen("tcp", "127.0.0.1:"+port)
+		if err != nil {
+			log.Fatalf("listen: %v", err)
+		}
+		log.Printf("socket activation unavailable, listening on %s", ln.Addr())
 	}
 
 	slog.Info("Starting server", "address", ":"+port)
@@ -75,34 +93,33 @@ func main() {
 	loggedRouter := middleware.LoggingMiddleware(mux)
 
 	server := &http.Server{
-		Addr:    ":" + port,
-		Handler: loggedRouter,
+		ReadHeaderTimeout: 5 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		Handler:           loggedRouter,
 	}
 
-	// Block waiting for SIGTERM so the app can have a zero downtime deploy when it
-	// is running as a systemd service and we do a systemctl restart <service_name>
+	// Tell systemd we’re ready **before** we start accepting traffic.
+	go server_management.SdNotifyReady()
 
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-
+	// Graceful shutdown on SIGTERM/SIGINT.
+	idleConnsClosed := make(chan struct{})
 	go func() {
-		for sig := range sigChan { // block until a signal is received
-			switch sig {
-			case syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP:
-				// Graceful shutdown
-				slog.Info("Received termination signal. Shutting down...")
-				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-				defer cancel()
-				if err := server.Shutdown(ctx); err != nil {
-					slog.Error("Error during graceful shutdown: " + err.Error())
-				}
-				os.Exit(0) // Exit the process to allow systemd to start a new instance
-			}
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+		<-sig
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if err := server.Shutdown(ctx); err != nil {
+			log.Printf("HTTP shutdown: %v", err)
 		}
+		close(idleConnsClosed)
 	}()
 
-	slog.Info("Server running", "address", ":"+port)
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Fatal(err)
+	log.Printf("serving HTTP")
+	if err := server.Serve(ln); err != http.ErrServerClosed {
+		log.Fatalf("Serve: %v", err)
 	}
+
+	<-idleConnsClosed
+	log.Printf("goodbye")
 }
