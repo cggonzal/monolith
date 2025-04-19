@@ -2,8 +2,6 @@
 # This script is meant to be run from the root of the monolith project.
 # Boot‑straps a fresh Ubuntu server for zero‑downtime Go deploys. Assumes that the ssh command can find your ssh key by default.
 # This script sets up a server with Caddy, systemd socket activation, and a basic Caddyfile.
-# It does not install Go or any other dependencies. It assumes that the app binary is already built and ready to be deployed.
-# It will SSH into the remote server and execute the commands to set up the server.
 # Usage: ./server_setup.sh user@host example.com
 
 set -euo pipefail
