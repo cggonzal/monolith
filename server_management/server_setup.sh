@@ -4,13 +4,13 @@
 # This script sets up a server with Caddy, systemd socket activation, and a basic Caddyfile.
 # It does not install Go or any other dependencies. It assumes that the app binary is already built and ready to be deployed.
 # It will SSH into the remote server and execute the commands to set up the server.
-# Usage: ./server_setup.sh user@host
+# Usage: ./server_setup.sh user@host example.com
 
 set -euo pipefail
 
 REMOTE="$1"                 # e.g. ubuntu@203.0.113.5
 APP_NAME="monolith"         # systemd unit prefix and directory name
-DOMAIN="example.com"        # domain served by Caddy
+DOMAIN="$2"        # domain served by Caddy
 APP_DIR="/opt/$APP_NAME"    # where releases/ and current -> releaseX live
 BIN_PORT="9000"             # must match systemd socket + Caddy reverse_proxy
 
