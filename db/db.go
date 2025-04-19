@@ -28,5 +28,6 @@ func Connect() {
 	dbHandle.AutoMigrate(
 		&models.User{},
 		&models.Job{},
+		&models.Message{},
 	)
 }
