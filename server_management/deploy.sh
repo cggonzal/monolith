@@ -58,5 +58,4 @@ EOSH
 
 rm "$BIN"
 
-echo "✅ Deployed release $TS"
 echo "✅ Deployment complete!"
