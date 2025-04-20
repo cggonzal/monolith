@@ -10,7 +10,7 @@
 #   KEEP   – how many past releases to keep (default 5)
 #   PRUNE  – "true" enables pruning, anything else disables it
 
-set -euo pipefail
+set -xeuo pipefail
 
 REMOTE="$1"                 # e.g. ubuntu@203.0.113.5
 APP_NAME="monolith"
@@ -34,7 +34,7 @@ scp "$BIN" "$REMOTE:$RELEASE_DIR/"
 
 echo "▶ Updating symlink & restarting service..."
 ssh "$REMOTE" bash -s -- "$APP_DIR" "$APP_NAME" "$RELEASE_DIR" "$KEEP" "$PRUNE" <<'EOSH'
-set -euo pipefail
+set -xeuo pipefail
 APP_DIR="$1"; APP_NAME="$2"; RELEASE_DIR="$3"; KEEP="$4"; PRUNE="$5"
 
 # 1) Atomic symlink swap

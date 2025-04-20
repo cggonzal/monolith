@@ -4,7 +4,7 @@
 # This script sets up a server with Caddy, systemd socket activation, and a basic Caddyfile.
 # Usage: ./server_setup.sh user@host example.com
 
-set -euo pipefail
+set -xeuo pipefail
 
 REMOTE="$1"                 # e.g. ubuntu@203.0.113.5
 APP_NAME="monolith"         # systemd unit prefix and directory name
@@ -13,7 +13,7 @@ APP_DIR="/opt/$APP_NAME"    # where releases/ and current -> releaseX live
 BIN_PORT="9000"             # must match systemd socket + Caddy reverse_proxy
 
 ssh "$REMOTE" bash -s <<EOF
-set -euo pipefail
+set -xeuo pipefail
 # ----- 1. Base packages ----------------------------------------------------
 sudo apt-get update -qq
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
