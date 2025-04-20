@@ -8,11 +8,11 @@ set -euo pipefail
 
 REMOTE="$1"                 # e.g. ubuntu@203.0.113.5
 APP_NAME="monolith"         # systemd unit prefix and directory name
-DOMAIN="$2"        # domain served by Caddy
+DOMAIN="$2"                 # domain served by Caddy
 APP_DIR="/opt/$APP_NAME"    # where releases/ and current -> releaseX live
 BIN_PORT="9000"             # must match systemd socket + Caddy reverse_proxy
 
-ssh "$REMOTE" bash -s <<'EOF'
+ssh "$REMOTE" bash -s <<EOF
 set -euo pipefail
 # ----- 1. Base packages ----------------------------------------------------
 sudo apt-get update -qq
@@ -25,7 +25,7 @@ if ! command -v caddy >/dev/null ; then
   sudo apt-get install -y debian-keyring debian-archive-keyring apt-transport-https
   curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/gpg.key | sudo tee /usr/share/keyrings/caddy-stable-archive-keyring.asc
   echo "deb [signed-by=/usr/share/keyrings/caddy-stable-archive-keyring.asc] \
-        https://dl.cloudsmith.io/public/caddy/stable/deb/ubuntu $(lsb_release -cs) main" \
+        https://dl.cloudsmith.io/public/caddy/stable/deb/ubuntu \$(lsb_release -cs) main" \
         | sudo tee /etc/apt/sources.list.d/caddy-stable.list
   sudo apt-get update -qq
   sudo apt-get install -y caddy
@@ -33,7 +33,7 @@ fi
 
 # ----- 3. Create app directories ------------------------------------------
 sudo mkdir -p $APP_DIR/releases
-sudo chown -R $(whoami): $(dirname $APP_DIR)
+sudo chown -R \$(whoami): \$(dirname $APP_DIR)
 
 # ----- 4. systemd socket + service ----------------------------------------
 sudo tee /etc/systemd/system/$APP_NAME.socket >/dev/null <<UNIT
@@ -81,5 +81,4 @@ sudo systemctl restart caddy       # picks up Caddyfile
 echo "✅ Server bootstrap complete."
 EOF
 
-echo "✅ Server bootstrap complete."
 echo "You can now deploy your app using the deploy.sh script."
