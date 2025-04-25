@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"monolith/config"
 	"monolith/db"
 	"monolith/handlers"
 	"monolith/middleware"
@@ -38,9 +39,8 @@ func main() {
 	handlers.InitTemplates(templateFiles)
 
 	// get the port from the environment variable or default to 9000
-	port := os.Getenv("BIN_PORT")
-	if port == "" {
-		port = "9000"
+	if config.PORT == "" {
+		config.PORT = "9000"
 	}
 
 	// Grab the listener from systemd (fall back to a normal port if run
@@ -51,14 +51,14 @@ func main() {
 		ln = listeners[0]
 		log.Printf("using systemd listener on %s", ln.Addr())
 	} else {
-		ln, err = net.Listen("tcp", "127.0.0.1:"+port)
+		ln, err = net.Listen("tcp", "127.0.0.1:"+config.PORT)
 		if err != nil {
 			log.Fatalf("listen: %v", err)
 		}
 		log.Printf("socket activation unavailable, listening on %s", ln.Addr())
 	}
 
-	slog.Info("Starting server", "address", ":"+port)
+	slog.Info("Starting server", "address", ":"+config.PORT)
 
 	mux := http.NewServeMux()
 
