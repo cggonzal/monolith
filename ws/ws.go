@@ -3,7 +3,6 @@ package ws
 import (
 	"encoding/json"
 	"log"
-	"monolith/db"
 	"monolith/models"
 	"net/http"
 	"sync"
@@ -234,12 +233,21 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	client.readPump()
 }
 
-// ServeWs is the handler for the /ws endpoint. It upgrades the HTTP connection to a WebSocket connection, initializes a new Hub, and starts the hub loop.
-func ServeWs(w http.ResponseWriter, r *http.Request) {
-	DB := db.GetDB()
-
-	hub := NewHub(DB)
-	go hub.Run()
-
-	serveWs(hub, w, r)
+// ServeWs is the handler for the /ws endpoint.
+// It upgrades the HTTP connection to a WebSocket and registers the client with the shared Hub.
+func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println("Upgrade error:", err)
+		return
+	}
+	client := &Client{
+		hub:           hub,
+		conn:          conn,
+		send:          make(chan []byte, 256),
+		subscriptions: make(map[string]bool),
+	}
+	// Start writePump in a separate goroutine.
+	go client.writePump()
+	client.readPump()
 }

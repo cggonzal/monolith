@@ -43,6 +43,10 @@ func main() {
 		config.PORT = "9000"
 	}
 
+	// Create a single shared Hub instance.
+	hub := ws.NewHub(db.GetDB())
+	go hub.Run()
+
 	// Grab the listener from systemd (fall back to a normal port if run
 	// without socket activation — handy for local dev).
 	listeners, err := server_management.SdListeners()
@@ -79,8 +83,10 @@ func main() {
 	mux.HandleFunc("GET /edit/{id}", middleware.RequireLogin(handlers.EditItemHandler))
 	mux.HandleFunc("POST /delete/{id}", middleware.RequireLogin(handlers.DeleteItemHandler))
 
-	// serve websockets routes at "/ws" endpoint
-	mux.HandleFunc("GET /ws", middleware.RequireLogin(ws.ServeWs))
+	// serve websockets routes at "/ws" endpoint with shared hub
+	mux.HandleFunc("GET /ws", middleware.RequireLogin(func(w http.ResponseWriter, r *http.Request) {
+		ws.ServeWs(hub, w, r)
+	}))
 
 	// pprof routes
 	mux.HandleFunc("GET /debug/pprof/", pprof.Index)
