@@ -1,3 +1,7 @@
+/*
+Package server_management provides helpers for systemd socket activation and
+deployment utilities used by the monolith.
+*/
 package server_management
 
 import (

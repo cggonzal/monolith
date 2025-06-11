@@ -1,3 +1,7 @@
+/*
+Package middleware provides reusable HTTP middlewares such as authentication
+and request logging.
+*/
 package middleware
 
 import (

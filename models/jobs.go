@@ -1,3 +1,6 @@
+/*
+Package models defines the database models used throughout the application.
+*/
 package models
 
 import (
