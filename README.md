@@ -229,7 +229,8 @@ hub.Broadcast("chat", []byte("Hello, world!"))
 
 ### Job Queue
 
-`jobs/` is a minimal in‑process queue with workers:
+`jobs/` is a minimal in‑process queue. Each job is executed in its own
+goroutine so long running tasks will not block others:
 
 ```go
 jobs.RegisterHandler(models.JobTypePrint, func(j *models.Job) error {
@@ -241,9 +242,10 @@ jobs.Enqueue(models.JobTypePrint, `"Hello background!"`)
 
 Features:
 
-* FIFO ordering backed by the `jobs` DB table  
-* Automatic retries & exponential back‑off (see `JobQueue.process()`)  
+* FIFO ordering backed by the `jobs` DB table
+* Automatic retries & exponential back‑off (see `JobQueue.process()`)
 * Configurable workers via `config.JOB_QUEUE_NUM_WORKERS`
+* Jobs run concurrently in separate goroutines for scalability
 
 ### Server Management & Zero‑downtime Deploys
 

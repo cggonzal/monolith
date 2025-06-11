@@ -81,26 +81,31 @@ func (jq *JobQueue) worker(workerID int) {
 			continue
 		}
 
-		log.Printf("Worker %d processing job %d of type %d", workerID, job.ID, job.Type)
-		jobFunc, exists := jq.registry[job.Type]
+		log.Printf("Worker %d dispatching job %d of type %d", workerID, job.ID, job.Type)
+		jq.processJobAsync(job)
+	}
+}
+
+// processJobAsync runs the job function in its own goroutine so that
+// long-running jobs do not block others.
+func (jq *JobQueue) processJobAsync(job *models.Job) {
+	go func(j *models.Job) {
+		jobFunc, exists := jq.registry[j.Type]
 		if !exists {
-			log.Printf("Worker %d: no registered function for job type %d", workerID, job.Type)
-			job.Status = models.JobStatusFailed
+			log.Printf("no registered function for job type %d", j.Type)
+			j.Status = models.JobStatusFailed
 		} else {
-			err = jobFunc(job.Payload)
-			if err != nil {
-				log.Printf("Worker %d: job %d failed: %v", workerID, job.ID, err)
-				job.Status = models.JobStatusFailed
+			if err := jobFunc(j.Payload); err != nil {
+				log.Printf("job %d failed: %v", j.ID, err)
+				j.Status = models.JobStatusFailed
 			} else {
-				job.Status = models.JobStatusCompleted
+				j.Status = models.JobStatusCompleted
 			}
 		}
-		// Update the job status in the database.
-		if err := jq.db.Save(job).Error; err != nil {
-			log.Printf("Worker %d: failed to update job %d: %v", workerID, job.ID, err)
+		if err := jq.db.Save(j).Error; err != nil {
+			log.Printf("failed to update job %d: %v", j.ID, err)
 		}
-
-	}
+	}(job)
 }
 
 // fetchJob retrieves one pending job and marks it as processing in a transaction.
