@@ -13,6 +13,7 @@ type JobType int
 const (
 	JobTypePrint JobType = iota
 	JobTypeSum
+	JobTypeEmail
 )
 
 // JobStatus defines an enum for job status

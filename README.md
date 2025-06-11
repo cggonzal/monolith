@@ -248,6 +248,27 @@ Features:
 * Automatic retries & exponential back‑off (see `JobQueue.process()`)  
 * Configurable workers via `config.JOB_QUEUE_NUM_WORKERS`
 
+### Email Package
+
+The `email` package provides a single `SendEmail` helper that enqueues an
+email‑sending job. Emails are delivered asynchronously through Mailgun using
+the REST API. Example:
+
+```go
+err := email.SendEmail(
+    "Hello",
+    "Welcome to the app!",
+    "no-reply@example.com",
+    []string{"user@example.com"},
+)
+if err != nil {
+    log.Println("unable to queue email:", err)
+}
+```
+
+Set the `MAILGUN_DOMAIN` and `MAILGUN_API_KEY` environment variables so the job
+workers can talk to Mailgun.
+
 ### Server Management & Zero‑downtime Deploys
 
 `server_management/` abstracts **systemd socket activation**:
@@ -450,6 +471,8 @@ This will do a zero downtime deploy by calling,
 | `GOOGLE_CLIENT_ID` | OAuth 2 client ID | – |
 | `GOOGLE_CLIENT_SECRET` | OAuth 2 client secret | – |
 | `DATABASE_URL` | Postgres DSN (if you switch drivers) | – |
+| `MAILGUN_DOMAIN` | Mailgun domain used for sending mail | – |
+| `MAILGUN_API_KEY` | Private API key for Mailgun | – |
 
 ### Make Targets
 
