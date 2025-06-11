@@ -20,7 +20,7 @@ type Hub struct {
 	unregister chan Subscription
 	broadcast  chan BroadcastMessage
 	db         *gorm.DB
-	mu         sync.Mutex
+	mu         sync.RWMutex
 }
 
 // Subscription represents a client's subscription to a channel.
@@ -44,6 +44,12 @@ func NewHub(db *gorm.DB) *Hub {
 		broadcast:  make(chan BroadcastMessage),
 		db:         db,
 	}
+}
+
+// Broadcast enqueues a message to be sent to all clients subscribed to a channel.
+// It can be called from any goroutine.
+func (h *Hub) Broadcast(channel string, data []byte) {
+	h.broadcast <- BroadcastMessage{channel: channel, data: data}
 }
 
 // Run starts the hub loop to process registrations, unregistrations, and broadcasts.
@@ -75,28 +81,39 @@ func (h *Hub) Run() {
 			log.Printf("Client unsubscribed from channel %s", sub.channel)
 
 		case msg := <-h.broadcast:
-			h.mu.Lock()
-			// Persist the message in the database.
-			messageRecord := models.Message{
-				Channel:   msg.channel,
-				Content:   string(msg.data),
-				CreatedAt: time.Now(),
-			}
-			if err := h.db.Create(&messageRecord).Error; err != nil {
-				log.Printf("DB error: %v", err)
-			}
-			// Send the message to all clients subscribed to the channel.
+			// Persist the message asynchronously to avoid blocking broadcasts.
+			go func(channel string, data []byte) {
+				record := models.Message{
+					Channel:   channel,
+					Content:   string(data),
+					CreatedAt: time.Now(),
+				}
+				if err := h.db.Create(&record).Error; err != nil {
+					log.Printf("DB error: %v", err)
+				}
+			}(msg.channel, msg.data)
+
+			// Snapshot clients subscribed to the channel.
+			h.mu.RLock()
+			var targets []*Client
 			if clients, ok := h.channels[msg.channel]; ok {
-				for client := range clients {
-					select {
-					case client.send <- msg.data:
-					default:
-						close(client.send)
-						delete(clients, client)
-					}
+				for c := range clients {
+					targets = append(targets, c)
 				}
 			}
-			h.mu.Unlock()
+			h.mu.RUnlock()
+
+			// Send the message outside the lock for scalability.
+			for _, client := range targets {
+				select {
+				case client.send <- msg.data:
+				default:
+					close(client.send)
+					h.mu.Lock()
+					delete(h.channels[msg.channel], client)
+					h.mu.Unlock()
+				}
+			}
 		}
 	}
 }
@@ -213,24 +230,6 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
-}
-
-// serveWs handles websocket requests from clients.
-func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println("Upgrade error:", err)
-		return
-	}
-	client := &Client{
-		hub:           hub,
-		conn:          conn,
-		send:          make(chan []byte, 256),
-		subscriptions: make(map[string]bool),
-	}
-	// Start writePump in a separate goroutine.
-	go client.writePump()
-	client.readPump()
 }
 
 // ServeWs is the handler for the /ws endpoint.
