@@ -205,11 +205,12 @@ This makes the final binary self‑contained & easy to deploy.
 
 ### WebSockets
 
-`ws/` implements a **publish/subscribe hub** inspired by Django Channels:
+`ws/` provides a lightweight **publish/subscribe** layer:
 
-* `Hub` – central switchboard; one per process  
-* `Client` – represents one browser connection  
-* Messages are JSON encoded and stored in the DB for history.
+* `Hub` – single central switchboard created at startup
+* `Client` – represents one browser connection
+* Messages are JSON encoded and stored in the DB for history.  Broadcasting is
+  done concurrently so thousands of clients can be serviced with minimal delay.
 
 Upgrading a request to WebSocket:
 
@@ -226,6 +227,8 @@ Broadcast from anywhere:
 ```go
 hub.Broadcast("chat", []byte("Hello, world!"))
 ```
+`Broadcast` is safe to call from any goroutine and fans the message out to
+subscribers concurrently.
 
 ### Job Queue
 
