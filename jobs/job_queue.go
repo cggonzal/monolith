@@ -34,8 +34,10 @@ func init() {
 	jobQueue.register(models.JobTypePrint, PrintJob)
 	jobQueue.register(models.JobTypeSum, SumJob)
 
-	// start the job queue!
-	jobQueue.start()
+	// start the job queue only if a database connection is available
+	if jobQueue.db != nil {
+		jobQueue.start()
+	}
 }
 
 // Use this function to access the job queue.
