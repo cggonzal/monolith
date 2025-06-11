@@ -1,3 +1,7 @@
+/*
+Package ws implements a publish/subscribe WebSocket hub with persistent
+messages stored in the database.
+*/
 package ws
 
 import (

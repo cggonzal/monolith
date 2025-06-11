@@ -1,3 +1,4 @@
+// Package main configures and starts the monolith HTTP server.
 package main
 
 import (

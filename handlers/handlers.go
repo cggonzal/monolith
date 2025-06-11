@@ -1,3 +1,7 @@
+/*
+Package handlers contains the HTTP route handlers and template initialization
+used by the application.
+*/
 package handlers
 
 import (

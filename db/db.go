@@ -1,3 +1,7 @@
+/*
+Package db bootstraps the GORM database connection and exposes helpers for
+other packages to retrieve the initialized handle.
+*/
 package db
 
 import (

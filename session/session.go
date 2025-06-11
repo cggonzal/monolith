@@ -1,3 +1,7 @@
+/*
+Package session handles cookie-based sessions and Google OAuth configuration for
+user authentication.
+*/
 package session
 
 import (
