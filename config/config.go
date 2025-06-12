@@ -11,7 +11,7 @@ import (
 
 var JOB_QUEUE_NUM_WORKERS = 4
 
-var PORT = 9000 // change to os.Getenv("PORT") if you want to use an environment variable
+var PORT = "9000" // change to os.Getenv("PORT") if you want to use an environment variable
 
 // Mailgun configuration. Set MAILGUN_DOMAIN and MAILGUN_API_KEY environment
 // variables in production. MAILGUN_API_BASE rarely changes and defaults to the
