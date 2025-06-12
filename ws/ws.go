@@ -55,9 +55,9 @@ func InitPubSub() {
 func newHub(db *gorm.DB) *Hub {
 	return &Hub{
 		channels:   make(map[string]map[*Client]bool),
-		register:   make(chan Subscription),
-		unregister: make(chan Subscription),
-		broadcast:  make(chan BroadcastMessage),
+		register:   make(chan Subscription, 256),
+		unregister: make(chan Subscription, 256),
+		broadcast:  make(chan BroadcastMessage, 256),
 		db:         db,
 	}
 }
