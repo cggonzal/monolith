@@ -7,6 +7,8 @@ package ws
 import (
 	"encoding/json"
 	"log"
+	"log/slog"
+	"monolith/db"
 	"monolith/models"
 	"net/http"
 	"sync"
@@ -15,6 +17,8 @@ import (
 	"github.com/gorilla/websocket"
 	"gorm.io/gorm"
 )
+
+var HUB *Hub
 
 // Hub manages channels, subscriptions, and broadcasts.
 type Hub struct {
@@ -39,8 +43,16 @@ type BroadcastMessage struct {
 	data    []byte
 }
 
+func InitPubSub() {
+	// Initialize the Hub with an empty channels map and channels for register, unregister, and broadcast.
+	// This function is called once at application startup.
+	slog.Info("Initializing Pub/Sub")
+	HUB = newHub(db.GetDB())
+	go HUB.Run()
+}
+
 // NewHub initializes a new Hub.
-func NewHub(db *gorm.DB) *Hub {
+func newHub(db *gorm.DB) *Hub {
 	return &Hub{
 		channels:   make(map[string]map[*Client]bool),
 		register:   make(chan Subscription),
@@ -238,14 +250,14 @@ var upgrader = websocket.Upgrader{
 
 // ServeWs is the handler for the /ws endpoint.
 // It upgrades the HTTP connection to a WebSocket and registers the client with the shared Hub.
-func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+func ServeWs(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Upgrade error:", err)
 		return
 	}
 	client := &Client{
-		hub:           hub,
+		hub:           HUB,
 		conn:          conn,
 		send:          make(chan []byte, 256),
 		subscriptions: make(map[string]bool),

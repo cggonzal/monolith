@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,7 +16,7 @@ import (
 	"monolith/config"
 	"monolith/db"
 	"monolith/handlers"
-	"monolith/middleware"
+	"monolith/routes"
 	"monolith/server_management"
 	"monolith/ws"
 )
@@ -44,9 +43,8 @@ func main() {
 		config.PORT = "9000"
 	}
 
-	// Create a single shared Hub instance.
-	hub := ws.NewHub(db.GetDB())
-	go hub.Run()
+	// initialize the websocket pub/sub
+	ws.InitPubSub()
 
 	// Grab the listener from systemd (fall back to a normal port if run
 	// without socket activation — handy for local dev).
@@ -65,44 +63,10 @@ func main() {
 
 	slog.Info("Starting server", "address", ":"+config.PORT)
 
-	mux := http.NewServeMux()
-
-	// Serve static files from embedded filesystem
-	staticFileServer := http.FileServer(http.FS(staticFiles))
-	mux.Handle("GET /static/", staticFileServer)
-
-	// OAuth routes
-	mux.HandleFunc("GET /auth/google", handlers.HandleGoogleLogin)
-	mux.HandleFunc("GET /auth/google/callback", handlers.HandleGoogleCallback)
-
-	// Public routes
-	mux.HandleFunc("GET /login", handlers.ShowLoginForm)
-	mux.HandleFunc("GET /logout", handlers.Logout)
-
-	// Protected routes
-	mux.HandleFunc("GET /dashboard", middleware.RequireLogin(handlers.Dashboard))
-	mux.HandleFunc("GET /edit/{id}", middleware.RequireLogin(handlers.EditItemHandler))
-	mux.HandleFunc("POST /delete/{id}", middleware.RequireLogin(handlers.DeleteItemHandler))
-
-	// serve websockets routes at "/ws" endpoint with shared hub
-	mux.HandleFunc("GET /ws", middleware.RequireLogin(func(w http.ResponseWriter, r *http.Request) {
-		ws.ServeWs(hub, w, r)
-	}))
-
-	// pprof routes
-	mux.HandleFunc("GET /debug/pprof/", pprof.Index)
-	mux.HandleFunc("GET /debug/pprof/cmdline", pprof.Cmdline)
-	mux.HandleFunc("GET /debug/pprof/profile", pprof.Profile)
-	mux.HandleFunc("GET /debug/pprof/symbol", pprof.Symbol)
-	mux.HandleFunc("GET /debug/pprof/trace", pprof.Trace)
-
-	// Wrap with structured logging middleware
-	loggedRouter := middleware.LoggingMiddleware(mux)
-
 	server := &http.Server{
 		ReadHeaderTimeout: 5 * time.Second,
 		IdleTimeout:       60 * time.Second,
-		Handler:           loggedRouter,
+		Handler:           routes.InitServerHandler(staticFiles),
 	}
 
 	// Tell systemd we’re ready **before** we start accepting traffic.

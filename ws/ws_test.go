@@ -4,9 +4,10 @@ import (
 	"testing"
 	"time"
 
+	"monolith/models"
+
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
-	"monolith/models"
 )
 
 func setupDB(t *testing.T) *gorm.DB {
@@ -22,7 +23,7 @@ func setupDB(t *testing.T) *gorm.DB {
 
 func TestBroadcastPersists(t *testing.T) {
 	db := setupDB(t)
-	h := NewHub(db)
+	h := newHub(db)
 	go h.Run()
 	h.Broadcast("ch", []byte("hello"))
 	time.Sleep(50 * time.Millisecond)
