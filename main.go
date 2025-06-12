@@ -38,5 +38,6 @@ func main() {
 	// initialize the websocket pub/sub
 	ws.InitPubSub()
 
+	// start the server!
 	server_management.RunServer(staticFiles)
 }
