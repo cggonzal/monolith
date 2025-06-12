@@ -21,3 +21,5 @@ var MAILGUN_API_KEY = os.Getenv("MAILGUN_API_KEY")
 
 // Base URL for the Mailgun API. Overridable for testing.
 var MAILGUN_API_BASE = "https://api.mailgun.net/v3"
+
+var SECRET_KEY = os.Getenv("SECRET_KEY")
