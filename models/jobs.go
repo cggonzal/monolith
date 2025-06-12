@@ -4,7 +4,7 @@ Package models defines the database models used throughout the application.
 package models
 
 import (
-	"time"
+	"gorm.io/gorm"
 )
 
 // JobType defines an enum for job types.
@@ -28,10 +28,8 @@ const (
 
 // Job represents a unit of work.
 type Job struct {
-	ID        uint      `gorm:"primaryKey"`
-	Type      JobType   // Using our enum for job types.
-	Payload   string    // JSON encoded arguments.
-	Status    JobStatus // Using our enum for status types.
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	gorm.Model           // Adds ID, CreatedAt, UpdatedAt, DeletedAt fields
+	Type       JobType   // Using our enum for job types.
+	Payload    string    // JSON encoded arguments.
+	Status     JobStatus // Using our enum for status types.
 }

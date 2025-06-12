@@ -1,21 +1,17 @@
 package models
 
 import (
-	"time"
-
 	"gorm.io/gorm"
 )
 
 // User represents a user in the database
 type User struct {
-	ID        uint   `gorm:"primaryKey"`
-	Email     string `gorm:"unique;not null"`
-	Name      string
-	AvatarURL string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	IsActive  bool `gorm:"default:true"`
-	IsAdmin   bool `gorm:"default:false"`
+	gorm.Model        // Adds ID, CreatedAt, UpdatedAt, DeletedAt fields
+	Email      string `gorm:"unique;not null"`
+	Name       string
+	AvatarURL  string
+	IsActive   bool `gorm:"default:true"`
+	IsAdmin    bool `gorm:"default:false"`
 }
 
 // GetUser fetches a user by email from the database
