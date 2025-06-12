@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 
-	"monolith/config"
 	"monolith/db"
 	"monolith/handlers"
 	"monolith/server_management"
@@ -29,11 +28,6 @@ func main() {
 
 	// initialize templates
 	handlers.InitTemplates(templateFiles)
-
-	// get the port from the environment variable or default to 9000
-	if config.PORT == "" {
-		config.PORT = "9000"
-	}
 
 	// initialize the websocket pub/sub
 	ws.InitPubSub()
