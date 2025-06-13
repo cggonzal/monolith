@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"go/format"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -73,7 +72,7 @@ func createModelFile(modelName string, fields []string) error {
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(path, formatted, 0644); err != nil {
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
 		return err
 	}
 	fmt.Println("create", path)
@@ -83,7 +82,7 @@ func createModelFile(modelName string, fields []string) error {
 // updateDBFile injects the new model into db/db.go AutoMigrate list.
 func updateDBFile(modelName string) error {
 	path := filepath.Join("db", "db.go")
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
@@ -117,7 +116,7 @@ func updateDBFile(modelName string) error {
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(path, formatted, 0644); err != nil {
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
 		return err
 	}
 	fmt.Println("update", path)
