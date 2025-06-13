@@ -27,18 +27,16 @@ func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
 	staticFileServer := http.FileServer(http.FS(staticFiles))
 	mux.Handle("GET /static/", staticFileServer)
 
-	// OAuth routes
-	mux.HandleFunc("GET /auth/google", controllers.HandleGoogleLogin)
-	mux.HandleFunc("GET /auth/google/callback", controllers.HandleGoogleCallback)
+	mux.HandleFunc("GET /auth/google", controllers.AuthCtrl.HandleGoogleLogin)
+	mux.HandleFunc("GET /auth/google/callback", controllers.AuthCtrl.HandleGoogleCallback)
 
 	// Public routes
-	mux.HandleFunc("GET /login", controllers.ShowLoginForm)
-	mux.HandleFunc("GET /logout", controllers.Logout)
+	mux.HandleFunc("GET /login", controllers.AuthCtrl.ShowLoginForm)
+	mux.HandleFunc("GET /logout", controllers.AuthCtrl.Logout)
 
-	// Protected routes
-	mux.HandleFunc("GET /dashboard", middleware.RequireLogin(controllers.Dashboard))
-	mux.HandleFunc("GET /edit/{id}", middleware.RequireLogin(controllers.EditItemHandler))
-	mux.HandleFunc("POST /delete/{id}", middleware.RequireLogin(controllers.DeleteItemHandler))
+	mux.HandleFunc("GET /dashboard", middleware.RequireLogin(controllers.DashboardCtrl.Show))
+	mux.HandleFunc("GET /edit/{id}", middleware.RequireLogin(controllers.ItemCtrl.EditItemHandler))
+	mux.HandleFunc("POST /delete/{id}", middleware.RequireLogin(controllers.ItemCtrl.DeleteItemHandler))
 
 	// serve websockets routes at "/ws" endpoint with shared hub
 	mux.HandleFunc("GET /ws", middleware.RequireLogin(func(w http.ResponseWriter, r *http.Request) {

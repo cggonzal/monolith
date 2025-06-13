@@ -6,10 +6,10 @@ import (
 	"log/slog"
 	"os"
 
-	"monolith/controllers"
 	"monolith/db"
 	"monolith/generator"
 	"monolith/server_management"
+	"monolith/templates"
 	"monolith/ws"
 )
 
@@ -36,7 +36,7 @@ func main() {
 	db.Connect()
 
 	// initialize templates
-	controllers.InitTemplates(templateFiles)
+	templates.InitTemplates(templateFiles)
 
 	// initialize the websocket pub/sub
 	ws.InitPubSub()

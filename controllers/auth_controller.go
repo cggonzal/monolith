@@ -9,19 +9,35 @@ import (
 	"monolith/db"
 	"monolith/models"
 	"monolith/session"
+	"monolith/templates"
 
 	"gorm.io/gorm"
 )
 
+type AuthController struct{}
+
+var AuthCtrl = &AuthController{}
+
+// ShowLoginForm renders the login page
+func (ac *AuthController) ShowLoginForm(w http.ResponseWriter, r *http.Request) {
+	templates.ExecuteTemplate(w, "login.html.tmpl", nil)
+}
+
+// Logout clears the session and redirects to home
+func (ac *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
+	session.Logout(w, r)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
 // HandleGoogleLogin redirects the user to Google's OAuth login page
-func HandleGoogleLogin(w http.ResponseWriter, r *http.Request) {
+func (ac *AuthController) HandleGoogleLogin(w http.ResponseWriter, r *http.Request) {
 	conf := session.GetGoogleOAuthConfig()
 	url := conf.AuthCodeURL("random-state")
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
 // HandleGoogleCallback processes the OAuth2 callback and saves user to DB
-func HandleGoogleCallback(w http.ResponseWriter, r *http.Request) {
+func (ac *AuthController) HandleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	conf := session.GetGoogleOAuthConfig()
 	code := r.URL.Query().Get("code")
 
