@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"os"
 
+	"monolith/controllers"
 	"monolith/db"
 	"monolith/generator"
-	"monolith/handlers"
 	"monolith/server_management"
 	"monolith/ws"
 )
@@ -36,7 +36,7 @@ func main() {
 	db.Connect()
 
 	// initialize templates
-	handlers.InitTemplates(templateFiles)
+	controllers.InitTemplates(templateFiles)
 
 	// initialize the websocket pub/sub
 	ws.InitPubSub()

@@ -2,7 +2,7 @@ package routes
 
 import (
 	"embed"
-	"monolith/handlers"
+	"monolith/controllers"
 	"monolith/middleware"
 	"monolith/ws"
 	"net/http"
@@ -28,17 +28,17 @@ func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
 	mux.Handle("GET /static/", staticFileServer)
 
 	// OAuth routes
-	mux.HandleFunc("GET /auth/google", handlers.HandleGoogleLogin)
-	mux.HandleFunc("GET /auth/google/callback", handlers.HandleGoogleCallback)
+	mux.HandleFunc("GET /auth/google", controllers.HandleGoogleLogin)
+	mux.HandleFunc("GET /auth/google/callback", controllers.HandleGoogleCallback)
 
 	// Public routes
-	mux.HandleFunc("GET /login", handlers.ShowLoginForm)
-	mux.HandleFunc("GET /logout", handlers.Logout)
+	mux.HandleFunc("GET /login", controllers.ShowLoginForm)
+	mux.HandleFunc("GET /logout", controllers.Logout)
 
 	// Protected routes
-	mux.HandleFunc("GET /dashboard", middleware.RequireLogin(handlers.Dashboard))
-	mux.HandleFunc("GET /edit/{id}", middleware.RequireLogin(handlers.EditItemHandler))
-	mux.HandleFunc("POST /delete/{id}", middleware.RequireLogin(handlers.DeleteItemHandler))
+	mux.HandleFunc("GET /dashboard", middleware.RequireLogin(controllers.Dashboard))
+	mux.HandleFunc("GET /edit/{id}", middleware.RequireLogin(controllers.EditItemHandler))
+	mux.HandleFunc("POST /delete/{id}", middleware.RequireLogin(controllers.DeleteItemHandler))
 
 	// serve websockets routes at "/ws" endpoint with shared hub
 	mux.HandleFunc("GET /ws", middleware.RequireLogin(func(w http.ResponseWriter, r *http.Request) {

@@ -17,7 +17,7 @@ If you are new, start with **Quick‑start** then come back to read the architec
    3. [Domain Models](#domain-models)  
    4. [Sessions & Authentication](#sessions--authentication)  
    5. [Middleware](#middleware)  
-   6. [Routing & HTTP Handlers](#routing--http-handlers)  
+   6. [Routing & HTTP controllers](#routing--http-controllers)  
    7. [Templates & Static Assets](#templates--static-assets)  
    8. [WebSockets](#websockets)  
    9. [Job Queue](#job-queue)  
@@ -70,7 +70,7 @@ Everything uses the **Go standard library** except two focused dependencies:
 ├── db/                      # DB connection bootstrap
 │   └── db.go
 ├── models/                  # GORM models (User, Job, Message)
-├── handlers/                # HTTP handlers (HTML + auth callbacks)
+├── controllers/                # HTTP controllers (HTML + auth callbacks)
 ├── middleware/              # Reusable HTTP middleware
 ├── session/                 # Session helpers & Google OAuth config
 ├── ws/                      # WebSocket hub, client & message types
@@ -142,7 +142,7 @@ Session helpers live in `session/session.go`:
 * `SetLoggedIn`, `Logout`, `IsLoggedIn`
 * Google OAuth 2.0 configuration (`oauth2.Config`)
 
-Authentication flow (`handlers/auth.go`):
+Authentication flow (`controllers/auth.go`):
 
 ```mermaid
 sequenceDiagram
@@ -174,20 +174,20 @@ Compose them like:
 
 ```go
 mux := http.NewServeMux()
-mux.HandleFunc("GET /dashboard", middleware.RequireLogin(handlers.Dashboard))
+mux.HandleFunc("GET /dashboard", middleware.RequireLogin(controllers.Dashboard))
 http.ListenAndServe(":9000", middleware.LoggingMiddleware(mux))
 ```
 
-### Routing & HTTP Handlers
+### Routing & HTTP controllers
 
-All handlers are in `handlers/` and are wired inside `main.go` using the **new routing syntax** (Go 1.22+):
+All controllers are in `controllers/` and are wired inside `main.go` using the **new routing syntax** (Go 1.22+):
 
 ```go
-mux.HandleFunc("GET /", handlers.Home)
-mux.HandleFunc("POST /items/new", handlers.CreateItemHandler)
+mux.HandleFunc("GET /", controllers.Home)
+mux.HandleFunc("POST /items/new", controllers.CreateItemHandler)
 ```
 
-Templates are parsed once during startup through `handlers.InitTemplates(embed.FS)` giving you the full power of Go’s `html/template`.
+Templates are parsed once during startup through `controllers.InitTemplates(embed.FS)` giving you the full power of Go’s `html/template`.
 
 ### Templates & Static Assets
 
@@ -382,7 +382,7 @@ func SendWelcome(to string) error {
 }
 ```
 
-Import and call it from handlers or jobs – services keep business logic away from HTTP glue.
+Import and call it from controllers or jobs – services keep business logic away from HTTP glue.
 
 ### New Job Type
 
@@ -413,7 +413,7 @@ Run the unit tests by running following in the root of the repo:
 make test
 ```
 
-`handlers/handlers_test.go` shows how to spin up an in‑memory HTTP server and assert redirects.
+`controllers/controllers_test.go` shows how to spin up an in‑memory HTTP server and assert redirects.
 
 ---
 ## Development

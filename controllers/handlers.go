@@ -1,8 +1,8 @@
 /*
-Package handlers contains the HTTP route handlers and template initialization
+Package controllers contains the HTTP route controllers and template initialization
 used by the application.
 */
-package handlers
+package controllers
 
 import (
 	"embed"
