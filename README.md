@@ -296,10 +296,10 @@ go tool pprof http://localhost:9000/debug/pprof/profile?seconds=30
 # 1. clone & enter
 git clone <repo> && cd monolith
 
-# 2. if you have air installed, run the following in the root of the repo
-make
+# 2. start the server (uses air if available)
+make       # hot reload during development
 
-# if you do not have air installed then run
+# or without air installed
 make run
 
 # open http://localhost:9000
@@ -309,20 +309,23 @@ The first launch creates **app.db** and auto‑migrates the schema.
 
 ### Authentication flow Example
 
-1. Browser hits `/auth/google`  
-2. Login at Google, consent → redirect back  
-3. A `secure` cookie called `session` is set  
-4. Visit `/dashboard` – you’ll see your profile
+1. Visit `/signup` and create an account
+2. On success you’re logged in and redirected to `/dashboard`
+3. Existing users go to `/login` with their credentials
+4. A cookie named `session` tracks login state
 
-To log out, hit `/logout` which calls `session.Logout`.
+Use `/logout` to clear the session
 
 ### WebSocket chat Example
 
 ```html
 <script>
-const sock = new WebSocket("ws://localhost:9000/ws?channel=chat");
-sock.onmessage = ev => console.log("got:", JSON.parse(ev.data));
-sock.onopen    = _  => sock.send(JSON.stringify({content: "Hello!"}));
+const sock = new WebSocket("ws://localhost:9000/ws");
+sock.onopen = () => {
+  sock.send(JSON.stringify({command: "subscribe", identifier: "ChatChannel"}));
+  sock.send(JSON.stringify({command: "message", identifier: "ChatChannel", data: "Hello from JS!"}));
+};
+sock.onmessage = ev => console.log("got:", ev.data);
 </script>
 ```
 
@@ -331,11 +334,11 @@ All messages are persisted and broadcast to every subscriber of `chat`.
 ### Background job Example
 
 ```go
-payload := `{"numbers":[3,5,7]}`
-jobs.Enqueue(models.JobTypeSum, payload)
+payload := `{"message":"Hello"}`
+jobs.GetJobQueue().AddJob(models.JobTypePrint, payload)
 ```
 
-`jobs.RegisterHandler` in `main.go` registers a function that deserialises the JSON and stores the numeric sum back to the DB.
+`jobs/job_queue.go` registers job handlers and the queue starts automatically.
 
 ### Interactive debug session
 
