@@ -30,20 +30,6 @@ func PrintJob(payload string) error {
 	return nil
 }
 
-// sumJob is an example job function that expects a JSON payload with "a" and "b" fields.
-func SumJob(payload string) error {
-	var data struct {
-		A int `json:"a"`
-		B int `json:"b"`
-	}
-	if err := json.Unmarshal([]byte(payload), &data); err != nil {
-		return err
-	}
-	sum := data.A + data.B
-	log.Printf("sumJob: %d + %d = %d", data.A, data.B, sum)
-	return nil
-}
-
 /*
 // example usage
 func main() {
