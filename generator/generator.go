@@ -24,6 +24,8 @@ func Run(args []string) error {
 		return runModel(args[1:])
 	case "controller":
 		return runController(args[1:])
+	case "resource":
+		return runResource(args[1:])
 	default:
 		return fmt.Errorf("unknown generator: %s", args[0])
 	}
@@ -66,6 +68,35 @@ func runController(args []string) error {
 		}
 	}
 	if err := createTemplateFiles(name, actions); err != nil {
+		return err
+	}
+	return nil
+}
+
+// runResource generates a model, a controller with REST actions,
+// associated templates, routes and placeholder tests.
+func runResource(args []string) error {
+	if len(args) == 0 {
+		return errors.New("resource name required")
+	}
+	name := args[0]
+	fields := args[1:]
+
+	// create the model (singular name)
+	if err := runModel(append([]string{name}, fields...)); err != nil {
+		return err
+	}
+
+	// controller uses pluralized name
+	ctrlName := inflection.Plural(name)
+	if err := runController([]string{ctrlName, "all"}); err != nil {
+		return err
+	}
+
+	if err := createModelTestFile(name); err != nil {
+		return err
+	}
+	if err := createControllerTestFile(ctrlName); err != nil {
 		return err
 	}
 	return nil
@@ -353,6 +384,50 @@ func createTemplateFiles(name string, actions []string) error {
 			fmt.Println("create", file)
 		}
 	}
+	return nil
+}
+
+// createModelTestFile creates a placeholder _test.go file for the model.
+func createModelTestFile(modelName string) error {
+	file := filepath.Join("models", toSnakeCase(modelName)+"_test.go")
+	if _, err := os.Stat(file); err == nil {
+		fmt.Println("exists", file)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("package models\n\n")
+	buf.WriteString("import \"testing\"\n\n")
+	buf.WriteString(fmt.Sprintf("func Test%sPlaceholder(t *testing.T) {}\n", toCamelCase(modelName)))
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(file, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", file)
+	return nil
+}
+
+// createControllerTestFile creates a placeholder _test.go for the controller.
+func createControllerTestFile(name string) error {
+	file := filepath.Join("controllers", toSnakeCase(name)+"_controller_test.go")
+	if _, err := os.Stat(file); err == nil {
+		fmt.Println("exists", file)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("package controllers\n\n")
+	buf.WriteString("import \"testing\"\n\n")
+	buf.WriteString(fmt.Sprintf("func Test%sControllerPlaceholder(t *testing.T) {}\n", toCamelCase(name)))
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(file, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", file)
 	return nil
 }
 
