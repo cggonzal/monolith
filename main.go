@@ -9,14 +9,14 @@ import (
 	"monolith/db"
 	"monolith/generator"
 	"monolith/server_management"
-	"monolith/templates"
+	"monolith/views"
 	"monolith/ws"
 )
 
 //go:embed static/*
 var staticFiles embed.FS
 
-//go:embed templates/*
+//go:embed views/*.html.tmpl
 var templateFiles embed.FS
 
 func main() {
@@ -36,7 +36,7 @@ func main() {
 	db.Connect()
 
 	// initialize templates
-	templates.InitTemplates(templateFiles)
+	views.InitTemplates(templateFiles)
 
 	// initialize the websocket pub/sub
 	ws.InitPubSub()

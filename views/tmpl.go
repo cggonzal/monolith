@@ -1,5 +1,5 @@
-// Package templates provides functionality to parse and cache HTML templates from an embedded filesystem.
-package templates
+// Package views provides functionality to parse and cache HTML templates from an embedded filesystem.
+package views
 
 import (
 	"embed"
@@ -15,7 +15,7 @@ func InitTemplates(templateFiles embed.FS) {
 	tmpl = template.Must(template.ParseFS(templateFiles, "templates/*.html.tmpl"))
 }
 
-// ExecuteTemplate executes a named template with the provided data and writes the output to the given writer.
-func ExecuteTemplate(wr io.Writer, name string, data interface{}) error {
+// Render executes a named template with the provided data and writes the output to the given writer.
+func Render(wr io.Writer, name string, data interface{}) error {
 	return tmpl.ExecuteTemplate(wr, name, data)
 }

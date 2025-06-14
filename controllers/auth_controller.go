@@ -6,7 +6,7 @@ import (
 	"monolith/db"
 	"monolith/models"
 	"monolith/session"
-	"monolith/templates"
+	"monolith/views"
 )
 
 type AuthController struct{}
@@ -15,12 +15,12 @@ var AuthCtrl = &AuthController{}
 
 // ShowLoginForm renders the login page
 func (ac *AuthController) ShowLoginForm(w http.ResponseWriter, r *http.Request) {
-	templates.ExecuteTemplate(w, "login.html.tmpl", nil)
+	views.Render(w, "login.html.tmpl", nil)
 }
 
 // ShowSignupForm renders the signup page
 func (ac *AuthController) ShowSignupForm(w http.ResponseWriter, r *http.Request) {
-	templates.ExecuteTemplate(w, "signup.html.tmpl", nil)
+	views.Render(w, "signup.html.tmpl", nil)
 }
 
 // Logout clears the session and redirects to home

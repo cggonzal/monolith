@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"monolith/templates"
+	"monolith/views"
 	"net/http"
 	"strings"
 )
@@ -20,7 +20,7 @@ func (ic *ItemController) EditItemHandler(w http.ResponseWriter, r *http.Request
 		ID:   id,
 		Name: "Example Item " + id,
 	}
-	templates.ExecuteTemplate(w, "edit.html.tmpl", data)
+	views.Render(w, "edit.html.tmpl", data)
 }
 
 // DeleteItemHandler simulates deleting an item

@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"monolith/session"
-	"monolith/templates"
+	"monolith/views"
 	"net/http"
 )
 
@@ -16,5 +16,5 @@ func (dc *DashboardController) Show(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	templates.ExecuteTemplate(w, "dashboard.html.tmpl", nil)
+	views.Render(w, "dashboard.html.tmpl", nil)
 }
