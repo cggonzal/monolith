@@ -12,7 +12,7 @@ var tmpl *template.Template
 
 // parse all templates and store them in the template cache
 func InitTemplates(templateFiles embed.FS) {
-	tmpl = template.Must(template.ParseFS(templateFiles, "templates/*.html.tmpl"))
+	tmpl = template.Must(template.ParseFS(templateFiles, "views/*.html.tmpl"))
 }
 
 // Render executes a named template with the provided data and writes the output to the given writer.

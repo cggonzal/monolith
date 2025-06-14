@@ -17,7 +17,7 @@ const helpMessage = `Usage: go run main.go generator <command> [arguments]
 
 Available commands:
   model NAME [field:type...]    Create a model struct and update db migrations
-  controller NAME [actions]     Create a controller, templates and routes
+  controller NAME [actions]     Create a controller, views and routes
   resource NAME [field:type...] Create model and full REST controller
   authentication                Scaffold basic user authentication
   job NAME                      Create a skeleton background job
@@ -78,7 +78,7 @@ func runModel(args []string) error {
 	return nil
 }
 
-// runController creates a new controller with optional REST actions and updates routes and templates.
+// runController creates a new controller with optional REST actions and updates routes and views.
 func runController(args []string) error {
 	if len(args) == 0 {
 		return errors.New("controller name required")
@@ -107,7 +107,7 @@ func runController(args []string) error {
 }
 
 // runResource generates a model, a controller with REST actions,
-// associated templates, routes and placeholder tests.
+// associated views, routes and placeholder tests.
 func runResource(args []string) error {
 	if len(args) == 0 {
 		return errors.New("resource name required")
@@ -151,7 +151,7 @@ func runJob(args []string) error {
 }
 
 // runAuthentication scaffolds user authentication helpers, controller,
-// templates and routes.
+// views and routes.
 func runAuthentication(args []string) error {
 	if len(args) != 0 {
 		return errors.New("authentication generator takes no arguments")
@@ -295,7 +295,7 @@ func createControllerFile(name string, actions []string) error {
 
 	imports := []string{"\"net/http\""}
 	if needTemplates {
-		imports = append(imports, "\"monolith/templates\"")
+		imports = append(imports, "\"monolith/views\"")
 	}
 	if needDB {
 		imports = append(imports, "\"monolith/db\"", "\"monolith/models\"")
@@ -319,18 +319,18 @@ func createControllerFile(name string, actions []string) error {
 			buf.WriteString(fmt.Sprintf("func (c *%s) Index(w http.ResponseWriter, r *http.Request) {\n", ctrlName))
 			buf.WriteString(fmt.Sprintf("\tvar records []models.%s\n", modelName))
 			buf.WriteString("\tdb.GetDB().Find(&records)\n")
-			buf.WriteString(fmt.Sprintf("\ttemplates.Render(w, \"%s_index.html.tmpl\", records)\n", toSnakeCase(name)))
+			buf.WriteString(fmt.Sprintf("\tviews.Render(w, \"%s_index.html.tmpl\", records)\n", toSnakeCase(name)))
 			buf.WriteString("}\n\n")
 		case "show":
 			buf.WriteString(fmt.Sprintf("func (c *%s) Show(w http.ResponseWriter, r *http.Request) {\n", ctrlName))
 			buf.WriteString("\tid := r.PathValue(\"id\")\n")
 			buf.WriteString(fmt.Sprintf("\tvar record models.%s\n", modelName))
 			buf.WriteString("\tdb.GetDB().First(&record, id)\n")
-			buf.WriteString(fmt.Sprintf("\ttemplates.Render(w, \"%s_show.html.tmpl\", record)\n", toSnakeCase(name)))
+			buf.WriteString(fmt.Sprintf("\tviews.Render(w, \"%s_show.html.tmpl\", record)\n", toSnakeCase(name)))
 			buf.WriteString("}\n\n")
 		case "new":
 			buf.WriteString(fmt.Sprintf("func (c *%s) New(w http.ResponseWriter, r *http.Request) {\n", ctrlName))
-			buf.WriteString(fmt.Sprintf("\ttemplates.Render(w, \"%s_new.html.tmpl\", nil)\n", toSnakeCase(name)))
+			buf.WriteString(fmt.Sprintf("\tviews.Render(w, \"%s_new.html.tmpl\", nil)\n", toSnakeCase(name)))
 			buf.WriteString("}\n\n")
 		case "create":
 			buf.WriteString(fmt.Sprintf("func (c *%s) Create(w http.ResponseWriter, r *http.Request) {\n", ctrlName))
@@ -344,7 +344,7 @@ func createControllerFile(name string, actions []string) error {
 			buf.WriteString("\tid := r.PathValue(\"id\")\n")
 			buf.WriteString(fmt.Sprintf("\tvar record models.%s\n", modelName))
 			buf.WriteString("\tdb.GetDB().First(&record, id)\n")
-			buf.WriteString(fmt.Sprintf("\ttemplates.Render(w, \"%s_edit.html.tmpl\", record)\n", toSnakeCase(name)))
+			buf.WriteString(fmt.Sprintf("\tviews.Render(w, \"%s_edit.html.tmpl\", record)\n", toSnakeCase(name)))
 			buf.WriteString("}\n\n")
 		case "update":
 			buf.WriteString(fmt.Sprintf("func (c *%s) Update(w http.ResponseWriter, r *http.Request) {\n", ctrlName))
@@ -450,14 +450,14 @@ func updateRoutesFile(name string, actions []string) error {
 	return nil
 }
 
-// createTemplateFiles generates HTML templates for GET actions.
+// createTemplateFiles generates HTML views for GET actions.
 func createTemplateFiles(name string, actions []string) error {
 	snake := toSnakeCase(name)
 	titleName := toCamelCase(name)
 	for _, act := range actions {
 		switch act {
 		case "index", "show", "new", "edit":
-			file := filepath.Join("templates", fmt.Sprintf("%s_%s.html.tmpl", snake, act))
+			file := filepath.Join("views", fmt.Sprintf("%s_%s.html.tmpl", snake, act))
 			if _, err := os.Stat(file); err == nil {
 				fmt.Println("exists", file)
 				continue
@@ -532,16 +532,62 @@ func createUserModelAuth() error {
 	}
 	if !exists {
 		var buf bytes.Buffer
-		buf.WriteString("package models\n\n")
-		buf.WriteString("import \"gorm.io/gorm\"\n\n")
-		buf.WriteString("// User represents an application user\n")
-		buf.WriteString("type User struct {\n")
-		buf.WriteString("\tgorm.Model\n")
-		buf.WriteString("\tEmail        string `gorm:\"unique;not null\"`\n")
-		buf.WriteString("\tPasswordHash []byte\n")
-		buf.WriteString("\tIsActive bool	`gorm:\"default:true\"`\n")
-		buf.WriteString("\tIsAdmin bool `gorm:\"default:false\"`\n")
-		buf.WriteString("}\n")
+		buf.WriteString(`package models
+
+import (
+    "errors"
+
+    "golang.org/x/crypto/bcrypt"
+    "gorm.io/gorm"
+)
+
+// User represents a user in the database
+type User struct {
+    gorm.Model          // Adds ID, CreatedAt, UpdatedAt, DeletedAt fields
+    Email        string ` + "`gorm:\"unique;not null\"`" + `
+    PasswordHash []byte
+    IsActive     bool ` + "`gorm:\"default:true\"`" + `
+    IsAdmin      bool ` + "`gorm:\"default:false\"`" + `
+}
+
+// GetUser fetches a user by email from the database
+func GetUser(db *gorm.DB, email string) (*User, error) {
+    var user User
+    result := db.Where(&User{Email: email}).Take(&user)
+    if result.Error != nil {
+        return nil, result.Error
+    }
+    return &user, nil
+}
+
+// CreateUser inserts a new user into the database
+func CreateUser(db *gorm.DB, email, password string) (*User, error) {
+    hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+    if err != nil {
+        return nil, err
+    }
+    user := User{
+        Email:        email,
+        PasswordHash: hash,
+    }
+    if err := db.Create(&user).Error; err != nil {
+        return nil, err
+    }
+    return &user, nil
+}
+
+// AuthenticateUser verifies the provided credentials and returns the user if valid.
+func AuthenticateUser(db *gorm.DB, email, password string) (*User, error) {
+    user, err := GetUser(db, email)
+    if err != nil {
+        return nil, err
+    }
+    if bcrypt.CompareHashAndPassword(user.PasswordHash, []byte(password)) != nil {
+        return nil, errors.New("invalid credentials")
+    }
+    return user, nil
+}
+`)
 		formatted, err := format.Source(buf.Bytes())
 		if err != nil {
 			return err
@@ -759,15 +805,15 @@ func createAuthControllerFile() error {
 	buf.WriteString("\t\"monolith/db\"\n")
 	buf.WriteString("\t\"monolith/models\"\n")
 	buf.WriteString("\t\"monolith/session\"\n")
-	buf.WriteString("\t\"monolith/templates\"\n")
+	buf.WriteString("\t\"monolith/views\"\n")
 	buf.WriteString(")\n\n")
 	buf.WriteString("type AuthController struct{}\n\n")
 	buf.WriteString("var AuthCtrl = &AuthController{}\n\n")
 	buf.WriteString("func (ac *AuthController) ShowLoginForm(w http.ResponseWriter, r *http.Request) {\n")
-	buf.WriteString("\ttemplates.Render(w, \"login.html.tmpl\", nil)\n")
+	buf.WriteString("\tviews.Render(w, \"login.html.tmpl\", nil)\n")
 	buf.WriteString("}\n\n")
 	buf.WriteString("func (ac *AuthController) ShowSignupForm(w http.ResponseWriter, r *http.Request) {\n")
-	buf.WriteString("\ttemplates.Render(w, \"signup.html.tmpl\", nil)\n")
+	buf.WriteString("\tviews.Render(w, \"signup.html.tmpl\", nil)\n")
 	buf.WriteString("}\n\n")
 	buf.WriteString("func (ac *AuthController) Signup(w http.ResponseWriter, r *http.Request) {\n")
 	buf.WriteString("\tif err := r.ParseForm(); err != nil {\n")
@@ -818,7 +864,7 @@ func createAuthControllerFile() error {
 
 // createLoginTemplate generates a basic login template.
 func createLoginTemplate() error {
-	path := filepath.Join("templates", "login.html.tmpl")
+	path := filepath.Join("views", "login.html.tmpl")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil
@@ -833,7 +879,7 @@ func createLoginTemplate() error {
 }
 
 func createSignupTemplate() error {
-	path := filepath.Join("templates", "signup.html.tmpl")
+	path := filepath.Join("views", "signup.html.tmpl")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil
