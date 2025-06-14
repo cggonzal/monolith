@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/jinzhu/inflection"
 	"go/format"
 	"os"
 	"path/filepath"
 	"strings"
 	"unicode"
+
+	"github.com/jinzhu/inflection"
 )
 
 // Run dispatches to the specific generator based on args.
@@ -315,6 +316,7 @@ func updateRoutesFile(name string, actions []string) error {
 	base := "/" + toSnakeCase(name)
 
 	var newLines []string
+	newLines = append(newLines, fmt.Sprintf("%s// %sController handles %s actions", indent, ctrlVar, name))
 	for _, act := range actions {
 		switch act {
 		case "index":
@@ -334,6 +336,7 @@ func updateRoutesFile(name string, actions []string) error {
 			newLines = append(newLines, fmt.Sprintf("%smux.HandleFunc(\"DELETE %s/{id}\", controllers.%s.Destroy)", indent, base, ctrlVar))
 		}
 	}
+	newLines = append(newLines, "") // add a blank line for readability
 
 	// check if any of the routes already exist
 	for _, nl := range newLines {
