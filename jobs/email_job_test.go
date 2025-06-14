@@ -43,7 +43,7 @@ func TestEmailJob(t *testing.T) {
 		config.MAILGUN_API_KEY = oldKey
 	}()
 
-	p := emailPayload{Subject: "subj", Body: "body", Sender: "from@example.com", To: []string{"a@example.com"}}
+	p := EmailPayload{Subject: "subj", Body: "body", Sender: "from@example.com", To: []string{"a@example.com"}}
 	b, _ := json.Marshal(p)
 	if err := EmailJob(string(b)); err != nil {
 		t.Fatalf("EmailJob error: %v", err)

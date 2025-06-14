@@ -12,7 +12,7 @@ import (
 	"monolith/config"
 )
 
-type emailPayload struct {
+type EmailPayload struct {
 	Subject string   `json:"subject"`
 	Body    string   `json:"body"`
 	Sender  string   `json:"sender"`
@@ -21,7 +21,7 @@ type emailPayload struct {
 
 // EmailJob sends an email via Mailgun using the REST API.
 func EmailJob(payload string) error {
-	var p emailPayload
+	var p EmailPayload
 	if err := json.Unmarshal([]byte(payload), &p); err != nil {
 		return err
 	}

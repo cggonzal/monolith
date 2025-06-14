@@ -18,7 +18,7 @@ type payload struct {
 // subject and body are the email contents. sender is the "from" address.
 // recipients is the list of destination email addresses.
 func SendEmail(subject, body, sender string, recipients []string) error {
-	p := payload{Subject: subject, Body: body, Sender: sender, To: recipients}
+	p := jobs.EmailPayload{Subject: subject, Body: body, Sender: sender, To: recipients}
 	b, err := json.Marshal(p)
 	if err != nil {
 		return err
