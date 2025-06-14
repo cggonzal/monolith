@@ -366,15 +366,14 @@ Import and call it from controllers or jobs – services keep business logic awa
 
 ### New Job Type
 
-```go
-const JobTypeEmail models.JobType = iota + 2
+Use the generator to scaffold a job:
 
-jobs.RegisterHandler(JobTypeEmail, func(j *models.Job) error {
-    var p struct{ To, Subject, Body string }
-    json.Unmarshal([]byte(j.Payload), &p)
-    return services.SendEmail(p.To, p.Subject, p.Body)
-})
+```bash
+go run main.go generator job Email
 ```
+
+This creates the enum, stub function and queue registration so you only need to
+implement `Email`.
 
 ### Custom WebSocket Channel
 
@@ -394,7 +393,7 @@ main program:
 go run main.go generator <type> [...options]
 ```
 
-Supported types are `model`, `controller`, `resource` and `authentication`.
+Supported types are `model`, `controller`, `resource`, `authentication` and `job`.
 
 ### Model
 
@@ -436,6 +435,15 @@ go run main.go generator authentication
 
 Generates a basic user model, session management and routes for user signup,
 login and logout.
+
+### Job
+
+```bash
+go run main.go generator job MyJob
+```
+
+Creates a stub `MyJob` function in `jobs/jobs.go`, registers it in
+`jobs/job_queue.go` and adds `JobTypeMyJob` to `models/jobs.go`.
 
 ---
 
