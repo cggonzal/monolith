@@ -54,12 +54,15 @@ If you are new, start with **Quick‑start** then come back to read the architec
 * Embedded templates and static assets  
 * Built‑in performance profiling with the standard library  
 
-Everything uses the **Go standard library** except two focused dependencies:
+Everything uses the **Go standard library** with a handful of small, focused dependencies:
 
 | Purpose | Package |
 | --- | --- |
 | Database driver | `github.com/glebarez/sqlite` |
 | Sessions | `github.com/gorilla/sessions` |
+| ORM | `gorm.io/gorm` |
+| WebSocket library | `github.com/gorilla/websocket` |
+| Singular/plural helpers | `github.com/jinzhu/inflection` |
 
 ---
 
