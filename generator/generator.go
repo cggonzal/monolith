@@ -13,14 +13,33 @@ import (
 	"github.com/jinzhu/inflection"
 )
 
+const helpMessage = `Usage: go run main.go generator <command> [arguments]
+
+Available commands:
+  model NAME [field:type...]    Create a model struct and update db migrations
+  controller NAME [actions]     Create a controller, templates and routes
+  resource NAME [field:type...] Create model and full REST controller
+  authentication                Scaffold basic user authentication
+
+Examples:
+  go run main.go generator model Widget name:string price:int
+  go run main.go generator controller widgets index show
+  go run main.go generator resource widget name:string price:int
+  go run main.go generator authentication
+`
+
 // Run dispatches to the specific generator based on args.
 // args should not include the leading "generator" argument.
 func Run(args []string) error {
 	if len(args) == 0 {
+		fmt.Print(helpMessage)
 		return errors.New("missing generator type")
 	}
 
 	switch args[0] {
+	case "help":
+		fmt.Print(helpMessage)
+		return nil
 	case "model":
 		return runModel(args[1:])
 	case "controller":
@@ -30,6 +49,7 @@ func Run(args []string) error {
 	case "authentication":
 		return runAuthentication(args[1:])
 	default:
+		fmt.Print(helpMessage)
 		return fmt.Errorf("unknown generator: %s", args[0])
 	}
 }

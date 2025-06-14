@@ -394,7 +394,7 @@ main program:
 go run main.go generator <type> [...options]
 ```
 
-Supported types are `model`, `controller` and `resource`.
+Supported types are `model`, `controller`, `resource` and `authentication`.
 
 ### Model
 
@@ -427,6 +427,15 @@ go run main.go generator resource widget name:string price:int
 
 This creates the model, a `widgets` controller with all CRUD actions, placeholder
 tests and templates, and RESTful routes under `/widgets`.
+
+### Authentication
+
+```bash
+go run main.go generator authentication
+```
+
+Generates a basic user model, session management and routes for user signup,
+login and logout.
 
 ---
 
