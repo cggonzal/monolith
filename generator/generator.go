@@ -313,10 +313,12 @@ func updateRoutesFile(name string, actions []string) error {
 
 	indent := leadingWhitespace(lines[insertIdx])
 	ctrlVar := toCamelCase(name) + "Ctrl"
+	ctrlName := toCamelCase(name) + "Controller"
 	base := "/" + toSnakeCase(name)
 
 	var newLines []string
-	newLines = append(newLines, fmt.Sprintf("%s// %sController handles %s actions", indent, ctrlVar, name))
+	newLines = append(newLines, "")
+	newLines = append(newLines, fmt.Sprintf("%s// routes for %s", indent, ctrlName))
 	for _, act := range actions {
 		switch act {
 		case "index":
