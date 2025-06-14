@@ -134,14 +134,17 @@ func runJob(args []string) error {
 	if len(args) == 0 {
 		return errors.New("job name required")
 	}
-	name := toCamelCase(args[0])
-	if err := createJobFunction(name); err != nil {
+	baseName := toCamelCase(args[0])
+	if err := createJobFile(baseName); err != nil {
 		return err
 	}
-	if err := updateJobTypeEnum(name); err != nil {
+	if err := createJobTestFile(baseName); err != nil {
 		return err
 	}
-	if err := registerJobInQueue(name); err != nil {
+	if err := updateJobTypeEnum(baseName); err != nil {
+		return err
+	}
+	if err := registerJobInQueue(baseName); err != nil {
 		return err
 	}
 	return nil
@@ -898,39 +901,27 @@ func updateRoutesForAuth() error {
 	return nil
 }
 
-func createJobFunction(name string) error {
-	path := filepath.Join("jobs", "jobs.go")
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	if strings.Contains(string(data), "func "+name+"(") {
-		fmt.Println("exists", path)
+func createJobFile(name string) error {
+	file := filepath.Join("jobs", toSnakeCase(name)+"_job.go")
+	if _, err := os.Stat(file); err == nil {
+		fmt.Println("exists", file)
 		return nil
 	}
-	lines := strings.Split(string(data), "\n")
-	insertIdx := len(lines)
-	for i, line := range lines {
-		if strings.Contains(line, "example usage") {
-			insertIdx = i - 1
-			break
-		}
-	}
+	funcName := name + "Job"
 	var buf bytes.Buffer
-	buf.WriteString(fmt.Sprintf("func %s(payload string) error {\n", name))
+	buf.WriteString("package jobs\n\n")
+	buf.WriteString(fmt.Sprintf("func %s(payload string) error {\n", funcName))
 	buf.WriteString("\t// TODO: implement job\n")
 	buf.WriteString("\treturn nil\n")
-	buf.WriteString("}\n\n")
-	newLines := append(lines[:insertIdx], append(strings.Split(buf.String(), "\n"), lines[insertIdx:]...)...)
-	out := strings.Join(newLines, "\n")
-	formatted, err := format.Source([]byte(out))
+	buf.WriteString("}\n")
+	formatted, err := format.Source(buf.Bytes())
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(path, formatted, 0644); err != nil {
+	if err := os.WriteFile(file, formatted, 0644); err != nil {
 		return err
 	}
-	fmt.Println("update", path)
+	fmt.Println("create", file)
 	return nil
 }
 
@@ -1015,6 +1006,28 @@ func registerJobInQueue(name string) error {
 		return err
 	}
 	fmt.Println("update", path)
+	return nil
+}
+
+func createJobTestFile(name string) error {
+	file := filepath.Join("jobs", toSnakeCase(name)+"_job_test.go")
+	if _, err := os.Stat(file); err == nil {
+		fmt.Println("exists", file)
+		return nil
+	}
+	funcName := name + "Job"
+	var buf bytes.Buffer
+	buf.WriteString("package jobs\n\n")
+	buf.WriteString("import \"testing\"\n\n")
+	buf.WriteString(fmt.Sprintf("func Test%s(t *testing.T) {}\n", funcName))
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(file, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", file)
 	return nil
 }
 

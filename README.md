@@ -372,8 +372,8 @@ Use the generator to scaffold a job:
 go run main.go generator job Email
 ```
 
-This creates the enum, stub function and queue registration so you only need to
-implement `Email`.
+This creates `jobs/email_job.go` with a stub `EmailJob` function, registers it
+in `jobs/job_queue.go` and adds `JobTypeEmail` to `models/jobs.go`.
 
 ### Custom WebSocket Channel
 
@@ -442,7 +442,7 @@ login and logout.
 go run main.go generator job MyJob
 ```
 
-Creates a stub `MyJob` function in `jobs/jobs.go`, registers it in
+Creates `jobs/my_job_job.go` with a stub `MyJobJob` function, registers it in
 `jobs/job_queue.go` and adds `JobTypeMyJob` to `models/jobs.go`.
 
 ---
