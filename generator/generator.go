@@ -383,6 +383,7 @@ func updateRoutesFile(name string, actions []string) error {
 		return err
 	}
 	lines := strings.Split(string(data), "\n")
+	lines = ensureControllersImport(lines)
 	insertIdx := -1
 	for i, line := range lines {
 		if strings.Contains(line, "pprof routes") {
@@ -901,6 +902,7 @@ func updateRoutesForAuth() error {
 		return err
 	}
 	lines := strings.Split(string(data), "\n")
+	lines = ensureControllersImport(lines)
 	insertIdx := -1
 	for i, line := range lines {
 		if strings.Contains(line, "staticFileServer") {
@@ -1116,4 +1118,58 @@ func toSnakeCase(s string) string {
 		}
 	}
 	return string(result)
+}
+
+// ensureControllersImport makes sure the routes file imports the controllers package.
+func ensureControllersImport(lines []string) []string {
+	for _, l := range lines {
+		if strings.Contains(l, "\"monolith/controllers\"") {
+			return lines
+		}
+	}
+
+	start, end := -1, -1
+	for i, l := range lines {
+		t := strings.TrimSpace(l)
+		if t == "import (" {
+			start = i
+			continue
+		}
+		if start != -1 && t == ")" {
+			end = i
+			break
+		}
+	}
+
+	if start != -1 && end != -1 {
+		indent := leadingWhitespace(lines[start+1])
+		newLine := indent + "\"monolith/controllers\""
+		lines = append(lines[:end], append([]string{newLine}, lines[end:]...)...)
+		return lines
+	}
+
+	for i, l := range lines {
+		t := strings.TrimSpace(l)
+		if strings.HasPrefix(t, "import ") {
+			pkg := strings.Trim(strings.TrimPrefix(t, "import"), " \"")
+			block := []string{
+				"import (",
+				"    " + pkg,
+				"    \"monolith/controllers\"",
+				")",
+			}
+			lines = append(lines[:i], append(block, lines[i+1:]...)...)
+			return lines
+		}
+	}
+
+	// no import section found; append one after package line
+	for i, l := range lines {
+		if strings.HasPrefix(l, "package ") {
+			block := []string{"import (", "    \"monolith/controllers\"", ")", ""}
+			lines = append(lines[:i+1], append(block, lines[i+1:]...)...)
+			break
+		}
+	}
+	return lines
 }
