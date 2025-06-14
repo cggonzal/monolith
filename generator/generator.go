@@ -20,12 +20,14 @@ Available commands:
   controller NAME [actions]     Create a controller, templates and routes
   resource NAME [field:type...] Create model and full REST controller
   authentication                Scaffold basic user authentication
+  job NAME                      Create a skeleton background job
 
 Examples:
   go run main.go generator model Widget name:string price:int
   go run main.go generator controller widgets index show
   go run main.go generator resource widget name:string price:int
   go run main.go generator authentication
+  go run main.go generator job MyJob
 `
 
 // Run dispatches to the specific generator based on args.
@@ -48,6 +50,8 @@ func Run(args []string) error {
 		return runResource(args[1:])
 	case "authentication":
 		return runAuthentication(args[1:])
+	case "job":
+		return runJob(args[1:])
 	default:
 		fmt.Print(helpMessage)
 		return fmt.Errorf("unknown generator: %s", args[0])
@@ -122,6 +126,24 @@ func runResource(args []string) error {
 		return err
 	}
 
+	return nil
+}
+
+// runJob scaffolds a new background job function and registers it.
+func runJob(args []string) error {
+	if len(args) == 0 {
+		return errors.New("job name required")
+	}
+	name := toCamelCase(args[0])
+	if err := createJobFunction(name); err != nil {
+		return err
+	}
+	if err := updateJobTypeEnum(name); err != nil {
+		return err
+	}
+	if err := registerJobInQueue(name); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -864,6 +886,126 @@ func updateRoutesForAuth() error {
 		}
 	}
 
+	out := strings.Join(lines, "\n")
+	formatted, err := format.Source([]byte(out))
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("update", path)
+	return nil
+}
+
+func createJobFunction(name string) error {
+	path := filepath.Join("jobs", "jobs.go")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	if strings.Contains(string(data), "func "+name+"(") {
+		fmt.Println("exists", path)
+		return nil
+	}
+	lines := strings.Split(string(data), "\n")
+	insertIdx := len(lines)
+	for i, line := range lines {
+		if strings.Contains(line, "example usage") {
+			insertIdx = i - 1
+			break
+		}
+	}
+	var buf bytes.Buffer
+	buf.WriteString(fmt.Sprintf("func %s(payload string) error {\n", name))
+	buf.WriteString("\t// TODO: implement job\n")
+	buf.WriteString("\treturn nil\n")
+	buf.WriteString("}\n\n")
+	newLines := append(lines[:insertIdx], append(strings.Split(buf.String(), "\n"), lines[insertIdx:]...)...)
+	out := strings.Join(newLines, "\n")
+	formatted, err := format.Source([]byte(out))
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("update", path)
+	return nil
+}
+
+func updateJobTypeEnum(name string) error {
+	path := filepath.Join("models", "jobs.go")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	if strings.Contains(string(data), "JobType"+name) {
+		fmt.Println("exists", path)
+		return nil
+	}
+	lines := strings.Split(string(data), "\n")
+	start, end := -1, -1
+	for i, line := range lines {
+		if strings.Contains(line, "JobTypePrint") {
+			for j := i; j >= 0; j-- {
+				if strings.Contains(lines[j], "const (") {
+					start = j
+					break
+				}
+			}
+			if start != -1 {
+				for k := start + 1; k < len(lines); k++ {
+					if strings.TrimSpace(lines[k]) == ")" {
+						end = k
+						break
+					}
+				}
+			}
+			break
+		}
+	}
+	if start == -1 || end == -1 {
+		return fmt.Errorf("could not find JobType enum in %s", path)
+	}
+	indent := leadingWhitespace(lines[end-1])
+	newLine := indent + "JobType" + name
+	lines = append(lines[:end], append([]string{newLine}, lines[end:]...)...)
+	out := strings.Join(lines, "\n")
+	formatted, err := format.Source([]byte(out))
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("update", path)
+	return nil
+}
+
+func registerJobInQueue(name string) error {
+	path := filepath.Join("jobs", "job_queue.go")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	if strings.Contains(string(data), "JobType"+name) {
+		fmt.Println("exists", path)
+		return nil
+	}
+	lines := strings.Split(string(data), "\n")
+	insertIdx := -1
+	for i, line := range lines {
+		if strings.Contains(line, "jobQueue.register(") {
+			insertIdx = i + 1
+		}
+	}
+	if insertIdx == -1 {
+		return fmt.Errorf("could not find registration point in %s", path)
+	}
+	indent := leadingWhitespace(lines[insertIdx-1])
+	newLine := fmt.Sprintf("%sjobQueue.register(models.JobType%s, %s)", indent, name, name)
+	lines = append(lines[:insertIdx], append([]string{newLine}, lines[insertIdx:]...)...)
 	out := strings.Join(lines, "\n")
 	formatted, err := format.Source([]byte(out))
 	if err != nil {

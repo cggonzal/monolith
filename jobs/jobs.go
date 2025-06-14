@@ -1,17 +1,14 @@
 /*
 An implementation of a job queue.
 
-All new job functions should be placed in jobs/jobs.go
+All job functions live in jobs/jobs.go and are registered in jobs/job_queue.go.
 
-jobs/jobs_queue.go is just the job queue implementation.
+Use the generator to scaffold a new job:
 
-To add a new job, do the following steps:
+	go run main.go generator job MyJob
 
-1. add a function to jobs/jobs.go with the signature: func NameOfJob(payload string) error
-
-2. add a JobType to the JobType enum in models/jobs.go (note that this file is in the models/ directory)
-
-3. register the job inside the init() function of jobs/job_queue.go
+The generator adds a stub `MyJob` function, a matching `JobTypeMyJob` enum and
+registers it with the job queue for you.
 */
 package jobs
 
