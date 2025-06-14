@@ -146,7 +146,7 @@ Session helpers live in `session/session.go`:
 * `SetLoggedIn`, `Logout`, `IsLoggedIn`
 
 Authentication flow: browser posts credentials to `/login` which validates the
-password and redirects to `/dashboard` on success.
+password and redirects to `/` on success.
 
 If `session.IsLoggedIn(r)` is **false**, the `middleware.RequireLogin` decorator redirects the request to `/login`.
 
@@ -313,7 +313,7 @@ The first launch creates **app.db** and auto‑migrates the schema.
 ### Authentication flow Example
 
 1. Visit `/signup` and create an account
-2. On success you’re logged in and redirected to `/dashboard`
+2. On success you’re logged in and redirected to `/`
 3. Existing users go to `/login` with their credentials
 4. A cookie named `session` tracks login state
 
