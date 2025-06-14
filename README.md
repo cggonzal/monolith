@@ -471,7 +471,7 @@ make
 
 Otherwise, just run the app with:
 ```
-go run main.go
+make run
 ```
 
 You can also create a standalone binary with:
