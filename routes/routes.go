@@ -27,11 +27,11 @@ func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
 	staticFileServer := http.FileServer(http.FS(staticFiles))
 	mux.Handle("GET /static/", staticFileServer)
 
-	mux.HandleFunc("GET /auth/google", controllers.AuthCtrl.HandleGoogleLogin)
-	mux.HandleFunc("GET /auth/google/callback", controllers.AuthCtrl.HandleGoogleCallback)
-
 	// Public routes
 	mux.HandleFunc("GET /login", controllers.AuthCtrl.ShowLoginForm)
+	mux.HandleFunc("POST /login", controllers.AuthCtrl.Login)
+	mux.HandleFunc("GET /signup", controllers.AuthCtrl.ShowSignupForm)
+	mux.HandleFunc("POST /signup", controllers.AuthCtrl.Signup)
 	mux.HandleFunc("GET /logout", controllers.AuthCtrl.Logout)
 
 	mux.HandleFunc("GET /dashboard", middleware.RequireLogin(controllers.DashboardCtrl.Show))
