@@ -48,6 +48,9 @@ func runModel(args []string) error {
 	if err := updateDBFile(modelName); err != nil {
 		return err
 	}
+	if err := createModelTestFile(modelName); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -73,6 +76,9 @@ func runController(args []string) error {
 	if err := createTemplateFiles(name, actions); err != nil {
 		return err
 	}
+	if err := createControllerTestFile(name); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -96,12 +102,6 @@ func runResource(args []string) error {
 		return err
 	}
 
-	if err := createModelTestFile(name); err != nil {
-		return err
-	}
-	if err := createControllerTestFile(ctrlName); err != nil {
-		return err
-	}
 	return nil
 }
 
