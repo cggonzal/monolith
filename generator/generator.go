@@ -27,6 +27,8 @@ func Run(args []string) error {
 		return runController(args[1:])
 	case "resource":
 		return runResource(args[1:])
+	case "authentication":
+		return runAuthentication(args[1:])
 	default:
 		return fmt.Errorf("unknown generator: %s", args[0])
 	}
@@ -98,6 +100,30 @@ func runResource(args []string) error {
 		return err
 	}
 	if err := createControllerTestFile(ctrlName); err != nil {
+		return err
+	}
+	return nil
+}
+
+// runAuthentication scaffolds user authentication helpers, controller,
+// templates and routes.
+func runAuthentication(args []string) error {
+	if len(args) != 0 {
+		return errors.New("authentication generator takes no arguments")
+	}
+	if err := createUserModelAuth(); err != nil {
+		return err
+	}
+	if err := createSessionFile(); err != nil {
+		return err
+	}
+	if err := createAuthControllerFile(); err != nil {
+		return err
+	}
+	if err := createLoginTemplate(); err != nil {
+		return err
+	}
+	if err := updateRoutesForAuth(); err != nil {
 		return err
 	}
 	return nil
@@ -431,6 +457,243 @@ func createControllerTestFile(name string) error {
 		return err
 	}
 	fmt.Println("create", file)
+	return nil
+}
+
+// createUserModelAuth writes a basic User model used for authentication if it
+// doesn't already exist and ensures it is migrated in db/db.go.
+func createUserModelAuth() error {
+	path := filepath.Join("models", "user.go")
+	if _, err := os.Stat(path); err == nil {
+		fmt.Println("exists", path)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("package models\n\n")
+	buf.WriteString("import \"gorm.io/gorm\"\n\n")
+	buf.WriteString("// User represents an application user\n")
+	buf.WriteString("type User struct {\n")
+	buf.WriteString("\tgorm.Model\n")
+	buf.WriteString("\tEmail        string `gorm:\"unique;not null\"`\n")
+	buf.WriteString("\tPasswordHash []byte\n")
+	buf.WriteString("}\n")
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", path)
+	return updateDBFile("User")
+}
+
+// createSessionFile sets up cookie sessions and Google OAuth config.
+func createSessionFile() error {
+	path := filepath.Join("session", "session.go")
+	if _, err := os.Stat(path); err == nil {
+		fmt.Println("exists", path)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("package session\n\n")
+	buf.WriteString("import (\n")
+	buf.WriteString("\t\"net/http\"\n\n")
+	buf.WriteString("\t\"github.com/gorilla/sessions\"\n")
+	buf.WriteString("\t\"golang.org/x/oauth2\"\n")
+	buf.WriteString("\t\"golang.org/x/oauth2/google\"\n")
+	buf.WriteString(")\n\n")
+	buf.WriteString("const SESSION_NAME_KEY = \"session\"\n")
+	buf.WriteString("const LOGGED_IN_KEY = \"logged_in\"\n")
+	buf.WriteString("const EMAIL_KEY = \"email\"\n\n")
+	buf.WriteString("var store = sessions.NewCookieStore([]byte(\"super-secret-key\"))\n\n")
+	buf.WriteString("var googleOAuthConfig = &oauth2.Config{\n")
+	buf.WriteString("\tClientID:     \"YOUR_GOOGLE_CLIENT_ID\",\n")
+	buf.WriteString("\tClientSecret: \"YOUR_GOOGLE_CLIENT_SECRET\",\n")
+	buf.WriteString("\tRedirectURL:  \"http://localhost:8080/auth/google/callback\",\n")
+	buf.WriteString("\tScopes:       []string{\"profile\", \"email\"},\n")
+	buf.WriteString("\tEndpoint:     google.Endpoint,\n")
+	buf.WriteString("}\n\n")
+	buf.WriteString("func GetGoogleOAuthConfig() *oauth2.Config {\n")
+	buf.WriteString("\treturn googleOAuthConfig\n")
+	buf.WriteString("}\n\n")
+	buf.WriteString("func SetLoggedIn(w http.ResponseWriter, r *http.Request, email string) {\n")
+	buf.WriteString("\tsession, _ := store.Get(r, SESSION_NAME_KEY)\n")
+	buf.WriteString("\tsession.Values[LOGGED_IN_KEY] = true\n")
+	buf.WriteString("\tsession.Values[EMAIL_KEY] = email\n")
+	buf.WriteString("\tsession.Save(r, w)\n")
+	buf.WriteString("}\n\n")
+	buf.WriteString("func Logout(w http.ResponseWriter, r *http.Request) {\n")
+	buf.WriteString("\tsession, _ := store.Get(r, SESSION_NAME_KEY)\n")
+	buf.WriteString("\tdelete(session.Values, LOGGED_IN_KEY)\n")
+	buf.WriteString("\tdelete(session.Values, EMAIL_KEY)\n")
+	buf.WriteString("\tsession.Save(r, w)\n")
+	buf.WriteString("}\n\n")
+	buf.WriteString("func IsLoggedIn(r *http.Request) bool {\n")
+	buf.WriteString("\tsession, _ := store.Get(r, SESSION_NAME_KEY)\n")
+	buf.WriteString("\tloggedIn, ok := session.Values[LOGGED_IN_KEY].(bool)\n")
+	buf.WriteString("\treturn ok && loggedIn\n")
+	buf.WriteString("}\n")
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", path)
+	return nil
+}
+
+// createAuthControllerFile creates auth controller handling OAuth callbacks.
+func createAuthControllerFile() error {
+	path := filepath.Join("controllers", "auth_controller.go")
+	if _, err := os.Stat(path); err == nil {
+		fmt.Println("exists", path)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("package controllers\n\n")
+	buf.WriteString("import (\n")
+	buf.WriteString("\t\"context\"\n")
+	buf.WriteString("\t\"encoding/json\"\n")
+	buf.WriteString("\t\"errors\"\n")
+	buf.WriteString("\t\"net/http\"\n\n")
+	buf.WriteString("\t\"monolith/db\"\n")
+	buf.WriteString("\t\"monolith/models\"\n")
+	buf.WriteString("\t\"monolith/session\"\n")
+	buf.WriteString("\t\"monolith/templates\"\n")
+	buf.WriteString("\n\t\"gorm.io/gorm\"\n")
+	buf.WriteString(")\n\n")
+	buf.WriteString("type AuthController struct{}\n\n")
+	buf.WriteString("var AuthCtrl = &AuthController{}\n\n")
+	buf.WriteString("func (ac *AuthController) ShowLoginForm(w http.ResponseWriter, r *http.Request) {\n")
+	buf.WriteString("\ttemplates.ExecuteTemplate(w, \"login.html.tmpl\", nil)\n")
+	buf.WriteString("}\n\n")
+	buf.WriteString("func (ac *AuthController) Logout(w http.ResponseWriter, r *http.Request) {\n")
+	buf.WriteString("\tsession.Logout(w, r)\n")
+	buf.WriteString("\thttp.Redirect(w, r, \"/\", http.StatusSeeOther)\n")
+	buf.WriteString("}\n\n")
+	buf.WriteString("func (ac *AuthController) HandleGoogleLogin(w http.ResponseWriter, r *http.Request) {\n")
+	buf.WriteString("\tconf := session.GetGoogleOAuthConfig()\n")
+	buf.WriteString("\turl := conf.AuthCodeURL(\"random-state\")\n")
+	buf.WriteString("\thttp.Redirect(w, r, url, http.StatusTemporaryRedirect)\n")
+	buf.WriteString("}\n\n")
+	buf.WriteString("func (ac *AuthController) HandleGoogleCallback(w http.ResponseWriter, r *http.Request) {\n")
+	buf.WriteString("\tconf := session.GetGoogleOAuthConfig()\n")
+	buf.WriteString("\tcode := r.URL.Query().Get(\"code\")\n\n")
+	buf.WriteString("\ttoken, err := conf.Exchange(context.Background(), code)\n")
+	buf.WriteString("\tif err != nil {\n")
+	buf.WriteString("\t\thttp.Error(w, \"Failed to exchange token\", http.StatusInternalServerError)\n")
+	buf.WriteString("\t\treturn\n")
+	buf.WriteString("\t}\n\n")
+	buf.WriteString("\tclient := conf.Client(context.Background(), token)\n")
+	buf.WriteString("\tresp, err := client.Get(\"https://www.googleapis.com/oauth2/v2/userinfo\")\n")
+	buf.WriteString("\tif err != nil {\n")
+	buf.WriteString("\t\thttp.Error(w, \"Failed to get user info\", http.StatusInternalServerError)\n")
+	buf.WriteString("\t\treturn\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("\tdefer resp.Body.Close()\n\n")
+	buf.WriteString("\tvar userInfo struct {\n")
+	buf.WriteString("\t\tEmail     string `json:\"email\"`\n")
+	buf.WriteString("\t\tName      string `json:\"name\"`\n")
+	buf.WriteString("\t\tAvatarURL string `json:\"picture\"`\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("\tjson.NewDecoder(resp.Body).Decode(&userInfo)\n\n")
+	buf.WriteString("\tuser, err := models.GetUser(db.GetDB(), userInfo.Email)\n")
+	buf.WriteString("\tif errors.Is(err, gorm.ErrRecordNotFound) {\n")
+	buf.WriteString("\t\tuser, err = models.CreateUser(db.GetDB(), userInfo.Email, userInfo.Name, userInfo.AvatarURL)\n")
+	buf.WriteString("\t\tif err != nil {\n")
+	buf.WriteString("\t\t\thttp.Error(w, \"Failed to create user\", http.StatusInternalServerError)\n")
+	buf.WriteString("\t\t\treturn\n")
+	buf.WriteString("\t\t}\n")
+	buf.WriteString("\t} else if err != nil {\n")
+	buf.WriteString("\t\thttp.Error(w, \"Database error\", http.StatusInternalServerError)\n")
+	buf.WriteString("\t\treturn\n")
+	buf.WriteString("\t}\n\n")
+	buf.WriteString("\tsession.SetLoggedIn(w, r, user.Email)\n\n")
+	buf.WriteString("\thttp.Redirect(w, r, \"/dashboard\", http.StatusSeeOther)\n")
+	buf.WriteString("}\n")
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", path)
+	return nil
+}
+
+// createLoginTemplate generates a basic login template.
+func createLoginTemplate() error {
+	path := filepath.Join("templates", "login.html.tmpl")
+	if _, err := os.Stat(path); err == nil {
+		fmt.Println("exists", path)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Login</title>\n</head>\n<body>\n    <h1>Login</h1>\n    <a href=\"/auth/google\">\n        <button>Login with Google</button>\n    </a>\n</body>\n</html>\n")
+	if err := os.WriteFile(path, buf.Bytes(), 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", path)
+	return nil
+}
+
+// updateRoutesForAuth injects the authentication routes if missing.
+func updateRoutesForAuth() error {
+	path := filepath.Join("routes", "routes.go")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	lines := strings.Split(string(data), "\n")
+	insertIdx := -1
+	for i, line := range lines {
+		if strings.Contains(line, "staticFileServer") {
+			insertIdx = i + 1
+			break
+		}
+	}
+	if insertIdx == -1 {
+		return fmt.Errorf("could not find insertion point in routes.go")
+	}
+	indent := leadingWhitespace(lines[insertIdx-1])
+	newLines := []string{
+		fmt.Sprintf("%smux.HandleFunc(\"GET /auth/google\", controllers.AuthCtrl.HandleGoogleLogin)", indent),
+		fmt.Sprintf("%smux.HandleFunc(\"GET /auth/google/callback\", controllers.AuthCtrl.HandleGoogleCallback)", indent),
+		fmt.Sprintf("%smux.HandleFunc(\"GET /login\", controllers.AuthCtrl.ShowLoginForm)", indent),
+		fmt.Sprintf("%smux.HandleFunc(\"GET /logout\", controllers.AuthCtrl.Logout)", indent),
+		"",
+	}
+
+	for _, nl := range newLines {
+		found := false
+		for _, l := range lines {
+			if strings.TrimSpace(l) == strings.TrimSpace(nl) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			lines = append(lines[:insertIdx], append([]string{nl}, lines[insertIdx:]...)...)
+			insertIdx++
+		}
+	}
+
+	out := strings.Join(lines, "\n")
+	formatted, err := format.Source([]byte(out))
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("update", path)
 	return nil
 }
 
