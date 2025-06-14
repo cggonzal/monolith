@@ -119,6 +119,39 @@ func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
 	}
 }
 
+func TestRunControllerAddsImport(t *testing.T) {
+	dir := t.TempDir()
+	wd, _ := os.Getwd()
+	os.Chdir(dir)
+	defer os.Chdir(wd)
+
+	writeFile(t, "routes/routes.go", `package routes
+import (
+    "embed"
+    "net/http"
+    "net/http/pprof"
+)
+func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
+    staticFileServer := http.FileServer(http.FS(staticFiles))
+    _ = staticFileServer
+    // pprof routes
+    mux.HandleFunc("GET /debug/pprof/", pprof.Index)
+}`)
+	os.MkdirAll("controllers", 0755)
+	os.MkdirAll("views", 0755)
+
+	if err := runController([]string{"widgets", "index"}); err != nil {
+		t.Fatalf("runController: %v", err)
+	}
+	data, _ := os.ReadFile("routes/routes.go")
+	if !strings.Contains(string(data), "\"monolith/controllers\"") {
+		t.Fatalf("import not added: %s", string(data))
+	}
+	if !strings.Contains(string(data), "GET /widgets") {
+		t.Fatalf("route not added: %s", string(data))
+	}
+}
+
 func setupBaseFiles(t *testing.T, dir string) {
 	writeFile(t, filepath.Join(dir, "db/db.go"), `package db
 import "monolith/models"
