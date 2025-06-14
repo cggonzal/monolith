@@ -1,0 +1,33 @@
+# This workflow will deploy the monolith application using GitHub Actions.
+# It makes the assumption that the server has already been set up with the server-setup workflow or manually by running the server_management/server_setup.sh script.
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Monolith-Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      server_host_ip:
+        description: 'Server Host and IP, e.g., ubuntu@203.0.113.5'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+
+    - name: Build
+      run: go build -o monolith main.go
+
+    - name: Test
+      run: go test -v ./...
+
+    - name: Deploy to server
+      run: ./server_management/deploy.sh ${{ github.event.inputs.server_host_ip }}
