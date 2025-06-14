@@ -117,6 +117,15 @@ func runAuthentication(args []string) error {
 	if err := createSessionFile(); err != nil {
 		return err
 	}
+	if err := createSessionTestFile(); err != nil {
+		return err
+	}
+	if err := createAuthMiddlewareFile(); err != nil {
+		return err
+	}
+	if err := createAuthMiddlewareTestFile(); err != nil {
+		return err
+	}
 	if err := createAuthControllerFile(); err != nil {
 		return err
 	}
@@ -469,28 +478,36 @@ func createControllerTestFile(name string) error {
 // doesn't already exist and ensures it is migrated in db/db.go.
 func createUserModelAuth() error {
 	path := filepath.Join("models", "user.go")
+	exists := false
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
-		return nil
-	}
-	var buf bytes.Buffer
-	buf.WriteString("package models\n\n")
-	buf.WriteString("import \"gorm.io/gorm\"\n\n")
-	buf.WriteString("// User represents an application user\n")
-	buf.WriteString("type User struct {\n")
-	buf.WriteString("\tgorm.Model\n")
-	buf.WriteString("\tEmail        string `gorm:\"unique;not null\"`\n")
-	buf.WriteString("\tPasswordHash []byte\n")
-	buf.WriteString("}\n")
-	formatted, err := format.Source(buf.Bytes())
-	if err != nil {
+		exists = true
+	} else if !os.IsNotExist(err) {
 		return err
 	}
-	if err := os.WriteFile(path, formatted, 0644); err != nil {
+	if !exists {
+		var buf bytes.Buffer
+		buf.WriteString("package models\n\n")
+		buf.WriteString("import \"gorm.io/gorm\"\n\n")
+		buf.WriteString("// User represents an application user\n")
+		buf.WriteString("type User struct {\n")
+		buf.WriteString("\tgorm.Model\n")
+		buf.WriteString("\tEmail        string `gorm:\"unique;not null\"`\n")
+		buf.WriteString("\tPasswordHash []byte\n")
+		buf.WriteString("}\n")
+		formatted, err := format.Source(buf.Bytes())
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(path, formatted, 0644); err != nil {
+			return err
+		}
+		fmt.Println("create", path)
+	}
+	if err := updateDBFile("User"); err != nil {
 		return err
 	}
-	fmt.Println("create", path)
-	return updateDBFile("User")
+	return nil
 }
 
 // createSessionFile sets up cookie session helpers for login state.
@@ -526,6 +543,146 @@ func createSessionFile() error {
 	buf.WriteString("\tsession, _ := store.Get(r, SESSION_NAME_KEY)\n")
 	buf.WriteString("\tloggedIn, ok := session.Values[LOGGED_IN_KEY].(bool)\n")
 	buf.WriteString("\treturn ok && loggedIn\n")
+	buf.WriteString("}\n")
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", path)
+	return nil
+}
+
+// createSessionTestFile sets up tests for session helpers.
+func createSessionTestFile() error {
+	path := filepath.Join("session", "session_test.go")
+	if _, err := os.Stat(path); err == nil {
+		fmt.Println("exists", path)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("package session\n\n")
+	buf.WriteString("import (\n")
+	buf.WriteString("\t\"net/http/httptest\"\n")
+	buf.WriteString("\t\"testing\"\n")
+	buf.WriteString(")\n\n")
+	buf.WriteString("func TestSessionLoginLogout(t *testing.T) {\n")
+	buf.WriteString("\treq := httptest.NewRequest(\"GET\", \"/\", nil)\n")
+	buf.WriteString("\tw := httptest.NewRecorder()\n")
+	buf.WriteString("\tSetLoggedIn(w, req, \"test@example.com\")\n")
+	buf.WriteString("\tcookie := w.Result().Cookies()[0]\n\n")
+	buf.WriteString("\treq2 := httptest.NewRequest(\"GET\", \"/\", nil)\n")
+	buf.WriteString("\treq2.AddCookie(cookie)\n")
+	buf.WriteString("\tif !IsLoggedIn(req2) {\n")
+	buf.WriteString("\t\tt.Fatal(\"expected logged in\")\n")
+	buf.WriteString("\t}\n\n")
+	buf.WriteString("\tw2 := httptest.NewRecorder()\n")
+	buf.WriteString("\tLogout(w2, req2)\n")
+	buf.WriteString("\tcookie2 := w2.Result().Cookies()[0]\n")
+	buf.WriteString("\treq3 := httptest.NewRequest(\"GET\", \"/\", nil)\n")
+	buf.WriteString("\treq3.AddCookie(cookie2)\n")
+	buf.WriteString("\tif IsLoggedIn(req3) {\n")
+	buf.WriteString("\t\tt.Fatal(\"expected logged out\")\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("}\n")
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", path)
+	return nil
+}
+
+// createAuthMiddlewareFile creates RequireLogin middleware.
+func createAuthMiddlewareFile() error {
+	path := filepath.Join("middleware", "auth.go")
+	if _, err := os.Stat(path); err == nil {
+		fmt.Println("exists", path)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("package middleware\n\n")
+	buf.WriteString("import (\n")
+	buf.WriteString("\t\"monolith/session\"\n")
+	buf.WriteString("\t\"net/http\"\n")
+	buf.WriteString(")\n\n")
+	buf.WriteString("// RequireLogin ensures the user is logged in before accessing a route\n")
+	buf.WriteString("func RequireLogin(next http.HandlerFunc) http.HandlerFunc {\n")
+	buf.WriteString("\treturn func(w http.ResponseWriter, r *http.Request) {\n")
+	buf.WriteString("\t\tif !session.IsLoggedIn(r) {\n")
+	buf.WriteString("\t\t\thttp.Redirect(w, r, \"/login\", http.StatusSeeOther)\n")
+	buf.WriteString("\t\t\treturn\n")
+	buf.WriteString("\t\t}\n")
+	buf.WriteString("\t\tnext(w, r)\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("}\n")
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", path)
+	return nil
+}
+
+// createAuthMiddlewareTestFile generates tests for the RequireLogin middleware.
+func createAuthMiddlewareTestFile() error {
+	path := filepath.Join("middleware", "auth_test.go")
+	if _, err := os.Stat(path); err == nil {
+		fmt.Println("exists", path)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("package middleware\n\n")
+	buf.WriteString("import (\n")
+	buf.WriteString("\t\"net/http\"\n")
+	buf.WriteString("\t\"net/http/httptest\"\n")
+	buf.WriteString("\t\"testing\"\n\n")
+	buf.WriteString("\t\"monolith/session\"\n")
+	buf.WriteString(")\n\n")
+	buf.WriteString("func TestRequireLogin(t *testing.T) {\n")
+	buf.WriteString("\thandlerCalled := false\n")
+	buf.WriteString("\thandler := RequireLogin(func(w http.ResponseWriter, r *http.Request) {\n")
+	buf.WriteString("\t\thandlerCalled = true\n")
+	buf.WriteString("\t})\n")
+	buf.WriteString("\treq := httptest.NewRequest(\"GET\", \"/\", nil)\n")
+	buf.WriteString("\tw := httptest.NewRecorder()\n")
+	buf.WriteString("\thandler(w, req)\n")
+	buf.WriteString("\tif w.Result().StatusCode != http.StatusSeeOther {\n")
+	buf.WriteString("\t\tt.Errorf(\"expected redirect status, got %d\", w.Result().StatusCode)\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("\tif handlerCalled {\n")
+	buf.WriteString("\t\tt.Errorf(\"handler should not be called when not logged in\")\n")
+	buf.WriteString("\t}\n\n")
+	buf.WriteString("\treq2 := httptest.NewRequest(\"GET\", \"/\", nil)\n")
+	buf.WriteString("\tw2 := httptest.NewRecorder()\n")
+	buf.WriteString("\tsession.SetLoggedIn(w2, req2, \"test@example.com\")\n")
+	buf.WriteString("\tcookie := w2.Result().Cookies()[0]\n")
+	buf.WriteString("\treq2.AddCookie(cookie)\n")
+	buf.WriteString("\tw3 := httptest.NewRecorder()\n")
+	buf.WriteString("\thandler(w3, req2)\n")
+	buf.WriteString("\tif w3.Result().StatusCode != http.StatusOK {\n")
+	buf.WriteString("\t\tt.Errorf(\"expected 200 status when logged in, got %d\", w3.Result().StatusCode)\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("\tif !handlerCalled {\n")
+	buf.WriteString("\t\tt.Errorf(\"handler should be called when logged in\")\n")
+	buf.WriteString("\t}\n")
 	buf.WriteString("}\n")
 	formatted, err := format.Source(buf.Bytes())
 	if err != nil {
