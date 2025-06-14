@@ -99,7 +99,7 @@ func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
     mux.HandleFunc("GET /debug/pprof/", pprof.Index)
 }`)
 	os.MkdirAll("controllers", 0755)
-	os.MkdirAll("templates", 0755)
+	os.MkdirAll("views", 0755)
 
 	if err := runController([]string{"widgets", "index", "show"}); err != nil {
 		t.Fatalf("runController: %v", err)
@@ -107,7 +107,7 @@ func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
 	if _, err := os.Stat("controllers/widgets_controller.go"); err != nil {
 		t.Fatalf("controller file: %v", err)
 	}
-	if _, err := os.Stat("templates/widgets_index.html.tmpl"); err != nil {
+	if _, err := os.Stat("views/widgets_index.html.tmpl"); err != nil {
 		t.Fatalf("index template: %v", err)
 	}
 	data, _ := os.ReadFile("routes/routes.go")
@@ -143,7 +143,7 @@ func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
 	os.MkdirAll(filepath.Join(dir, "jobs"), 0755)
 	os.MkdirAll(filepath.Join(dir, "models"), 0755)
 	os.MkdirAll(filepath.Join(dir, "controllers"), 0755)
-	os.MkdirAll(filepath.Join(dir, "templates"), 0755)
+	os.MkdirAll(filepath.Join(dir, "views"), 0755)
 	os.MkdirAll(filepath.Join(dir, "session"), 0755)
 	os.MkdirAll(filepath.Join(dir, "middleware"), 0755)
 }
@@ -218,8 +218,8 @@ func TestRunAuthentication(t *testing.T) {
 		"middleware/auth.go",
 		"middleware/auth_test.go",
 		"controllers/auth_controller.go",
-		"templates/login.html.tmpl",
-		"templates/signup.html.tmpl",
+		"views/login.html.tmpl",
+		"views/signup.html.tmpl",
 	}
 	for _, f := range files {
 		if _, err := os.Stat(f); err != nil {
