@@ -30,7 +30,6 @@ func Connect() {
 
 	// Auto-migrate all registered models
 	dbHandle.AutoMigrate(
-		&models.User{},
 		&models.Job{},
 		&models.Message{},
 	)

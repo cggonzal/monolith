@@ -12,7 +12,6 @@ type JobType int
 
 const (
 	JobTypePrint JobType = iota
-	JobTypeSum
 	JobTypeEmail
 )
 
