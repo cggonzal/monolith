@@ -21,7 +21,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 func TestCreateAndGetUser(t *testing.T) {
 	db := setupTestDB(t)
 	email := "test@example.com"
-	_, err := CreateUser(db, email, "name", "")
+	_, err := CreateUser(db, email, "secret")
 	if err != nil {
 		t.Fatalf("create user: %v", err)
 	}
@@ -31,5 +31,22 @@ func TestCreateAndGetUser(t *testing.T) {
 	}
 	if u.Email != email {
 		t.Fatalf("expected email %s got %s", email, u.Email)
+	}
+}
+
+func TestAuthenticateUser(t *testing.T) {
+	db := setupTestDB(t)
+	email := "test2@example.com"
+	password := "secret123"
+	_, err := CreateUser(db, email, password)
+	if err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+	_, err = AuthenticateUser(db, email, password)
+	if err != nil {
+		t.Fatalf("authenticate: %v", err)
+	}
+	if _, err := AuthenticateUser(db, email, "badpass"); err == nil {
+		t.Fatalf("expected invalid credentials error")
 	}
 }

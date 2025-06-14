@@ -27,6 +27,8 @@ func Run(args []string) error {
 		return runController(args[1:])
 	case "resource":
 		return runResource(args[1:])
+	case "authentication":
+		return runAuthentication(args[1:])
 	default:
 		return fmt.Errorf("unknown generator: %s", args[0])
 	}
@@ -98,6 +100,33 @@ func runResource(args []string) error {
 		return err
 	}
 	if err := createControllerTestFile(ctrlName); err != nil {
+		return err
+	}
+	return nil
+}
+
+// runAuthentication scaffolds user authentication helpers, controller,
+// templates and routes.
+func runAuthentication(args []string) error {
+	if len(args) != 0 {
+		return errors.New("authentication generator takes no arguments")
+	}
+	if err := createUserModelAuth(); err != nil {
+		return err
+	}
+	if err := createSessionFile(); err != nil {
+		return err
+	}
+	if err := createAuthControllerFile(); err != nil {
+		return err
+	}
+	if err := createLoginTemplate(); err != nil {
+		return err
+	}
+	if err := createSignupTemplate(); err != nil {
+		return err
+	}
+	if err := updateRoutesForAuth(); err != nil {
 		return err
 	}
 	return nil
@@ -433,6 +462,238 @@ func createControllerTestFile(name string) error {
 		return err
 	}
 	fmt.Println("create", file)
+	return nil
+}
+
+// createUserModelAuth writes a basic User model used for authentication if it
+// doesn't already exist and ensures it is migrated in db/db.go.
+func createUserModelAuth() error {
+	path := filepath.Join("models", "user.go")
+	if _, err := os.Stat(path); err == nil {
+		fmt.Println("exists", path)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("package models\n\n")
+	buf.WriteString("import \"gorm.io/gorm\"\n\n")
+	buf.WriteString("// User represents an application user\n")
+	buf.WriteString("type User struct {\n")
+	buf.WriteString("\tgorm.Model\n")
+	buf.WriteString("\tEmail        string `gorm:\"unique;not null\"`\n")
+	buf.WriteString("\tPasswordHash []byte\n")
+	buf.WriteString("}\n")
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", path)
+	return updateDBFile("User")
+}
+
+// createSessionFile sets up cookie session helpers for login state.
+func createSessionFile() error {
+	path := filepath.Join("session", "session.go")
+	if _, err := os.Stat(path); err == nil {
+		fmt.Println("exists", path)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("package session\n\n")
+	buf.WriteString("import (\n")
+	buf.WriteString("\t\"net/http\"\n\n")
+	buf.WriteString("\t\"github.com/gorilla/sessions\"\n")
+	buf.WriteString(")\n\n")
+	buf.WriteString("const SESSION_NAME_KEY = \"session\"\n")
+	buf.WriteString("const LOGGED_IN_KEY = \"logged_in\"\n")
+	buf.WriteString("const EMAIL_KEY = \"email\"\n\n")
+	buf.WriteString("var store = sessions.NewCookieStore([]byte(\"super-secret-key\"))\n\n")
+	buf.WriteString("func SetLoggedIn(w http.ResponseWriter, r *http.Request, email string) {\n")
+	buf.WriteString("\tsession, _ := store.Get(r, SESSION_NAME_KEY)\n")
+	buf.WriteString("\tsession.Values[LOGGED_IN_KEY] = true\n")
+	buf.WriteString("\tsession.Values[EMAIL_KEY] = email\n")
+	buf.WriteString("\tsession.Save(r, w)\n")
+	buf.WriteString("}\n\n")
+	buf.WriteString("func Logout(w http.ResponseWriter, r *http.Request) {\n")
+	buf.WriteString("\tsession, _ := store.Get(r, SESSION_NAME_KEY)\n")
+	buf.WriteString("\tdelete(session.Values, LOGGED_IN_KEY)\n")
+	buf.WriteString("\tdelete(session.Values, EMAIL_KEY)\n")
+	buf.WriteString("\tsession.Save(r, w)\n")
+	buf.WriteString("}\n\n")
+	buf.WriteString("func IsLoggedIn(r *http.Request) bool {\n")
+	buf.WriteString("\tsession, _ := store.Get(r, SESSION_NAME_KEY)\n")
+	buf.WriteString("\tloggedIn, ok := session.Values[LOGGED_IN_KEY].(bool)\n")
+	buf.WriteString("\treturn ok && loggedIn\n")
+	buf.WriteString("}\n")
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", path)
+	return nil
+}
+
+// createAuthControllerFile creates controller handling signup and login.
+func createAuthControllerFile() error {
+	path := filepath.Join("controllers", "auth_controller.go")
+	if _, err := os.Stat(path); err == nil {
+		fmt.Println("exists", path)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("package controllers\n\n")
+	buf.WriteString("import (\n")
+	buf.WriteString("\t\"net/http\"\n\n")
+	buf.WriteString("\t\"monolith/db\"\n")
+	buf.WriteString("\t\"monolith/models\"\n")
+	buf.WriteString("\t\"monolith/session\"\n")
+	buf.WriteString("\t\"monolith/templates\"\n")
+	buf.WriteString(")\n\n")
+	buf.WriteString("type AuthController struct{}\n\n")
+	buf.WriteString("var AuthCtrl = &AuthController{}\n\n")
+	buf.WriteString("func (ac *AuthController) ShowLoginForm(w http.ResponseWriter, r *http.Request) {\n")
+	buf.WriteString("\ttemplates.ExecuteTemplate(w, \"login.html.tmpl\", nil)\n")
+	buf.WriteString("}\n\n")
+	buf.WriteString("func (ac *AuthController) ShowSignupForm(w http.ResponseWriter, r *http.Request) {\n")
+	buf.WriteString("\ttemplates.ExecuteTemplate(w, \"signup.html.tmpl\", nil)\n")
+	buf.WriteString("}\n\n")
+	buf.WriteString("func (ac *AuthController) Signup(w http.ResponseWriter, r *http.Request) {\n")
+	buf.WriteString("\tif err := r.ParseForm(); err != nil {\n")
+	buf.WriteString("\t\thttp.Error(w, \"invalid form\", http.StatusBadRequest)\n")
+	buf.WriteString("\t\treturn\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("\temail := r.FormValue(\"email\")\n")
+	buf.WriteString("\tpassword := r.FormValue(\"password\")\n")
+	buf.WriteString("\tif email == \"\" || password == \"\" {\n")
+	buf.WriteString("\t\thttp.Error(w, \"missing credentials\", http.StatusBadRequest)\n")
+	buf.WriteString("\t\treturn\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("\tif _, err := models.CreateUser(db.GetDB(), email, password); err != nil {\n")
+	buf.WriteString("\t\thttp.Error(w, \"could not create user\", http.StatusInternalServerError)\n")
+	buf.WriteString("\t\treturn\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("\tsession.SetLoggedIn(w, r, email)\n")
+	buf.WriteString("\thttp.Redirect(w, r, \"/dashboard\", http.StatusSeeOther)\n")
+	buf.WriteString("}\n\n")
+	buf.WriteString("func (ac *AuthController) Login(w http.ResponseWriter, r *http.Request) {\n")
+	buf.WriteString("\tif err := r.ParseForm(); err != nil {\n")
+	buf.WriteString("\t\thttp.Error(w, \"invalid form\", http.StatusBadRequest)\n")
+	buf.WriteString("\t\treturn\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("\temail := r.FormValue(\"email\")\n")
+	buf.WriteString("\tpassword := r.FormValue(\"password\")\n")
+	buf.WriteString("\tif _, err := models.AuthenticateUser(db.GetDB(), email, password); err != nil {\n")
+	buf.WriteString("\t\thttp.Error(w, \"invalid credentials\", http.StatusUnauthorized)\n")
+	buf.WriteString("\t\treturn\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("\tsession.SetLoggedIn(w, r, email)\n")
+	buf.WriteString("\thttp.Redirect(w, r, \"/dashboard\", http.StatusSeeOther)\n")
+	buf.WriteString("}\n\n")
+	buf.WriteString("func (ac *AuthController) Logout(w http.ResponseWriter, r *http.Request) {\n")
+	buf.WriteString("\tsession.Logout(w, r)\n")
+	buf.WriteString("\thttp.Redirect(w, r, \"/\", http.StatusSeeOther)\n")
+	buf.WriteString("}\n")
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", path)
+	return nil
+}
+
+// createLoginTemplate generates a basic login template.
+func createLoginTemplate() error {
+	path := filepath.Join("templates", "login.html.tmpl")
+	if _, err := os.Stat(path); err == nil {
+		fmt.Println("exists", path)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Login</title>\n</head>\n<body>\n    <h1>Login</h1>\n    <form method=\"POST\" action=\"/login\">\n        <label>Email: <input type=\"email\" name=\"email\"></label><br>\n        <label>Password: <input type=\"password\" name=\"password\"></label><br>\n        <button type=\"submit\">Login</button>\n    </form>\n    <a href=\"/signup\">Sign up</a>\n</body>\n</html>\n")
+	if err := os.WriteFile(path, buf.Bytes(), 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", path)
+	return nil
+}
+
+func createSignupTemplate() error {
+	path := filepath.Join("templates", "signup.html.tmpl")
+	if _, err := os.Stat(path); err == nil {
+		fmt.Println("exists", path)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Sign Up</title>\n</head>\n<body>\n    <h1>Sign Up</h1>\n    <form method=\"POST\" action=\"/signup\">\n        <label>Email: <input type=\"email\" name=\"email\"></label><br>\n        <label>Password: <input type=\"password\" name=\"password\"></label><br>\n        <button type=\"submit\">Create Account</button>\n    </form>\n    <a href=\"/login\">Login</a>\n</body>\n</html>\n")
+	if err := os.WriteFile(path, buf.Bytes(), 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", path)
+	return nil
+}
+
+// updateRoutesForAuth injects the authentication routes if missing.
+func updateRoutesForAuth() error {
+	path := filepath.Join("routes", "routes.go")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	lines := strings.Split(string(data), "\n")
+	insertIdx := -1
+	for i, line := range lines {
+		if strings.Contains(line, "staticFileServer") {
+			insertIdx = i + 1
+			break
+		}
+	}
+	if insertIdx == -1 {
+		return fmt.Errorf("could not find insertion point in routes.go")
+	}
+	indent := leadingWhitespace(lines[insertIdx-1])
+	newLines := []string{
+		fmt.Sprintf("%smux.HandleFunc(\"GET /login\", controllers.AuthCtrl.ShowLoginForm)", indent),
+		fmt.Sprintf("%smux.HandleFunc(\"POST /login\", controllers.AuthCtrl.Login)", indent),
+		fmt.Sprintf("%smux.HandleFunc(\"GET /signup\", controllers.AuthCtrl.ShowSignupForm)", indent),
+		fmt.Sprintf("%smux.HandleFunc(\"POST /signup\", controllers.AuthCtrl.Signup)", indent),
+		fmt.Sprintf("%smux.HandleFunc(\"GET /logout\", controllers.AuthCtrl.Logout)", indent),
+		"",
+	}
+
+	for _, nl := range newLines {
+		found := false
+		for _, l := range lines {
+			if strings.TrimSpace(l) == strings.TrimSpace(nl) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			lines = append(lines[:insertIdx], append([]string{nl}, lines[insertIdx:]...)...)
+			insertIdx++
+		}
+	}
+
+	out := strings.Join(lines, "\n")
+	formatted, err := format.Source([]byte(out))
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("update", path)
 	return nil
 }
 

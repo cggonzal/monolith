@@ -43,7 +43,7 @@ If you are new, start with **Quick‑start** then come back to read the architec
 
 **Monolith** is a full‑stack Go application that demonstrates:
 
-* Cookie‑based sessions with OAuth 2.0 login  
+* Cookie‑based sessions with built‑in login
 * GORM‑powered persistence (SQLite by default) 
 * Zero downtime deploys
 * A tiny background job queue  
@@ -57,7 +57,7 @@ Everything uses the **Go standard library** except two focused dependencies:
 | Purpose | Package |
 | --- | --- |
 | Database driver | `github.com/glebarez/sqlite` |
-| Sessions + OAuth | `github.com/gorilla/sessions`, `golang.org/x/oauth2` |
+| Sessions | `github.com/gorilla/sessions` |
 
 ---
 
@@ -73,7 +73,7 @@ Everything uses the **Go standard library** except two focused dependencies:
 ├── models/                  # GORM models (User, Job, Message)
 ├── controllers/                # HTTP controllers (HTML + auth callbacks)
 ├── middleware/              # Reusable HTTP middleware
-├── session/                 # Session helpers & Google OAuth config
+├── session/                 # Session helpers
 ├── ws/                      # WebSocket hub, client & message types
 ├── jobs/                    # Simple in‑process job queue
 ├── templates/               # `embed`ded HTML templates
@@ -93,12 +93,11 @@ Everything uses the **Go standard library** except two focused dependencies:
 const JOB_QUEUE_NUM_WORKERS = 4
 ```
 
-Everything dynamic (port, database DSN, OAuth keys) is read from **environment variables** inside `main.go` or the relevant package:
+Everything dynamic (port and database DSN) is read from **environment variables** inside `main.go` or the relevant package:
 
 | Variable | Default | Used in |
 | -------- | ------- | ------- |
 | `BIN_PORT` | `9000` | HTTP listener |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | – | `session/` |
 | `LISTEN_FDS`, `LISTEN_PID` | – | systemd socket activation |
 
 ### Database Layer
@@ -131,8 +130,7 @@ All models embed GORM timestamps, so you automatically get `CreatedAt` / `Update
 Example: Creating a user
 
 ```go
-user, _ := models.CreateUser(db.GetDB(),
-    "foo@example.com", "Foo Bar", "https://gravatar.com/avatar/…")
+user, _ := models.CreateUser(db.GetDB(), "foo@example.com", "secret")
 ```
 
 ### Sessions & Authentication
@@ -141,24 +139,9 @@ Session helpers live in `session/session.go`:
 
 * **SecureCookie** store (`gorilla/sessions`)
 * `SetLoggedIn`, `Logout`, `IsLoggedIn`
-* Google OAuth 2.0 configuration (`oauth2.Config`)
 
-Authentication flow (`controllers/auth.go`):
-
-```mermaid
-sequenceDiagram
-participant Browser
-participant Server
-participant Google
-Browser->>Server: GET /auth/google
-Server-->>Browser: 302 Google OAuth URL
-Browser->>Google: authenticate
-Google-->>Server: code
-Server->>Google: code ↦ access_token
-Google-->>Server: userinfo JSON
-Server->>DB: upsert User
-Server->>Browser: 302 /dashboard (Set‑Cookie)
-```
+Authentication flow: browser posts credentials to `/login` which validates the
+password and redirects to `/dashboard` on success.
 
 If `session.IsLoggedIn(r)` is **false**, the `middleware.RequireLogin` decorator redirects the request to `/login`.
 
@@ -311,11 +294,7 @@ go tool pprof http://localhost:9000/debug/pprof/profile?seconds=30
 # 1. clone & enter
 git clone <repo> && cd monolith
 
-# 2. (optional) export OAuth creds
-export GOOGLE_CLIENT_ID=…
-export GOOGLE_CLIENT_SECRET=…
-
-# 3. if you have air installed, run the following in the root of the repo
+# 2. if you have air installed, run the following in the root of the repo
 make
 
 # if you do not have air installed then run
@@ -514,8 +493,6 @@ This will do a zero downtime deploy by calling,
 | Name | Description | Default |
 | ---- | ----------- | ------- |
 | `BIN_PORT` | Fallback TCP port when not using socket activation | `9000` |
-| `GOOGLE_CLIENT_ID` | OAuth 2 client ID | – |
-| `GOOGLE_CLIENT_SECRET` | OAuth 2 client secret | – |
 | `DATABASE_URL` | Postgres DSN (if you switch drivers) | – |
 | `MAILGUN_DOMAIN` | Mailgun domain used for sending mail | – |
 | `MAILGUN_API_KEY` | Private API key for Mailgun | – |
