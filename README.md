@@ -29,12 +29,13 @@ If you are new, start with **Quick‑start** then come back to read the architec
    3. [WebSocket chat](#websocket-chat-example)  
    4. [Background job](#background-job-example)  
    5. [Interactive debug session](#interactive-debug-session)  
-5. [Extending the Monolith](#extending-the-monolith)  
-6. [Development](#development)
+5. [Extending the Monolith](#extending-the-monolith)
+6. [Generators](#generators)
 7. [Testing](#testing)
-8. [Server Setup](#server-setup)
-9. [Deployment](#deployment)
-10. [Appendix](#appendix)
+8. [Development](#development)
+9. [Server Setup](#server-setup)
+10. [Deployment](#deployment)
+11. [Appendix](#appendix)
 
 ---
 
@@ -402,6 +403,51 @@ jobs.RegisterHandler(JobTypeEmail, func(j *models.Job) error {
 hub.Subscribe(client, "notifications")
 hub.Broadcast("notifications", []byte(`{"title":"Build finished"}`))
 ```
+
+---
+
+## Generators
+
+Generators scaffold common pieces of the application. They are run through the
+main program:
+
+```bash
+go run main.go generator <type> [...options]
+```
+
+Supported types are `model`, `controller` and `resource`.
+
+### Model
+
+```bash
+go run main.go generator model Widget name:string price:int
+```
+
+Creates `models/widget.go` with a `Widget` struct and updates `db/db.go` so the
+model is automatically migrated.
+
+### Controller
+
+Controllers are typically named using the plural form:
+
+```bash
+go run main.go generator controller widgets index show
+```
+
+This generates `controllers/widgets_controller.go`, inserts matching routes into
+`routes/routes.go` and creates templates like `templates/widgets_index.html.tmpl`.
+
+### Resource
+
+The resource generator produces a model and a full REST controller in one step.
+Pass the **singular** name; the controller and routes will be pluralised.
+
+```bash
+go run main.go generator resource widget name:string price:int
+```
+
+This creates the model, a `widgets` controller with all CRUD actions, placeholder
+tests and templates, and RESTful routes under `/widgets`.
 
 ---
 
