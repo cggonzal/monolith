@@ -514,6 +514,8 @@ func createUserModelAuth() error {
 		buf.WriteString("\tgorm.Model\n")
 		buf.WriteString("\tEmail        string `gorm:\"unique;not null\"`\n")
 		buf.WriteString("\tPasswordHash []byte\n")
+		buf.WriteString("\tIsActive bool	`gorm:\"default:true\"`\n")
+		buf.WriteString("\tIsAdmin bool `gorm:\"default:false\"`\n")
 		buf.WriteString("}\n")
 		formatted, err := format.Source(buf.Bytes())
 		if err != nil {
