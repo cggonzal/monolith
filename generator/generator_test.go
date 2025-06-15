@@ -268,3 +268,32 @@ func TestRunAuthentication(t *testing.T) {
 		t.Fatalf("db not updated: %s", string(db))
 	}
 }
+
+func TestRunAdmin(t *testing.T) {
+	dir := t.TempDir()
+	wd, _ := os.Getwd()
+	os.Chdir(dir)
+	defer os.Chdir(wd)
+	setupBaseFiles(t, dir)
+
+	if err := runAdmin([]string{}); err != nil {
+		t.Fatalf("runAdmin: %v", err)
+	}
+	files := []string{
+		"models/user.go",
+		"controllers/admin_controller.go",
+		"views/admin_dashboard.html.tmpl",
+		"middleware/admin.go",
+		"middleware/admin_test.go",
+		"session/email.go",
+	}
+	for _, f := range files {
+		if _, err := os.Stat(f); err != nil {
+			t.Fatalf("missing %s", f)
+		}
+	}
+	data, _ := os.ReadFile("routes/routes.go")
+	if !strings.Contains(string(data), "GET /admin") || !strings.Contains(string(data), "POST /admin") {
+		t.Fatalf("route not added: %s", string(data))
+	}
+}
