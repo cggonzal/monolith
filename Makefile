@@ -17,6 +17,10 @@ build:
 test:
 	go test -v ./...
 
+doc:
+	# Documentation server running: http://localhost:6060/
+	godoc -http=":6060"
+
 # Deploy using the deploy script
 deploy:
 	chmod +x ./server_management/deploy.sh && ./server_management/deploy.sh
