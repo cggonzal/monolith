@@ -17,14 +17,15 @@ If you are new, start with **Quick‑start** then come back to read the architec
    1. [Configuration](#configuration)  
    2. [Database Layer](#database-layer)  
    3. [Domain Models](#domain-models)  
-   4. [Sessions & Authentication](#sessions--authentication)  
-   5. [Middleware](#middleware)  
-   6. [Routing & HTTP controllers](#routing--http-controllers)  
-   7. [Templates & Static Assets](#templates--static-assets)  
-   8. [WebSockets](#websockets)  
-   9. [Job Queue](#job-queue)  
-   10. [Server Management & Zero‑downtime Deploys](#server-management--zero-downtime-deploys)  
-   11. [Debugging & Profiling](#debugging--profiling)
+   4. [Sessions & Authentication](#sessions--authentication)
+   5. [CSRF Protection](#csrf-protection)
+   6. [Middleware](#middleware)
+   7. [Routing & HTTP controllers](#routing--http-controllers)
+   8. [Templates & Static Assets](#templates--static-assets)
+   9. [WebSockets](#websockets)
+   10. [Job Queue](#job-queue)
+   11. [Server Management & Zero‑downtime Deploys](#server-management--zero-downtime-deploys)
+   12. [Debugging & Profiling](#debugging--profiling)
 4. [Practical Walk‑throughs](#practical-walkthroughs)  
    1. [Quick‑start](#quickstart)  
    2. [Authentication flow](#authentication-flow-example)  
@@ -150,21 +151,71 @@ password and redirects to `/` on success.
 
 If `session.IsLoggedIn(r)` is **false**, the `middleware.RequireLogin` decorator redirects the request to `/login`.
 
+### CSRF Protection
+
+`csrf/` provides helpers to embed a CSRF token into HTML forms or expose it to JavaScript. `middleware/CSRFMiddleware` verifies the token on every mutating request and returns **403 Forbidden** if it is missing or invalid.
+
+Use `csrf.GetCSRFTokenForForm` inside your controllers when rendering templates:
+
+```go
+data := map[string]any{
+    "csrf_token": csrf.GetCSRFTokenForForm(w, r),
+}
+templates.ExecuteTemplate(w, "form.html.tmpl", data)
+```
+
+In the template simply output `{{.csrf_token}}` inside the `<form>`:
+
+```html
+<form method="POST" action="/items">
+    {{.csrf_token}}
+    <!-- rest of fields -->
+</form>
+```
+
+For AJAX requests include the meta tag returned by `csrf.GetCSRFMetaTag` and send the token in the `X-CSRF-Token` header:
+
+```go
+data := map[string]any{
+    "csrf_meta": csrf.GetCSRFMetaTag(w, r),
+}
+templates.ExecuteTemplate(w, "index.html.tmpl", data)
+```
+
+```html
+<head>
+    {{.csrf_meta}}
+</head>
+<script>
+const token = document.querySelector('meta[name="csrf-token"]').content;
+fetch('/items', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-CSRF-Token': token,
+  },
+  body: JSON.stringify({name: 'foo'}),
+});
+</script>
+```
+
 ### Middleware
 
-Two middlewares are shipped:
+Three middlewares are shipped:
 
 | File | Function | Description |
 | ---- | -------- | ----------- |
 | `middleware/logging.go` | `LoggingMiddleware` | Structured request log using `log/slog` |
 | `middleware/auth.go` | `RequireLogin` | Gate routes behind authentication |
+| `middleware/csrf.go` | `CSRFMiddleware` | Validate CSRF token for unsafe requests |
 
 Compose them like:
 
 ```go
 mux := http.NewServeMux()
 mux.HandleFunc("GET /dashboard", middleware.RequireLogin(controllers.Dashboard))
-http.ListenAndServe(":9000", middleware.LoggingMiddleware(mux))
+handler := middleware.CSRFMiddleware(middleware.LoggingMiddleware(mux))
+http.ListenAndServe(":9000", handler)
 ```
 
 ### Routing & HTTP controllers
