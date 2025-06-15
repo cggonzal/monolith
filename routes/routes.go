@@ -16,10 +16,11 @@ func InitServerHandler(staticFiles embed.FS) http.Handler {
 	// Register all routes
 	registerRoutes(mux, staticFiles)
 
-	// Wrap with structured logging middleware
+	// Wrap with structured logging and CSRF protection middleware
 	loggedRouter := middleware.LoggingMiddleware(mux)
+	csrfProtected := middleware.CSRFMiddleware(loggedRouter)
 
-	return loggedRouter
+	return csrfProtected
 }
 
 func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
