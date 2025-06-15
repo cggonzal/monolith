@@ -21,6 +21,7 @@ Available commands:
   resource NAME [field:type...] Create model and full REST controller
   authentication                Scaffold basic user authentication
   job NAME                      Create a skeleton background job
+  admin                         Add an admin dashboard with profiling helpers
 
 Examples:
   go run main.go generator model Widget name:string price:int
@@ -52,6 +53,8 @@ func Run(args []string) error {
 		return runAuthentication(args[1:])
 	case "job":
 		return runJob(args[1:])
+	case "admin":
+		return runAdmin(args[1:])
 	default:
 		fmt.Print(helpMessage)
 		return fmt.Errorf("unknown generator: %s", args[0])
@@ -181,6 +184,37 @@ func runAuthentication(args []string) error {
 		return err
 	}
 	if err := updateRoutesForAuth(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// runAdmin adds an admin dashboard with profiling helpers.
+func runAdmin(args []string) error {
+	if len(args) != 0 {
+		return errors.New("admin generator takes no arguments")
+	}
+	if _, err := os.Stat(filepath.Join("models", "user.go")); os.IsNotExist(err) {
+		if err := runAuthentication([]string{}); err != nil {
+			return err
+		}
+	}
+	if err := createSessionEmailHelper(); err != nil {
+		return err
+	}
+	if err := createAdminControllerFile(); err != nil {
+		return err
+	}
+	if err := createAdminTemplate(); err != nil {
+		return err
+	}
+	if err := createAdminMiddlewareFile(); err != nil {
+		return err
+	}
+	if err := createAdminMiddlewareTestFile(); err != nil {
+		return err
+	}
+	if err := updateRoutesForAdmin(); err != nil {
 		return err
 	}
 	return nil
@@ -1201,4 +1235,288 @@ func ensureControllersImport(lines []string) []string {
 		}
 	}
 	return lines
+}
+
+// ensureMiddlewareImport makes sure the routes file imports the middleware package.
+func ensureMiddlewareImport(lines []string) []string {
+	for _, l := range lines {
+		if strings.Contains(l, "\"monolith/middleware\"") {
+			return lines
+		}
+	}
+
+	start, end := -1, -1
+	for i, l := range lines {
+		t := strings.TrimSpace(l)
+		if t == "import (" {
+			start = i
+			continue
+		}
+		if start != -1 && t == ")" {
+			end = i
+			break
+		}
+	}
+
+	if start != -1 && end != -1 {
+		indent := leadingWhitespace(lines[start+1])
+		newLine := indent + "\"monolith/middleware\""
+		lines = append(lines[:end], append([]string{newLine}, lines[end:]...)...)
+		return lines
+	}
+
+	for i, l := range lines {
+		t := strings.TrimSpace(l)
+		if strings.HasPrefix(t, "import ") {
+			pkg := strings.Trim(strings.TrimPrefix(t, "import"), " \t")
+			block := []string{
+				"import (",
+				"    " + pkg,
+				"    \"monolith/middleware\"",
+				")",
+			}
+			lines = append(lines[:i], append(block, lines[i+1:]...)...)
+			return lines
+		}
+	}
+
+	for i, l := range lines {
+		if strings.HasPrefix(l, "package ") {
+			block := []string{"import (", "    \"monolith/middleware\"", ")", ""}
+			lines = append(lines[:i+1], append(block, lines[i+1:]...)...)
+			break
+		}
+	}
+	return lines
+}
+
+func createSessionEmailHelper() error {
+	path := filepath.Join("session", "email.go")
+	if _, err := os.Stat(path); err == nil {
+		fmt.Println("exists", path)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("package session\n\n")
+	buf.WriteString("import \"net/http\"\n\n")
+	buf.WriteString("func GetEmail(r *http.Request) string {\n")
+	buf.WriteString("\ts, _ := store.Get(r, SESSION_NAME_KEY)\n")
+	buf.WriteString("\temail, _ := s.Values[EMAIL_KEY].(string)\n")
+	buf.WriteString("\treturn email\n")
+	buf.WriteString("}\n")
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", path)
+	return nil
+}
+
+func createAdminControllerFile() error {
+	path := filepath.Join("controllers", "admin_controller.go")
+	if _, err := os.Stat(path); err == nil {
+		fmt.Println("exists", path)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("package controllers\n\n")
+	buf.WriteString("import (\n")
+	buf.WriteString("\t\"net/http\"\n")
+	buf.WriteString("\t\"monolith/views\"\n")
+	buf.WriteString(")\n\n")
+	buf.WriteString("type AdminController struct{}\n\n")
+	buf.WriteString("var AdminCtrl = &AdminController{}\n\n")
+	buf.WriteString("func (ac *AdminController) Dashboard(w http.ResponseWriter, r *http.Request) {\n")
+	buf.WriteString("\tif r.Method == http.MethodPost {\n")
+	buf.WriteString("\t\tif err := r.ParseForm(); err == nil {\n")
+	buf.WriteString("\t\t\ttyp := r.FormValue(\"profile_type\")\n")
+	buf.WriteString("\t\t\tdur := r.FormValue(\"seconds\")\n")
+	buf.WriteString("\t\t\tswitch typ {\n")
+	buf.WriteString("\t\t\tcase \"cpu\":\n")
+	buf.WriteString("\t\t\t\tif dur == \"\" { dur = \"30\" }\n")
+	buf.WriteString("\t\t\t\thttp.Redirect(w, r, \"/debug/pprof/profile?seconds=\"+dur, http.StatusSeeOther)\n")
+	buf.WriteString("\t\t\t\treturn\n")
+	buf.WriteString("\t\t\tcase \"heap\":\n")
+	buf.WriteString("\t\t\t\thttp.Redirect(w, r, \"/debug/pprof/heap\", http.StatusSeeOther)\n")
+	buf.WriteString("\t\t\t\treturn\n")
+	buf.WriteString("\t\t\tcase \"mem\":\n")
+	buf.WriteString("\t\t\t\thttp.Redirect(w, r, \"/debug/pprof/allocs\", http.StatusSeeOther)\n")
+	buf.WriteString("\t\t\t\treturn\n")
+	buf.WriteString("\t\t\tcase \"trace\":\n")
+	buf.WriteString("\t\t\t\tif dur == \"\" { dur = \"1\" }\n")
+	buf.WriteString("\t\t\t\thttp.Redirect(w, r, \"/debug/pprof/trace?seconds=\"+dur, http.StatusSeeOther)\n")
+	buf.WriteString("\t\t\t\treturn\n")
+	buf.WriteString("\t\t\t}\n")
+	buf.WriteString("\t\t}\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("\tviews.Render(w, \"admin_dashboard.html.tmpl\", nil)\n")
+	buf.WriteString("}\n")
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", path)
+	return nil
+}
+
+func createAdminTemplate() error {
+	path := filepath.Join("views", "admin_dashboard.html.tmpl")
+	if _, err := os.Stat(path); err == nil {
+		fmt.Println("exists", path)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString(`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.css">
+</head>
+<body>
+    <h1>Admin Dashboard</h1>
+    <div id="chart" style="height:300px;"></div>
+    <h2>Download Profile</h2>
+    <form method="POST">
+        <label>Profile Type:
+            <select name="profile_type">
+                <option value="cpu">CPU</option>
+                <option value="heap">Heap</option>
+                <option value="mem">Memory</option>
+                <option value="trace">Trace</option>
+            </select>
+        </label>
+        <label>Duration (seconds):
+            <input type="number" name="seconds" value="30">
+        </label>
+        <button type="submit">Download</button>
+    </form>
+</body>
+</html>
+`)
+	if err := os.WriteFile(path, buf.Bytes(), 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", path)
+	return nil
+}
+
+func createAdminMiddlewareFile() error {
+	path := filepath.Join("middleware", "admin.go")
+	if _, err := os.Stat(path); err == nil {
+		fmt.Println("exists", path)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("package middleware\n\n")
+	buf.WriteString("import (\n")
+	buf.WriteString("\t\"net/http\"\n")
+	buf.WriteString("\t\"monolith/db\"\n")
+	buf.WriteString("\t\"monolith/models\"\n")
+	buf.WriteString("\t\"monolith/session\"\n")
+	buf.WriteString(")\n\n")
+	buf.WriteString("// RequireAdmin ensures the user is logged in and an admin before accessing a route\n")
+	buf.WriteString("func RequireAdmin(next http.HandlerFunc) http.HandlerFunc {\n")
+	buf.WriteString("\treturn func(w http.ResponseWriter, r *http.Request) {\n")
+	buf.WriteString("\t\tif !session.IsLoggedIn(r) {\n")
+	buf.WriteString("\t\t\thttp.Redirect(w, r, \"/login\", http.StatusSeeOther)\n")
+	buf.WriteString("\t\t\treturn\n")
+	buf.WriteString("\t\t}\n")
+	buf.WriteString("\t\temail := session.GetEmail(r)\n")
+	buf.WriteString("\t\tuser, err := models.GetUser(db.GetDB(), email)\n")
+	buf.WriteString("\t\tif err != nil || !user.IsAdmin {\n")
+	buf.WriteString("\t\t\thttp.Redirect(w, r, \"/\", http.StatusSeeOther)\n")
+	buf.WriteString("\t\t\treturn\n")
+	buf.WriteString("\t\t}\n")
+	buf.WriteString("\t\tnext(w, r)\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("}\n")
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", path)
+	return nil
+}
+
+func createAdminMiddlewareTestFile() error {
+	path := filepath.Join("middleware", "admin_test.go")
+	if _, err := os.Stat(path); err == nil {
+		fmt.Println("exists", path)
+		return nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("package middleware\n\n")
+	buf.WriteString("import \"testing\"\n\n")
+	buf.WriteString("func TestRequireAdminPlaceholder(t *testing.T) {}\n")
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("create", path)
+	return nil
+}
+
+func updateRoutesForAdmin() error {
+	path := filepath.Join("routes", "routes.go")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	lines := strings.Split(string(data), "\n")
+	lines = ensureControllersImport(lines)
+	lines = ensureMiddlewareImport(lines)
+	insertIdx := -1
+	for i, line := range lines {
+		if strings.Contains(line, "pprof routes") {
+			insertIdx = i
+			break
+		}
+	}
+	if insertIdx == -1 {
+		return fmt.Errorf("could not find insertion point in routes.go")
+	}
+	indent := leadingWhitespace(lines[insertIdx])
+	newLine := fmt.Sprintf("%smux.HandleFunc(\"GET /admin\", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))", indent)
+	exists := false
+	for _, l := range lines {
+		if strings.TrimSpace(l) == strings.TrimSpace(newLine) {
+			exists = true
+			break
+		}
+	}
+	if !exists {
+		lines = append(lines[:insertIdx], append([]string{newLine, ""}, lines[insertIdx:]...)...)
+	}
+	out := strings.Join(lines, "\n")
+	formatted, err := format.Source([]byte(out))
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, formatted, 0644); err != nil {
+		return err
+	}
+	fmt.Println("update", path)
+	return nil
 }
