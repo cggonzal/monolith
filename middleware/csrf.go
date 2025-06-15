@@ -16,25 +16,27 @@ func CSRFMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		if err := r.ParseForm(); err != nil {
-			slog.Error("csrf parse form", "error", err)
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
+		reqToken := r.Header.Get("X-CSRF-Token")
+		if reqToken == "" {
+			if err := r.ParseForm(); err != nil {
+				slog.Error("csrf parse form", "error", err)
+				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				return
+			}
+			reqToken = r.FormValue("csrf_token")
 		}
-
-		formToken := r.FormValue("csrf_token")
 		cookie, err := r.Cookie(csrfCookieName)
 		if err != nil {
 			slog.Warn("CSRF token missing in cookie")
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
-		if formToken == "" {
-			slog.Warn("CSRF token missing in form")
+		if reqToken == "" {
+			slog.Warn("CSRF token missing in request")
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
-		if cookie.Value != formToken {
+		if cookie.Value != reqToken {
 			slog.Warn("CSRF token mismatch")
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
