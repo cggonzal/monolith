@@ -293,7 +293,7 @@ func TestRunAdmin(t *testing.T) {
 		}
 	}
 	data, _ := os.ReadFile("routes/routes.go")
-	if !strings.Contains(string(data), "/admin") {
+	if !strings.Contains(string(data), "GET /admin") || !strings.Contains(string(data), "POST /admin") {
 		t.Fatalf("route not added: %s", string(data))
 	}
 }

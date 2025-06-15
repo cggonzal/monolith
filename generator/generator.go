@@ -1498,16 +1498,23 @@ func updateRoutesForAdmin() error {
 		return fmt.Errorf("could not find insertion point in routes.go")
 	}
 	indent := leadingWhitespace(lines[insertIdx])
-	newLine := fmt.Sprintf("%smux.HandleFunc(\"GET /admin\", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))", indent)
-	exists := false
-	for _, l := range lines {
-		if strings.TrimSpace(l) == strings.TrimSpace(newLine) {
-			exists = true
-			break
-		}
+	newLines := []string{
+		fmt.Sprintf("%smux.HandleFunc(\"GET /admin\", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))", indent),
+		fmt.Sprintf("%smux.HandleFunc(\"POST /admin\", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))", indent),
 	}
-	if !exists {
-		lines = append(lines[:insertIdx], append([]string{newLine, ""}, lines[insertIdx:]...)...)
+
+	for _, nl := range newLines {
+		exists := false
+		for _, l := range lines {
+			if strings.TrimSpace(l) == strings.TrimSpace(nl) {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			lines = append(lines[:insertIdx], append([]string{nl}, lines[insertIdx:]...)...)
+			insertIdx++
+		}
 	}
 	out := strings.Join(lines, "\n")
 	formatted, err := format.Source([]byte(out))
