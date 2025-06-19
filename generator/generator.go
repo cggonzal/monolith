@@ -14,6 +14,7 @@ import (
 )
 
 const helpMessage = `Usage: go run main.go generator <command> [arguments]
+   or: make generator <command> [arguments]
 
 Available commands:
   model NAME [field:type...]    Create a model struct and update db migrations
@@ -24,11 +25,11 @@ Available commands:
   admin                         Add an admin dashboard with profiling helpers
 
 Examples:
-  go run main.go generator model Widget name:string price:int
-  go run main.go generator controller widgets index show
-  go run main.go generator resource widget name:string price:int
-  go run main.go generator authentication
-  go run main.go generator job MyJob
+  make generator model Widget name:string price:int
+  make generator controller widgets index show
+  make generator resource widget name:string price:int
+  make generator authentication
+  make generator job MyJob
 `
 
 // Run dispatches to the specific generator based on args.
