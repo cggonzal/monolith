@@ -87,6 +87,7 @@ make run
 ```
 
 The first launch creates **app.db** and auto‑migrates the schema.
+
 ---
 
 ## Practical Walk‑throughs
