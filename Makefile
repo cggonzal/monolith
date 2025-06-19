@@ -25,7 +25,6 @@ doc:
 deploy:
 	chmod +x ./server_management/deploy.sh && ./server_management/deploy.sh
 
-.PHONY: dev run build test deploy generator
 
 # Pass any additional arguments after "generator" through to the Go program
 ARGS := $(filter-out generator,$(MAKECMDGOALS))
@@ -37,3 +36,6 @@ generator:
 # Catch-all target so extra arguments don't raise errors
 %:
 	@:
+
+
+.PHONY: dev run build test deploy generator
