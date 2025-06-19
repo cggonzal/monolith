@@ -428,7 +428,7 @@ Import and call it from controllers or jobs – services keep business logic awa
 Use the generator to scaffold a job:
 
 ```bash
-go run main.go generator job Email
+make generator job Email
 ```
 
 This creates `jobs/email_job.go` with a stub `EmailJob` function, registers it
@@ -445,11 +445,13 @@ hub.Broadcast("notifications", []byte(`{"title":"Build finished"}`))
 
 ## Generators
 
-Generators scaffold common pieces of the application. They are run through the
-main program:
+Generators scaffold common pieces of the application. They can be run through
+the main program or via `make`:
 
 ```bash
 go run main.go generator <type> [...options]
+# or
+make generator <type> [...options]
 ```
 
 Supported types are `model`, `controller`, `resource`, `authentication` and `job`.
@@ -457,7 +459,7 @@ Supported types are `model`, `controller`, `resource`, `authentication` and `job
 ### Model
 
 ```bash
-go run main.go generator model Widget name:string price:int
+make generator model Widget name:string price:int
 ```
 
 Creates `models/widget.go` with a `Widget` struct and updates `db/db.go` so the
@@ -468,7 +470,7 @@ model is automatically migrated.
 Controllers are typically named using the plural form:
 
 ```bash
-go run main.go generator controller widgets index show
+make generator controller widgets index show
 ```
 
 This generates `controllers/widgets_controller.go`, inserts matching routes into
@@ -480,7 +482,7 @@ The resource generator produces a model and a full REST controller in one step.
 Pass the **singular** name; the controller and routes will be pluralised.
 
 ```bash
-go run main.go generator resource widget name:string price:int
+make generator resource widget name:string price:int
 ```
 
 This creates the model, a `widgets` controller with all CRUD actions, placeholder
@@ -489,7 +491,7 @@ tests and templates, and RESTful routes under `/widgets`.
 ### Authentication
 
 ```bash
-go run main.go generator authentication
+make generator authentication
 ```
 
 Generates a basic user model, session management and routes for user signup,
@@ -498,7 +500,7 @@ login and logout.
 ### Job
 
 ```bash
-go run main.go generator job MyJob
+make generator job MyJob
 ```
 
 Creates `jobs/my_job_job.go` with a stub `MyJobJob` function, registers it in

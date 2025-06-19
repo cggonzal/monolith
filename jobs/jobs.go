@@ -6,7 +6,7 @@ are registered in `jobs/job_queue.go`.
 
 Use the generator to scaffold a new job:
 
-	go run main.go generator job Email
+        make generator job Email
 
 The generator creates `jobs/email_job.go` with a stub `EmailJob` function,
 adds a matching `JobTypeEmail` enum and registers it with the job queue for you.
