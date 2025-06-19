@@ -24,7 +24,7 @@ Available commands:
   job NAME                      Create a skeleton background job
   admin                         Add an admin dashboard with profiling helpers
 
-Run "go run main.go generator COMMAND --help" for detailed usage of a command.
+Run "go run main.go generator help COMMAND" for detailed usage of a command.
 
 Examples:
   make generator model Widget name:string price:int
@@ -98,17 +98,13 @@ func Run(args []string) error {
 		return errors.New("missing generator type")
 	}
 
-	// `help <cmd>` or `<cmd> --help` display detailed help
+	// `help <cmd>` displays detailed help
 	if args[0] == "help" {
 		cmd := ""
 		if len(args) > 1 {
 			cmd = args[1]
 		}
 		printHelp(cmd)
-		return nil
-	}
-	if len(args) > 1 && (args[1] == "--help" || args[1] == "-h") {
-		printHelp(args[0])
 		return nil
 	}
 
@@ -153,6 +149,7 @@ func printHelp(cmd string) {
 // runModel creates a new model struct and updates db migrations.
 func runModel(args []string) error {
 	if len(args) == 0 {
+		fmt.Print(modelHelp)
 		return errors.New("model name required")
 	}
 	modelName := toCamelCase(args[0])
@@ -173,6 +170,7 @@ func runModel(args []string) error {
 // runController creates a new controller with optional REST actions and updates routes and views.
 func runController(args []string) error {
 	if len(args) == 0 {
+		fmt.Print(controllerHelp)
 		return errors.New("controller name required")
 	}
 	name := args[0]
@@ -202,6 +200,7 @@ func runController(args []string) error {
 // associated views, routes and placeholder tests.
 func runResource(args []string) error {
 	if len(args) == 0 {
+		fmt.Print(resourceHelp)
 		return errors.New("resource name required")
 	}
 	name := args[0]
@@ -224,6 +223,7 @@ func runResource(args []string) error {
 // runJob scaffolds a new background job function and registers it.
 func runJob(args []string) error {
 	if len(args) == 0 {
+		fmt.Print(jobHelp)
 		return errors.New("job name required")
 	}
 	baseName := toCamelCase(args[0])
@@ -246,6 +246,7 @@ func runJob(args []string) error {
 // views and routes.
 func runAuthentication(args []string) error {
 	if len(args) != 0 {
+		fmt.Print(authenticationHelp)
 		return errors.New("authentication generator takes no arguments")
 	}
 	if err := createUserModelAuth(); err != nil {
@@ -281,6 +282,7 @@ func runAuthentication(args []string) error {
 // runAdmin adds an admin dashboard with profiling helpers.
 func runAdmin(args []string) error {
 	if len(args) != 0 {
+		fmt.Print(adminHelp)
 		return errors.New("admin generator takes no arguments")
 	}
 	if _, err := os.Stat(filepath.Join("models", "user.go")); os.IsNotExist(err) {
