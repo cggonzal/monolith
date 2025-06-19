@@ -11,12 +11,17 @@ If you are new, start with **Quick‑start** then come back to read the architec
 
 ## Table of Contents
 
-1. [Introduction](#introduction)  
-2. [Project Layout](#project-layout)  
-3. [Core Concepts](#core-concepts)  
-   1. [Configuration](#configuration)  
-   2. [Database Layer](#database-layer)  
-   3. [Domain Models](#domain-models)  
+1. [Introduction](#introduction)
+2. [Quickstart](#quickstart)
+3. [Practical Walk‑throughs](#practical-walkthroughs)
+   1. [Authentication flow](#authentication-flow-example)
+   2. [WebSocket chat](#websocket-chat-example)
+   3. [Background job](#background-job-example)
+   4. [Interactive debug session](#interactive-debug-session)
+4. [Core Concepts](#core-concepts)
+   1. [Configuration](#configuration)
+   2. [Database Layer](#database-layer)
+   3. [Domain Models](#domain-models)
    4. [Sessions & Authentication](#sessions--authentication)
    5. [CSRF Protection](#csrf-protection)
    6. [Middleware](#middleware)
@@ -26,19 +31,14 @@ If you are new, start with **Quick‑start** then come back to read the architec
    10. [Job Queue](#job-queue)
    11. [Server Management & Zero‑downtime Deploys](#server-management--zero-downtime-deploys)
    12. [Debugging & Profiling](#debugging--profiling)
-4. [Practical Walk‑throughs](#practical-walkthroughs)  
-   1. [Quick‑start](#quickstart)  
-   2. [Authentication flow](#authentication-flow-example)  
-   3. [WebSocket chat](#websocket-chat-example)  
-   4. [Background job](#background-job-example)  
-   5. [Interactive debug session](#interactive-debug-session)  
-5. [Extending the Monolith](#extending-the-monolith)
-6. [Generators](#generators)
-7. [Testing](#testing)
-8. [Development](#development)
-9. [Server Setup](#server-setup)
-10. [Deployment](#deployment)
-11. [Appendix](#appendix)
+5. [Project Layout](#project-layout)
+6. [Extending the Monolith](#extending-the-monolith)
+7. [Generators](#generators)
+8. [Testing](#testing)
+9. [Development](#development)
+10. [Server Setup](#server-setup)
+11. [Deployment](#deployment)
+12. [Appendix](#appendix)
 
 ---
 
@@ -67,28 +67,73 @@ Everything uses the **Go standard library** with a handful of small, focused de
 
 ---
 
-## Project Layout
+## Quickstart
 
+```bash
+# 1. clone & enter
+git clone <repo> && cd monolith
+
+# 2. start the server (uses air if available)
+make       # hot reload during development
+
+# or without air installed
+make run
+
+# open http://localhost:9000
 ```
-.
-├── main.go                  # Program entry‑point
-├── config/                  # Compile‑time configuration knobs
-│   └── config.go
-├── db/                      # DB connection bootstrap
-│   └── db.go
-├── models/                  # GORM models (User, Job, Message)
-├── controllers/                # HTTP controllers (HTML + auth callbacks)
-├── middleware/              # Reusable HTTP middleware
-├── session/                 # Session helpers
-├── ws/                      # WebSocket hub, client & message types
-├── jobs/                    # Simple in‑process job queue
-├── templates/               # `embed`ded HTML templates
-├── static/                  # `embed`ded public files
-├── server_management/       # systemd helpers + deployment scripts
-└── tests, Makefile, etc.
+
+The first launch creates **app.db** and auto‑migrates the schema.
+---
+
+## Practical Walk‑throughs
+
+### Authentication flow Example
+
+1. Visit `/signup` and create an account
+2. On success you’re logged in and redirected to `/`
+3. Existing users go to `/login` with their credentials
+4. A cookie named `session` tracks login state
+
+Use `/logout` to clear the session
+
+### WebSocket chat Example
+
+```html
+<script>
+const sock = new WebSocket("ws://localhost:9000/ws");
+sock.onopen = () => {
+  sock.send(JSON.stringify({command: "subscribe", identifier: "ChatChannel"}));
+  sock.send(JSON.stringify({command: "message", identifier: "ChatChannel", data: "Hello from JS!"}));
+};
+sock.onmessage = ev => console.log("got:", ev.data);
+</script>
+```
+
+All messages are persisted and broadcast to every subscriber of `chat`.
+
+### Background job Example
+
+```go
+payload := `{"message":"Hello"}`
+jobs.GetJobQueue().AddJob(models.JobTypePrint, payload)
+```
+
+`jobs/job_queue.go` registers job handlers and the queue starts automatically.
+
+### Interactive debug session
+
+```bash
+# in one terminal
+go run .            # start app
+
+# in another
+curl http://localhost:9000/debug/pprof/heap > heap.out
+go tool pprof heap.out
 ```
 
 ---
+
+
 
 ## Core Concepts
 ### Configuration
@@ -341,69 +386,27 @@ go tool pprof http://localhost:9000/debug/pprof/profile?seconds=30
 ```
 
 ---
+## Project Layout
 
-## Practical Walk‑throughs
-
-### Quick‑start
-
-```bash
-# 1. clone & enter
-git clone <repo> && cd monolith
-
-# 2. start the server (uses air if available)
-make       # hot reload during development
-
-# or without air installed
-make run
-
-# open http://localhost:9000
+```
+.
+├── main.go                  # Program entry‑point
+├── config/                  # Compile‑time configuration knobs
+│   └── config.go
+├── db/                      # DB connection bootstrap
+│   └── db.go
+├── models/                  # GORM models (User, Job, Message)
+├── controllers/                # HTTP controllers (HTML + auth callbacks)
+├── middleware/              # Reusable HTTP middleware
+├── session/                 # Session helpers
+├── ws/                      # WebSocket hub, client & message types
+├── jobs/                    # Simple in‑process job queue
+├── templates/               # `embed`ded HTML templates
+├── static/                  # `embed`ded public files
+├── server_management/       # systemd helpers + deployment scripts
+└── tests, Makefile, etc.
 ```
 
-The first launch creates **app.db** and auto‑migrates the schema.
-
-### Authentication flow Example
-
-1. Visit `/signup` and create an account
-2. On success you’re logged in and redirected to `/`
-3. Existing users go to `/login` with their credentials
-4. A cookie named `session` tracks login state
-
-Use `/logout` to clear the session
-
-### WebSocket chat Example
-
-```html
-<script>
-const sock = new WebSocket("ws://localhost:9000/ws");
-sock.onopen = () => {
-  sock.send(JSON.stringify({command: "subscribe", identifier: "ChatChannel"}));
-  sock.send(JSON.stringify({command: "message", identifier: "ChatChannel", data: "Hello from JS!"}));
-};
-sock.onmessage = ev => console.log("got:", ev.data);
-</script>
-```
-
-All messages are persisted and broadcast to every subscriber of `chat`.
-
-### Background job Example
-
-```go
-payload := `{"message":"Hello"}`
-jobs.GetJobQueue().AddJob(models.JobTypePrint, payload)
-```
-
-`jobs/job_queue.go` registers job handlers and the queue starts automatically.
-
-### Interactive debug session
-
-```bash
-# in one terminal
-go run .            # start app
-
-# in another
-curl http://localhost:9000/debug/pprof/heap > heap.out
-go tool pprof heap.out
-```
 
 ---
 
