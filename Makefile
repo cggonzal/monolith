@@ -1,3 +1,5 @@
+.SILENT:
+
 # Default target - run with air for development
 .DEFAULT_GOAL := dev
 
