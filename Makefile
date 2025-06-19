@@ -20,7 +20,7 @@ test:
 	go test -v ./...
 
 doc:
-	# Documentation server running: http://localhost:6060/
+	echo "Documentation server running: http://localhost:6060/"
 	godoc -http=":6060"
 
 # Deploy using the deploy script
