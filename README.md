@@ -18,6 +18,10 @@ If you are new, start with **Quick‑start** then come back to read the architec
    2. [WebSocket chat](#websocket-chat-example)
    3. [Background job](#background-job-example)
    4. [Interactive debug session](#interactive-debug-session)
+   5. [Generating a job](#generating-a-job)
+   6. [Generating a resource](#generating-a-resource)
+   7. [Generating authentication](#generating-authentication)
+   8. [Generating an admin dashboard](#generating-an-admin-dashboard)
 4. [Core Concepts](#core-concepts)
    1. [Configuration](#configuration)
    2. [Database Layer](#database-layer)
@@ -130,6 +134,41 @@ go run .            # start app
 curl http://localhost:9000/debug/pprof/heap > heap.out
 go tool pprof heap.out
 ```
+
+### Generating a job
+
+```bash
+make generator job Email
+```
+
+Edit `jobs/email_job.go` and implement the `EmailJob` function. The generator
+also registers the new type in `jobs/job_queue.go`.
+
+### Generating a resource
+
+```bash
+make generator resource widget name:string price:int
+```
+
+This creates `models/widget.go` plus a fully‑wired `widgets` controller with
+CRUD actions, templates and RESTful routes under `/widgets`.
+
+### Generating authentication
+
+```bash
+make generator authentication
+```
+
+Adds a basic `User` model, login/logout handlers and middleware for sessions.
+
+### Generating an admin dashboard
+
+```bash
+make generator admin
+```
+
+Creates an `/admin` dashboard with profiling helpers. If a User model does not
+exist it will be generated automatically.
 
 ---
 
@@ -457,7 +496,7 @@ go run main.go generator <type> [...options]
 make generator <type> [...options]
 ```
 
-Supported types are `model`, `controller`, `resource`, `authentication` and `job`.
+Supported types are `model`, `controller`, `resource`, `authentication`, `job` and `admin`.
 
 ### Model
 
@@ -508,6 +547,16 @@ make generator job MyJob
 
 Creates `jobs/my_job_job.go` with a stub `MyJobJob` function, registers it in
 `jobs/job_queue.go` and adds `JobTypeMyJob` to `models/jobs.go`.
+
+### Admin
+
+```bash
+make generator admin
+```
+
+Scaffolds an `/admin` dashboard for profiling and wraps it in admin-only
+middleware. If no `User` model exists it will be generated along with the
+authentication pieces.
 
 ---
 
