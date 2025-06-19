@@ -34,7 +34,6 @@ generator:
 	go run main.go generator $(ARGS)
 
 # 'g' is an alias for 'generator'
-# Pass any additional arguments after "g" through to the Go program
 ARGS := $(filter-out g,$(MAKECMDGOALS))
 g:
 	go run main.go generator $(ARGS)
