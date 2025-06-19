@@ -1,3 +1,4 @@
+# prevent make from printing commands when running targets
 .SILENT:
 
 # Default target - run with air for development
