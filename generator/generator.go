@@ -24,12 +24,70 @@ Available commands:
   job NAME                      Create a skeleton background job
   admin                         Add an admin dashboard with profiling helpers
 
+Run "go run main.go generator help COMMAND" for detailed usage of a command.
+
 Examples:
   make generator model Widget name:string price:int
   make generator controller widgets index show
   make generator resource widget name:string price:int
   make generator authentication
   make generator job MyJob
+`
+
+const modelHelp = `Usage: go run main.go generator model NAME [field:type...]
+
+Creates models/NAME.go with a struct embedding gorm.Model and updates db/db.go
+so the model is migrated automatically. Optional field arguments add struct
+fields with the specified Go types.
+
+Example:
+  make generator model Widget name:string price:int
+`
+
+const controllerHelp = `Usage: go run main.go generator controller NAME [actions]
+
+Generates controllers/NAME_controller.go and matching templates. If actions are
+provided, RESTful routes are inserted into routes/routes.go. Use "all" to
+generate the full set of CRUD actions.
+
+Example:
+  make generator controller widgets index show
+`
+
+const resourceHelp = `Usage: go run main.go generator resource NAME [field:type...]
+
+Creates a model and a pluralised controller with all CRUD actions, templates and
+routes. Pass the singular model name; the controller will be pluralised.
+
+Example:
+  make generator resource widget name:string price:int
+`
+
+const authenticationHelp = `Usage: go run main.go generator authentication
+
+Scaffolds a basic user model along with session helpers, login and signup
+templates and routes. This generator takes no arguments.
+
+Example:
+  make generator authentication
+`
+
+const jobHelp = `Usage: go run main.go generator job NAME
+
+Creates jobs/NAME_job.go with a stub function, registers it in the job queue and
+adds JobTypeNAME to models/jobs.go.
+
+Example:
+  make generator job MyJob
+`
+
+const adminHelp = `Usage: go run main.go generator admin
+
+Generates an /admin dashboard wrapped in admin-only middleware. If a User model
+does not exist, the authentication generator will be invoked automatically.
+
+Example:
+  make generator admin
 `
 
 // Run dispatches to the specific generator based on args.
@@ -40,10 +98,17 @@ func Run(args []string) error {
 		return errors.New("missing generator type")
 	}
 
-	switch args[0] {
-	case "help":
-		fmt.Print(helpMessage)
+	// `help <cmd>` displays detailed help
+	if args[0] == "help" {
+		cmd := ""
+		if len(args) > 1 {
+			cmd = args[1]
+		}
+		printHelp(cmd)
 		return nil
+	}
+
+	switch args[0] {
 	case "model":
 		return runModel(args[1:])
 	case "controller":
@@ -62,9 +127,29 @@ func Run(args []string) error {
 	}
 }
 
+func printHelp(cmd string) {
+	switch cmd {
+	case "model":
+		fmt.Print(modelHelp)
+	case "controller":
+		fmt.Print(controllerHelp)
+	case "resource":
+		fmt.Print(resourceHelp)
+	case "authentication":
+		fmt.Print(authenticationHelp)
+	case "job":
+		fmt.Print(jobHelp)
+	case "admin":
+		fmt.Print(adminHelp)
+	default:
+		fmt.Print(helpMessage)
+	}
+}
+
 // runModel creates a new model struct and updates db migrations.
 func runModel(args []string) error {
 	if len(args) == 0 {
+		fmt.Print(modelHelp)
 		return errors.New("model name required")
 	}
 	modelName := toCamelCase(args[0])
@@ -85,6 +170,7 @@ func runModel(args []string) error {
 // runController creates a new controller with optional REST actions and updates routes and views.
 func runController(args []string) error {
 	if len(args) == 0 {
+		fmt.Print(controllerHelp)
 		return errors.New("controller name required")
 	}
 	name := args[0]
@@ -114,6 +200,7 @@ func runController(args []string) error {
 // associated views, routes and placeholder tests.
 func runResource(args []string) error {
 	if len(args) == 0 {
+		fmt.Print(resourceHelp)
 		return errors.New("resource name required")
 	}
 	name := args[0]
@@ -136,6 +223,7 @@ func runResource(args []string) error {
 // runJob scaffolds a new background job function and registers it.
 func runJob(args []string) error {
 	if len(args) == 0 {
+		fmt.Print(jobHelp)
 		return errors.New("job name required")
 	}
 	baseName := toCamelCase(args[0])
@@ -158,6 +246,7 @@ func runJob(args []string) error {
 // views and routes.
 func runAuthentication(args []string) error {
 	if len(args) != 0 {
+		fmt.Print(authenticationHelp)
 		return errors.New("authentication generator takes no arguments")
 	}
 	if err := createUserModelAuth(); err != nil {
@@ -193,6 +282,7 @@ func runAuthentication(args []string) error {
 // runAdmin adds an admin dashboard with profiling helpers.
 func runAdmin(args []string) error {
 	if len(args) != 0 {
+		fmt.Print(adminHelp)
 		return errors.New("admin generator takes no arguments")
 	}
 	if _, err := os.Stat(filepath.Join("models", "user.go")); os.IsNotExist(err) {
