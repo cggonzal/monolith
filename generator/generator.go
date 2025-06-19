@@ -24,12 +24,70 @@ Available commands:
   job NAME                      Create a skeleton background job
   admin                         Add an admin dashboard with profiling helpers
 
+Run "go run main.go generator COMMAND --help" for detailed usage of a command.
+
 Examples:
   make generator model Widget name:string price:int
   make generator controller widgets index show
   make generator resource widget name:string price:int
   make generator authentication
   make generator job MyJob
+`
+
+const modelHelp = `Usage: go run main.go generator model NAME [field:type...]
+
+Creates models/NAME.go with a struct embedding gorm.Model and updates db/db.go
+so the model is migrated automatically. Optional field arguments add struct
+fields with the specified Go types.
+
+Example:
+  make generator model Widget name:string price:int
+`
+
+const controllerHelp = `Usage: go run main.go generator controller NAME [actions]
+
+Generates controllers/NAME_controller.go and matching templates. If actions are
+provided, RESTful routes are inserted into routes/routes.go. Use "all" to
+generate the full set of CRUD actions.
+
+Example:
+  make generator controller widgets index show
+`
+
+const resourceHelp = `Usage: go run main.go generator resource NAME [field:type...]
+
+Creates a model and a pluralised controller with all CRUD actions, templates and
+routes. Pass the singular model name; the controller will be pluralised.
+
+Example:
+  make generator resource widget name:string price:int
+`
+
+const authenticationHelp = `Usage: go run main.go generator authentication
+
+Scaffolds a basic user model along with session helpers, login and signup
+templates and routes. This generator takes no arguments.
+
+Example:
+  make generator authentication
+`
+
+const jobHelp = `Usage: go run main.go generator job NAME
+
+Creates jobs/NAME_job.go with a stub function, registers it in the job queue and
+adds JobTypeNAME to models/jobs.go.
+
+Example:
+  make generator job MyJob
+`
+
+const adminHelp = `Usage: go run main.go generator admin
+
+Generates an /admin dashboard wrapped in admin-only middleware. If a User model
+does not exist, the authentication generator will be invoked automatically.
+
+Example:
+  make generator admin
 `
 
 // Run dispatches to the specific generator based on args.
@@ -40,10 +98,21 @@ func Run(args []string) error {
 		return errors.New("missing generator type")
 	}
 
-	switch args[0] {
-	case "help":
-		fmt.Print(helpMessage)
+	// `help <cmd>` or `<cmd> --help` display detailed help
+	if args[0] == "help" {
+		cmd := ""
+		if len(args) > 1 {
+			cmd = args[1]
+		}
+		printHelp(cmd)
 		return nil
+	}
+	if len(args) > 1 && (args[1] == "--help" || args[1] == "-h") {
+		printHelp(args[0])
+		return nil
+	}
+
+	switch args[0] {
 	case "model":
 		return runModel(args[1:])
 	case "controller":
@@ -59,6 +128,25 @@ func Run(args []string) error {
 	default:
 		fmt.Print(helpMessage)
 		return fmt.Errorf("unknown generator: %s", args[0])
+	}
+}
+
+func printHelp(cmd string) {
+	switch cmd {
+	case "model":
+		fmt.Print(modelHelp)
+	case "controller":
+		fmt.Print(controllerHelp)
+	case "resource":
+		fmt.Print(resourceHelp)
+	case "authentication":
+		fmt.Print(authenticationHelp)
+	case "job":
+		fmt.Print(jobHelp)
+	case "admin":
+		fmt.Print(adminHelp)
+	default:
+		fmt.Print(helpMessage)
 	}
 }
 

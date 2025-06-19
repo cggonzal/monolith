@@ -21,8 +21,12 @@ var templateFiles embed.FS
 
 func main() {
 	// Dispatch to generators if requested
-	if len(os.Args) > 1 && os.Args[1] == "generator" {
-		if err := generator.Run(os.Args[2:]); err != nil {
+	if len(os.Args) > 1 && (os.Args[1] == "generator" || os.Args[1] == "generators") {
+		args := os.Args[2:]
+		if os.Args[1] == "generators" {
+			args = append([]string{"help"}, args...)
+		}
+		if err := generator.Run(args); err != nil {
 			slog.Error("generator failed", "error", err)
 		}
 		return
