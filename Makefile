@@ -33,9 +33,15 @@ ARGS := $(filter-out generator,$(MAKECMDGOALS))
 generator:
 	go run main.go generator $(ARGS)
 
+# 'g' is an alias for 'generator'
+# Pass any additional arguments after "g" through to the Go program
+ARGS := $(filter-out g,$(MAKECMDGOALS))
+g:
+	go run main.go generator $(ARGS)
+
 # Catch-all target so extra arguments don't raise errors
 %:
 	@:
 
 
-.PHONY: dev run build test deploy generator
+.PHONY: dev run build test deploy generator g doc
