@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="https://cdn.simplecss.org/simple.css">
 <style>
   body {
-    background-color: #00ADD8;
+    background-color: #00ADD8; /* Go blue */
     color: #ffffff;
     text-align: center;
   }
@@ -39,6 +39,10 @@
   main {
     max-width: 600px;
     margin: 0 auto;
+    padding: 2rem;
+  }
+  .highlight {
+    color: #FFD700; /* gold */
   }
 </style>
 {{end}}
@@ -52,13 +56,8 @@
 <main>
   <h1>Welcome aboard</h1>
   <p>Your Go application is running!</p>
-  <p>To get started:</p>
-  <ul>
-    <li>Edit <code>routes/routes.go</code> to define routes.</li>
-    <li>Create handlers in <code>controllers/</code>.</li>
-    <li>Update templates in <code>views/</code> to change this page.</li>
-  </ul>
-  <p>Happy coding!</p>
+  <p>Update <code>routes/routes.go</code> to add routes, create handlers in <code>controllers/</code>, and edit templates in <code>views/</code> to customise this page.</p>
+  <p class="highlight">Happy coding!</p>
 </main>
 {{end}}
 
