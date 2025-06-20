@@ -23,3 +23,5 @@ var MAILGUN_API_KEY = os.Getenv("MAILGUN_API_KEY")
 var MAILGUN_API_BASE = "https://api.mailgun.net/v3"
 
 var SECRET_KEY = os.Getenv("SECRET_KEY")
+
+var MONOLITH_VERSION = "0.1.0"
