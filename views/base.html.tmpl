@@ -5,6 +5,21 @@
 {{block "head" .}}
     <title>{{block "title" .}} My Website {{end}}</title>
     <meta charset="UTF-8">
+    {{block "meta" .}}
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{end}}
+
+    {{block "favicon" .}}
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    {{end}}
+
+    {{block "header" .}}
+    {{end}}
+
+
+    {{block "scripts" .}}
+        <!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> -->
+    {{end}}
     {{block "stylesheet" .}}<link rel="stylesheet" href="https://cdn.simplecss.org/simple.css">{{end}}
 {{end}}
 </head>
