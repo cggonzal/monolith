@@ -147,8 +147,9 @@
       <li><a href="#configure-db">Configure your database</a></li>
       <li><a href="#define-models">Define models</a></li>
       <li><a href="#routes">Set up routes</a></li>
-      <li><a href="#generate-templates">Generate templates</a></li>
+      <li><a href="#generate-templates">Templates</a></li>
       <li><a href="#start-server">Start the server</a></li>
+      <li><a href="#generators">Use the generators</a></li>
       <li><a href="https://go.dev/doc/">Go documentation →</a></li>
     </ul>
   </nav>
@@ -156,42 +157,52 @@
   <section class="content">
     <h2 id="configure-db">1. Configure your database</h2>
     <p>
-      Update <code>config/database.yml</code> (or the equivalent for your Go framework) with
-      the correct connection information, then run:
+      The app uses SQLite by default and will create <code>app.db</code> on first run.
+      To use Postgres instead, edit <code>db/db.go</code> to switch drivers and set
+      the <code>DATABASE_URL</code> environment variable.
     </p>
-    <pre><code>go run cmd/migrate/main.go</code></pre>
 
     <h2 id="define-models">2. Define models</h2>
     <p>
-      Create your data models—using your favorite ORM or the standard library—inside
-      <code>internal/models/</code>. Then generate migrations if required.
+      Define your structs in <code>models/</code>. All registered models are
+      automatically migrated when the server starts.
     </p>
 
     <h2 id="routes">3. Set up routes</h2>
     <p>
-      Edit <code>internal/router/router.go</code> to declare your URL mappings.
-      A typical handler looks like:
+      Edit <code>routes/routes.go</code> to declare your URL mappings. A typical
+      handler looks like:
     </p>
     <pre><code>func Home(w http.ResponseWriter, r *http.Request) {
     data := map[string]any{"Message": "Hello, Go world!"}
     templates.ExecuteTemplate(w, "home.html.tmpl", data)
 }</code></pre>
 
-    <h2 id="generate-templates">4. Create / generate templates</h2>
+    <h2 id="generate-templates">4. Create templates</h2>
     <p>
-      Place HTML templates in <code>web/templates</code>. You can scaffold them
-      with:
+      Place HTML templates in <code>views/</code>. Generators will create starter
+      templates when scaffolding controllers or resources.
     </p>
-    <pre><code>go run cmd/scaffold/main.go -name Post</code></pre>
 
     <h2 id="start-server">5. Fire it up</h2>
     <p>
-      Finally, boot the development server:
+      Finally, start the development server:
     </p>
-    <pre><code>go run ./cmd/server</code></pre>
+    <pre><code>make       # with hot reload
+make run  # without air</code></pre>
     <p>
       Then visit <code>http://localhost:9000</code> in your browser.
     </p>
+
+    <h2 id="generators">6. Use the generators</h2>
+    <p>
+      Run <code>make generator &lt;type&gt; [...options]</code> (or
+      <code>go run main.go generator &lt;type&gt; [...options]</code>) to scaffold
+      pieces of your app. Available types are
+      <code>model</code>, <code>controller</code>, <code>resource</code>,
+      <code>authentication</code>, <code>job</code> and <code>admin</code>.
+    </p>
+    <pre><code>make generator resource widget name:string price:int</code></pre>
   </section>
 </main>
 {{end}}
