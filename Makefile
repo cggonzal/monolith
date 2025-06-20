@@ -25,8 +25,15 @@ doc:
 	godoc -http=":6060"
 
 # Deploy using the deploy script
+DEPLOY_ARGS := $(filter-out deploy,$(MAKECMDGOALS))
+
+# Deploy using the deploy script
 deploy:
-	chmod +x ./server_management/deploy.sh && ./server_management/deploy.sh
+	@if [ -z "$(DEPLOY_ARGS)" ]; then \
+	echo "Usage: make deploy <user@host>"; \
+	exit 1; \
+	fi; \
+	chmod +x ./server_management/deploy.sh && ./server_management/deploy.sh $(DEPLOY_ARGS)
 
 
 # Pass any additional arguments after "generator" through to the Go program
