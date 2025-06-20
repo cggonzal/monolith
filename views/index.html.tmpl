@@ -1,210 +1,55 @@
 {{template "base.html.tmpl" .}}
 
-{{define "title"}}Home Page{{end}}
-
-{{define "header"}}
-<header>
-  <h1>Welcome to Monolith!</h1>
-  <p>Your project has been created successfully.</p>
-</header>
-{{end}}
+{{define "title"}}<title>Monolith Web Framework</title>{{end}}
 
 {{define "stylesheet"}}
 <style>
-  :root {
-    --go-cyan: #00ADD8;
-    --go-cyan-dark: #007D9C;
-    --go-cyan-light: #B3EAF6;
-    --go-white: #ffffff;
-    --go-gray: #333f48;
-    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+  body{
+    min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:#ffffff;position:relative;overflow-x:hidden;
+  }
+  body::after{                       /* blue diagonal */
+    content:"";position:fixed;bottom:0;left:0;width:100vw;height:65vh;
+    background:#00ADD8;transform-origin:bottom left;transform:skewY(-8deg);z-index:-1;
   }
 
-  * { box-sizing: border-box; }
-
-  html, body {
-    margin: 0;
-    padding: 0;
-    font-family: var(--font-sans);
-    color: var(--go-gray);
-    background: var(--go-white);
-    line-height: 1.6;
+  /* ▸▸ revised logo circle */
+  nav{
+    width:20vmin;height:20vmin;max-width:280px;max-height:280px;min-width:96px;min-height:96px;
+    display:flex;justify-content:center;align-items:center;
+    border-radius:50%;                          /* circle */
+    background:#ffffff;                         /* contrast so PNG is visible */
+    border:8px solid #00ADD8;                   /* Go-blue ring (was fill)   */
+    box-shadow:0 12px 20px rgba(0,0,0,.07),0 6px 10px rgba(0,0,0,.06);
+    transition:transform .2s cubic-bezier(.33,1,.68,1);
   }
+  nav:hover{transform:scale(1.05);}             /* subtle hover pop */
 
-  /* Header – now constrained to the same max-width as the content */
-  header {
-    background: var(--go-cyan);
-    color: var(--go-white);
-    text-align: center;
-    padding: 4rem 1rem 3rem;
-    max-width: 960px;          /* matches main’s width */
-    margin: 2rem auto 0;       /* top margin adds white-space above */
-    border-radius: 0.75rem;    /* rounded corners (all four) */
-    position: relative;
+  nav img{
+    width:100%;height:100%;object-fit:contain;border-radius:50%;overflow:hidden;
   }
 
-  header h1 {
-    font-size: clamp(2.2rem, 5vw, 3rem);
-    margin: 0 0 0.5rem;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-  }
-
-  header p {
-    font-size: 1.25rem;
-    margin: 0;
-    opacity: 0.95;
-  }
-
-  /* soft “gopher circle” accent */
-  header::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    margin: auto;
-    width: 200px;
-    height: 200px;
-    border-radius: 50%;
-    background: var(--go-cyan-light);
-    opacity: 0.15;
-    z-index: 0;
-  }
-  header > * { position: relative; z-index: 1; }
-
-  /* Main content wrapper */
-  main {
-    max-width: 960px;
-    margin: 2rem auto 3rem;    /* 2 rem gap below the header */
-    display: flex;
-    gap: 2rem;
-    padding: 0 1rem;
-  }
-
-  nav {
-    flex: 0 0 260px;
-    border: 2px solid var(--go-cyan-light);
-    border-radius: 0.75rem;
-    background: var(--go-white);
-    padding: 1.5rem;
-  }
-  nav h2 {
-    margin-top: 0;
-    font-size: 1.1rem;
-    color: var(--go-cyan-dark);
-  }
-  nav ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  nav li { margin: 0.6rem 0; }
-  nav a {
-    color: var(--go-gray);
-    text-decoration: none;
-  }
-  nav a:hover {
-    color: var(--go-cyan-dark);
-    text-decoration: underline;
-  }
-
-  section.content {
-    flex: 1 1 auto;
-    border: 2px solid var(--go-cyan-light);
-    border-radius: 0.75rem;
-    background: var(--go-white);
-    padding: 2rem 2.5rem 2.5rem;
-  }
-
-  section.content h2 {
-    margin-top: 0;
-    font-size: 1.5rem;
-    color: var(--go-cyan-dark);
-  }
-
-  section.content code {
-    background: #f3f4f4;
-    padding: 0.15rem 0.4rem;
-    border-radius: 4px;
-    font-size: 0.9rem;
-  }
-
-  /* Responsive stack */
-  @media (max-width: 800px) {
-    header, main { margin-left: 1rem; margin-right: 1rem; } /* breathing room */
-    main { flex-direction: column; }
-    nav { width: 100%; }
-  }
+  ul{list-style:none;margin-top:2.5rem;font-size:1rem;line-height:1.4;color:#0A0F12;text-align:center}
 </style>
 {{end}}
 
 
 {{define "body"}}
-<body>
-<main>
+
+  <!-- centered, circular mascot -->
   <nav>
-    <h2>Next up</h2>
-    <ul>
-      <li><a href="#configure-db">Configure your database</a></li>
-      <li><a href="#define-models">Define models</a></li>
-      <li><a href="#routes">Set up routes</a></li>
-      <li><a href="#generate-templates">Templates</a></li>
-      <li><a href="#start-server">Start the server</a></li>
-      <li><a href="#generators">Use the generators</a></li>
-      <li><a href="https://go.dev/doc/">Go documentation →</a></li>
-    </ul>
+    <a href="https://www.github.com/cggonzal/monolith"><img src="/static/img/logo.png"/></a>
   </nav>
 
-  <section class="content">
-    <h2 id="configure-db">1. Configure your database</h2>
-    <p>
-      The app uses SQLite by default and will create <code>app.db</code> on first run.
-      To use Postgres instead, edit <code>db/db.go</code> to switch drivers and set
-      the <code>DATABASE_URL</code> environment variable.
-    </p>
+  <!-- framework & runtime info -->
+  <ul>
+    <li><strong>Monolith version:</strong> 0.1.0</li>
+    <li><strong>Go version:</strong> go1.22+</li>
+  </ul>
 
-    <h2 id="define-models">2. Define models</h2>
-    <p>
-      Define your structs in <code>models/</code>. All registered models are
-      automatically migrated when the server starts.
-    </p>
-
-    <h2 id="routes">3. Set up routes</h2>
-    <p>
-      Edit <code>routes/routes.go</code> to declare your URL mappings. A typical
-      handler looks like:
-    </p>
-    <pre><code>func Home(w http.ResponseWriter, r *http.Request) {
-    data := map[string]any{"Message": "Hello, Go world!"}
-    templates.ExecuteTemplate(w, "home.html.tmpl", data)
-}</code></pre>
-
-    <h2 id="generate-templates">4. Create templates</h2>
-    <p>
-      Place HTML templates in <code>views/</code>. Generators will create starter
-      templates when scaffolding controllers or resources.
-    </p>
-
-    <h2 id="start-server">5. Fire it up</h2>
-    <p>
-      Finally, start the development server:
-    </p>
-    <pre><code>make       # with hot reload
-make run  # without air</code></pre>
-    <p>
-      Then visit <code>http://localhost:9000</code> in your browser.
-    </p>
-
-    <h2 id="generators">6. Use the generators</h2>
-    <p>
-      Run <code>make generator &lt;type&gt; [...options]</code> (or
-      <code>go run main.go generator &lt;type&gt; [...options]</code>) to scaffold
-      pieces of your app. Available types are
-      <code>model</code>, <code>controller</code>, <code>resource</code>,
-      <code>authentication</code>, <code>job</code> and <code>admin</code>.
-    </p>
-    <pre><code>make generator resource widget name:string price:int</code></pre>
-  </section>
-</main>
 {{end}}
 
 
