@@ -24,10 +24,19 @@ doc:
 	echo "Documentation server running: http://localhost:6060/"
 	godoc -http=":6060"
 
-# Deploy using the deploy script
-DEPLOY_ARGS := $(filter-out deploy,$(MAKECMDGOALS))
+
+# set up server using the server_setup script, should only be run once when setting up a new server but never again
+SERVER_SETUP_ARGS := $(filter-out server-setup,$(MAKECMDGOALS))
+server-setup:
+	@if [ -z "$(SERVER_SETUP_ARGS)" ]; then \
+	echo "Usage: make server-setup <user@host> <domain>"; \
+	exit 1; \
+	fi; \
+	chmod +x ./server_management/server_setup.sh && ./server_management/server_setup.sh $(DEPLOY_ARGS)
+
 
 # Deploy using the deploy script
+DEPLOY_ARGS := $(filter-out deploy,$(MAKECMDGOALS))
 deploy:
 	@if [ -z "$(DEPLOY_ARGS)" ]; then \
 	echo "Usage: make deploy <user@host>"; \
