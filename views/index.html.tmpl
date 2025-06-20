@@ -1,13 +1,69 @@
 {{template "base.html.tmpl" .}}
 
-{{define "title"}}Home Page{{end}}
+{{define "title"}}Welcome to Monolith{{end}}
+
+{{define "stylesheet"}}
+<link rel="stylesheet" href="https://cdn.simplecss.org/simple.css">
+<style>
+  body {
+    background-color: #00ADD8;
+    color: #ffffff;
+    text-align: center;
+  }
+  nav {
+    font-size: 0;
+    height: 20vw;
+    max-height: 280px;
+    max-width: 280px;
+    min-height: 86px;
+    min-width: 86px;
+    width: 20vw;
+    margin: 2rem auto;
+    line-height: 0;
+  }
+  nav a {
+    background: #ffffff;
+    border-radius: 100%;
+    display: flex;
+    transition: background 0.25s cubic-bezier(0.33, 1, 0.68, 1);
+    box-shadow: 0 20px 13px rgb(0 0 0 / 0.03), 0 8px 5px rgb(0 0 0 / 0.08);
+  }
+  nav a:hover {
+    background: #003366;
+  }
+  nav a img {
+    width: 100%;
+    height: auto;
+    cursor: pointer;
+  }
+  main {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+</style>
+{{end}}
 
 {{define "body"}}
-<p>Welcome to the Home Page</p>
+<nav>
+  <a href="https://go.dev" target="_blank">
+    <img alt="Go Gopher" src="https://raw.githubusercontent.com/golang-samples/gopher-vector/master/gopher.svg" />
+  </a>
+</nav>
+<main>
+  <h1>Welcome aboard</h1>
+  <p>Your Go application is running!</p>
+  <p>To get started:</p>
+  <ul>
+    <li>Edit <code>routes/routes.go</code> to define routes.</li>
+    <li>Create handlers in <code>controllers/</code>.</li>
+    <li>Update templates in <code>views/</code> to change this page.</li>
+  </ul>
+  <p>Happy coding!</p>
+</main>
 {{end}}
 
 {{define "footer"}}
 <footer>
-    <p>Index Footer</p>
+  <p>&copy; 2025 Monolith</p>
 </footer>
 {{end}}
