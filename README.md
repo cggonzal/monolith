@@ -591,14 +591,14 @@ make build
 ## Server Setup
 Assuming you have a newly created ubuntu server that you have ssh access into, just run:
 ```bash
-./server_management/server_setup.sh root@{{ip address of server}} {{domain name}}
+make server-setup root@{{ip address of server}} {{domain name}}
 ```
 
-where `ip address of server` is the IP address of your server and `domain name` is the domain that will be served by your server.
+where `ip address of server` is the host name IP address of your server and `domain name` is the domain that will be served by your server.
 
 For example,
 ```bash
-./server_management/server_setup.sh root@203.0.113.5 example.com
+make server-setup root@203.0.113.5 example.com
 ```
 
 ---
@@ -608,7 +608,14 @@ For example,
 
 Run the following from the root of the repo:
 
-`make deploy`
+`make deploy {{ip address of server}}`
+
+where `ip address of server` is the hostname and IP address of your server.
+
+For example,
+```bash
+make deploy root@203.0.113.5
+```
 
 This will do a zero downtime deploy by calling,
 ```bash
