@@ -591,9 +591,13 @@ func updateRoutesFile(name string, actions []string) error {
 	}
 	lines := strings.Split(string(data), "\n")
 	lines = ensureControllersImport(lines)
-	insertIdx := -1
+	startIdx, insertIdx := -1, -1
 	for i, line := range lines {
-		if strings.Contains(line, "pprof routes") {
+		if strings.HasPrefix(strings.TrimSpace(line), "func registerRoutes(") {
+			startIdx = i
+			continue
+		}
+		if startIdx != -1 && strings.TrimSpace(line) == "}" && leadingWhitespace(line) == leadingWhitespace(lines[startIdx]) {
 			insertIdx = i
 			break
 		}
@@ -602,7 +606,7 @@ func updateRoutesFile(name string, actions []string) error {
 		return fmt.Errorf("could not find insertion point in routes.go")
 	}
 
-	indent := leadingWhitespace(lines[insertIdx])
+	indent := leadingWhitespace(lines[startIdx+1])
 	ctrlVar := toCamelCase(name) + "Ctrl"
 	ctrlName := toCamelCase(name) + "Controller"
 	base := "/" + toSnakeCase(name)
@@ -1540,6 +1544,59 @@ func ensureMiddlewareImport(lines []string) []string {
 	return lines
 }
 
+// ensurePprofImport makes sure the routes file imports net/http/pprof.
+func ensurePprofImport(lines []string) []string {
+	for _, l := range lines {
+		if strings.Contains(l, "\"net/http/pprof\"") {
+			return lines
+		}
+	}
+
+	start, end := -1, -1
+	for i, l := range lines {
+		t := strings.TrimSpace(l)
+		if t == "import (" {
+			start = i
+			continue
+		}
+		if start != -1 && t == ")" {
+			end = i
+			break
+		}
+	}
+
+	if start != -1 && end != -1 {
+		indent := leadingWhitespace(lines[start+1])
+		newLine := indent + "\"net/http/pprof\""
+		lines = append(lines[:end], append([]string{newLine}, lines[end:]...)...)
+		return lines
+	}
+
+	for i, l := range lines {
+		t := strings.TrimSpace(l)
+		if strings.HasPrefix(t, "import ") {
+			pkg := strings.Trim(strings.TrimPrefix(t, "import"), " \t")
+			block := []string{
+				"import (",
+				"    " + pkg,
+				"    \"net/http/pprof\"",
+				")",
+			}
+			lines = append(lines[:i], append(block, lines[i+1:]...)...)
+			return lines
+		}
+	}
+
+	for i, l := range lines {
+		if strings.HasPrefix(l, "package ") {
+			block := []string{"import (", "    \"net/http/pprof\"", ")", ""}
+			lines = append(lines[:i+1], append(block, lines[i+1:]...)...)
+			break
+		}
+	}
+	return lines
+}
+
 func createSessionEmailHelper() error {
 	path := filepath.Join("session", "email.go")
 	if _, err := os.Stat(path); err == nil {
@@ -1754,9 +1811,15 @@ func updateRoutesForAdmin() error {
 	lines := strings.Split(string(data), "\n")
 	lines = ensureControllersImport(lines)
 	lines = ensureMiddlewareImport(lines)
-	insertIdx := -1
+	lines = ensurePprofImport(lines)
+
+	startIdx, insertIdx := -1, -1
 	for i, line := range lines {
-		if strings.Contains(line, "pprof routes") {
+		if strings.HasPrefix(strings.TrimSpace(line), "func registerRoutes(") {
+			startIdx = i
+			continue
+		}
+		if startIdx != -1 && strings.TrimSpace(line) == "}" && leadingWhitespace(line) == leadingWhitespace(lines[startIdx]) {
 			insertIdx = i
 			break
 		}
@@ -1764,10 +1827,16 @@ func updateRoutesForAdmin() error {
 	if insertIdx == -1 {
 		return fmt.Errorf("could not find insertion point in routes.go")
 	}
-	indent := leadingWhitespace(lines[insertIdx])
+	indent := leadingWhitespace(lines[startIdx+1])
 	newLines := []string{
 		fmt.Sprintf("%smux.HandleFunc(\"GET /admin\", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))", indent),
 		fmt.Sprintf("%smux.HandleFunc(\"POST /admin\", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))", indent),
+		fmt.Sprintf("%s// pprof routes", indent),
+		fmt.Sprintf("%smux.HandleFunc(\"GET /debug/pprof/\", middleware.RequireAdmin(pprof.Index))", indent),
+		fmt.Sprintf("%smux.HandleFunc(\"GET /debug/pprof/cmdline\", middleware.RequireAdmin(pprof.Cmdline))", indent),
+		fmt.Sprintf("%smux.HandleFunc(\"GET /debug/pprof/profile\", middleware.RequireAdmin(pprof.Profile))", indent),
+		fmt.Sprintf("%smux.HandleFunc(\"GET /debug/pprof/symbol\", middleware.RequireAdmin(pprof.Symbol))", indent),
+		fmt.Sprintf("%smux.HandleFunc(\"GET /debug/pprof/trace\", middleware.RequireAdmin(pprof.Trace))", indent),
 	}
 
 	for _, nl := range newLines {
