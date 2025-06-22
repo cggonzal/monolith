@@ -661,7 +661,6 @@ func updateRoutesFile(name string, actions []string) error {
 // createTemplateFiles generates HTML views for GET actions.
 func createTemplateFiles(name string, actions []string) error {
 	snake := toSnakeCase(name)
-	titleName := toCamelCase(name)
 	for _, act := range actions {
 		switch act {
 		case "index", "show", "new", "edit":
@@ -671,9 +670,33 @@ func createTemplateFiles(name string, actions []string) error {
 				continue
 			}
 			var buf bytes.Buffer
-			buf.WriteString("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n")
-			buf.WriteString(fmt.Sprintf("    <title>%s %s</title>\n</head>\n<body>\n", titleName, strings.Title(act)))
-			buf.WriteString(fmt.Sprintf("    <h1>%s %s</h1>\n</body>\n</html>\n", titleName, strings.Title(act)))
+			buf.WriteString(`{{template "base.html.tmpl" .}}
+
+{{define "title"}}<title></title>{{end}}
+
+{{block "meta" .}}
+{{end}}
+
+ {{block "header" .}}
+ {{end}}
+
+{{block "scripts" .}}
+{{end}}
+
+{{define "stylesheet"}}
+<style>
+</style>
+{{end}}
+
+{{define "body"}}
+{{end}}
+
+
+{{define "footer"}}
+<footer>
+</footer>
+{{end}}
+`)
 			if err := os.WriteFile(file, buf.Bytes(), 0644); err != nil {
 				return err
 			}
@@ -1095,7 +1118,40 @@ func createLoginTemplate() error {
 		return nil
 	}
 	var buf bytes.Buffer
-	buf.WriteString("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Login</title>\n</head>\n<body>\n    <h1>Login</h1>\n    <form method=\"POST\" action=\"/login\">\n        <label>Email: <input type=\"email\" name=\"email\"></label><br>\n        <label>Password: <input type=\"password\" name=\"password\"></label><br>\n        <button type=\"submit\">Login</button>\n    </form>\n    <a href=\"/signup\">Sign up</a>\n</body>\n</html>\n")
+	buf.WriteString(`{{template "base.html.tmpl" .}}
+
+{{define "title"}}<title>Login</title>{{end}}
+
+{{block "meta" .}}
+{{end}}
+
+ {{block "header" .}}
+ {{end}}
+
+{{block "scripts" .}}
+{{end}}
+
+{{define "stylesheet"}}
+<style>
+</style>
+{{end}}
+
+{{define "body"}}
+    <h1>Login</h1>
+    <form method="POST" action="/login">
+        <label>Email: <input type="email" name="email"></label><br>
+        <label>Password: <input type="password" name="password"></label><br>
+        <button type="submit">Login</button>
+    </form>
+    <a href="/signup">Sign up</a>
+{{end}}
+
+
+{{define "footer"}}
+<footer>
+</footer>
+{{end}}
+`)
 	if err := os.WriteFile(path, buf.Bytes(), 0644); err != nil {
 		return err
 	}
@@ -1110,7 +1166,40 @@ func createSignupTemplate() error {
 		return nil
 	}
 	var buf bytes.Buffer
-	buf.WriteString("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Sign Up</title>\n</head>\n<body>\n    <h1>Sign Up</h1>\n    <form method=\"POST\" action=\"/signup\">\n        <label>Email: <input type=\"email\" name=\"email\"></label><br>\n        <label>Password: <input type=\"password\" name=\"password\"></label><br>\n        <button type=\"submit\">Create Account</button>\n    </form>\n    <a href=\"/login\">Login</a>\n</body>\n</html>\n")
+	buf.WriteString(`{{template "base.html.tmpl" .}}
+
+{{define "title"}}<title>Sign Up</title>{{end}}
+
+{{block "meta" .}}
+{{end}}
+
+ {{block "header" .}}
+ {{end}}
+
+{{block "scripts" .}}
+{{end}}
+
+{{define "stylesheet"}}
+<style>
+</style>
+{{end}}
+
+{{define "body"}}
+    <h1>Sign Up</h1>
+    <form method="POST" action="/signup">
+        <label>Email: <input type="email" name="email"></label><br>
+        <label>Password: <input type="password" name="password"></label><br>
+        <button type="submit">Create Account</button>
+    </form>
+    <a href="/login">Login</a>
+{{end}}
+
+
+{{define "footer"}}
+<footer>
+</footer>
+{{end}}
+`)
 	if err := os.WriteFile(path, buf.Bytes(), 0644); err != nil {
 		return err
 	}
@@ -1536,14 +1625,26 @@ func createAdminTemplate() error {
 		return nil
 	}
 	var buf bytes.Buffer
-	buf.WriteString(`<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.css">
-</head>
-<body>
+	buf.WriteString(`{{template "base.html.tmpl" .}}
+
+{{define "title"}}<title>Admin Dashboard</title>{{end}}
+
+{{block "meta" .}}
+{{end}}
+
+ {{block "header" .}}
+ {{end}}
+
+{{block "scripts" .}}
+{{end}}
+
+{{define "stylesheet"}}
+<style>
+    @import url("https://cdn.simplecss.org/simple.css");
+</style>
+{{end}}
+
+{{define "body"}}
     <h1>Admin Dashboard</h1>
     <div id="chart" style="height:300px;"></div>
     <h2>Download Profile</h2>
@@ -1561,8 +1662,13 @@ func createAdminTemplate() error {
         </label>
         <button type="submit">Download</button>
     </form>
-</body>
-</html>
+{{end}}
+
+
+{{define "footer"}}
+<footer>
+</footer>
+{{end}}
 `)
 	if err := os.WriteFile(path, buf.Bytes(), 0644); err != nil {
 		return err
