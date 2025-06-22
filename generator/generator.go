@@ -322,7 +322,8 @@ func createModelFile(modelName string, fields []string) error {
 	var buf bytes.Buffer
 	buf.WriteString("package models\n\n")
 	buf.WriteString("import \"gorm.io/gorm\"\n\n")
-	buf.WriteString(fmt.Sprintf("type %s struct {\n", toCamelCase(modelName)))
+	camelName := toCamelCase(modelName)
+	buf.WriteString(fmt.Sprintf("type %s struct {\n", camelName))
 	buf.WriteString("\tgorm.Model\n")
 
 	for _, f := range fields {
@@ -334,6 +335,19 @@ func createModelFile(modelName string, fields []string) error {
 		}
 		buf.WriteString(fmt.Sprintf("\t%s %s\n", toCamelCase(name), typ))
 	}
+	buf.WriteString("}\n\n")
+
+	// add blank hook implementations so users can customize validations
+	buf.WriteString(fmt.Sprintf("// BeforeSave is called by GORM before persisting a %s.\n", camelName))
+	buf.WriteString("// Use this hook to validate or modify the model before saving.\n")
+	buf.WriteString(fmt.Sprintf("func (m *%s) BeforeSave(tx *gorm.DB) error {\n", camelName))
+	buf.WriteString("\treturn nil\n")
+	buf.WriteString("}\n\n")
+
+	buf.WriteString(fmt.Sprintf("// AfterSave is triggered by GORM after a %s has been saved.\n", camelName))
+	buf.WriteString("// This can be used for post-save actions or additional validation.\n")
+	buf.WriteString(fmt.Sprintf("func (m *%s) AfterSave(tx *gorm.DB) error {\n", camelName))
+	buf.WriteString("\treturn nil\n")
 	buf.WriteString("}\n")
 
 	formatted, err := format.Source(buf.Bytes())

@@ -218,6 +218,10 @@ gorm.Open(postgres.Open(os.Getenv("DATABASE_URL")), &gorm.Config{})
 
 All models embed GORM timestamps, so you automatically get `CreatedAt` / `UpdatedAt`.
 
+Generated models also include blank `BeforeSave` and `AfterSave` hooks. GORM
+automatically invokes these methods before and after a record is persisted, so
+you can implement validation or post‑processing logic as needed.
+
 Example: Creating a user
 
 ```go
@@ -506,7 +510,9 @@ make generator model Widget name:string price:int
 ```
 
 Creates `models/widget.go` with a `Widget` struct and updates `db/db.go` so the
-model is automatically migrated.
+model is automatically migrated. The file also defines empty `BeforeSave` and
+`AfterSave` hooks which you can use to validate your model before and after it
+is saved.
 
 ### Controller
 
