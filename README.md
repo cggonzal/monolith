@@ -206,7 +206,7 @@ Switching to Postgres is one line:
 gorm.Open(postgres.Open(os.Getenv("DATABASE_URL")), &gorm.Config{})
 ```
 
-`db.Connect()` runs **auto‑migration** for every registered model so your schema stays in sync.
+`db.InitDB()` runs **auto‑migration** for every registered model so your schema stays in sync.
 
 ### Domain Models
 

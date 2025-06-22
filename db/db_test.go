@@ -7,7 +7,7 @@ import (
 
 func TestConnectAndGetDB(t *testing.T) {
 	os.Remove("app.db")
-	Connect()
+	InitDB()
 	if GetDB() == nil {
 		t.Fatal("expected database handle, got nil")
 	}

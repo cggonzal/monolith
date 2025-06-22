@@ -8,6 +8,7 @@ import (
 
 	"monolith/db"
 	"monolith/generator"
+	"monolith/jobs"
 	"monolith/server_management"
 	"monolith/views"
 	"monolith/ws"
@@ -36,8 +37,11 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	// Initialize database
-	db.Connect()
+	// initialize database
+	db.InitDB()
+
+	// initialize job queue, must come after initializing the database
+	jobs.InitJobQueue()
 
 	// initialize templates
 	views.InitTemplates(templateFiles)

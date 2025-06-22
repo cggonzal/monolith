@@ -20,8 +20,8 @@ func GetDB() *gorm.DB {
 	return dbHandle
 }
 
-// Connect initializes the database connection
-func Connect() {
+// InitDB initializes the database connection
+func InitDB() {
 	var err error
 	dbHandle, err = gorm.Open(sqlite.Open("app.db"), &gorm.Config{}) // Change to postgres.Open(...) for PostgreSQL
 	if err != nil {

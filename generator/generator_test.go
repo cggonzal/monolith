@@ -57,7 +57,7 @@ func TestRunModel(t *testing.T) {
 
 	writeFile(t, "db/db.go", `package db
 import "monolith/models"
-func Connect() {
+func InitDB() {
     dbHandle.AutoMigrate(
         &models.User{},
     )
@@ -149,7 +149,7 @@ func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
 func setupBaseFiles(t *testing.T, dir string) {
 	writeFile(t, filepath.Join(dir, "db/db.go"), `package db
 import "monolith/models"
-func Connect() {
+func InitDB() {
     dbHandle.AutoMigrate(
         &models.User{},
     )

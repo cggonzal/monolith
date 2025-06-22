@@ -27,6 +27,7 @@ func setup(t *testing.T) *gorm.DB {
 	if err := db.AutoMigrate(&models.Job{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
+	jobs.InitJobQueue()
 	setQueueDB(db)
 	return db
 }

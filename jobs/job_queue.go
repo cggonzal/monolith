@@ -3,6 +3,7 @@ package jobs
 import (
 	"errors"
 	"log"
+	"log/slog"
 	"monolith/models"
 	"time"
 
@@ -27,7 +28,7 @@ type JobQueue struct {
 // to access the job queue, use GetJobQueue(). DO NOT use this variable directly except for inside the init()
 var jobQueue *JobQueue
 
-func init() {
+func InitJobQueue() {
 	jobQueue = newJobQueue(db.GetDB(), config.JOB_QUEUE_NUM_WORKERS)
 
 	// register all jobs
@@ -37,6 +38,8 @@ func init() {
 	// start the job queue only if a database connection is available
 	if jobQueue.db != nil {
 		jobQueue.start()
+	} else {
+		slog.Error("Job queue not started: no database connection available")
 	}
 }
 
