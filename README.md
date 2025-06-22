@@ -131,7 +131,7 @@ jobs.GetJobQueue().AddJob(models.JobTypePrint, payload)
 # in one terminal
 go run .            # start app
 
-# in another
+# in another (requires an admin account and the admin generator)
 curl http://localhost:9000/debug/pprof/heap > heap.out
 go tool pprof heap.out
 ```
@@ -415,7 +415,7 @@ Because the listener is handed over, the old process finishes in‑flight reques
 
 ### Debugging & Profiling
 
-The `/debug/pprof/*` routes are already mounted:
+After running `make generator admin` and creating an admin user, the `/debug/pprof/*` routes become available:
 
 ```
 GET /debug/pprof/

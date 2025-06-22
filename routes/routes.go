@@ -6,7 +6,6 @@ import (
 	"monolith/middleware"
 	"monolith/ws"
 	"net/http"
-	"net/http/pprof"
 )
 
 func InitServerHandler(staticFiles embed.FS) http.Handler {
@@ -36,9 +35,4 @@ func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
 	})
 
 	// pprof routes
-	mux.HandleFunc("GET /debug/pprof/", pprof.Index)
-	mux.HandleFunc("GET /debug/pprof/cmdline", pprof.Cmdline)
-	mux.HandleFunc("GET /debug/pprof/profile", pprof.Profile)
-	mux.HandleFunc("GET /debug/pprof/symbol", pprof.Symbol)
-	mux.HandleFunc("GET /debug/pprof/trace", pprof.Trace)
 }

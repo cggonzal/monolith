@@ -89,14 +89,12 @@ func TestRunController(t *testing.T) {
 import (
     "embed"
     "net/http"
-    "net/http/pprof"
     "monolith/controllers"
 )
 func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
     staticFileServer := http.FileServer(http.FS(staticFiles))
     _ = staticFileServer
     // pprof routes
-    mux.HandleFunc("GET /debug/pprof/", pprof.Index)
 }`)
 	os.MkdirAll("controllers", 0755)
 	os.MkdirAll("views", 0755)
@@ -129,13 +127,11 @@ func TestRunControllerAddsImport(t *testing.T) {
 import (
     "embed"
     "net/http"
-    "net/http/pprof"
 )
 func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
     staticFileServer := http.FileServer(http.FS(staticFiles))
     _ = staticFileServer
     // pprof routes
-    mux.HandleFunc("GET /debug/pprof/", pprof.Index)
 }`)
 	os.MkdirAll("controllers", 0755)
 	os.MkdirAll("views", 0755)
@@ -164,14 +160,12 @@ func Connect() {
 import (
     "embed"
     "net/http"
-    "net/http/pprof"
     "monolith/controllers"
 )
 func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
     staticFileServer := http.FileServer(http.FS(staticFiles))
     _ = staticFileServer
     // pprof routes
-    mux.HandleFunc("GET /debug/pprof/", pprof.Index)
 }`)
 	os.MkdirAll(filepath.Join(dir, "jobs"), 0755)
 	os.MkdirAll(filepath.Join(dir, "models"), 0755)
@@ -299,5 +293,8 @@ func TestRunAdmin(t *testing.T) {
 	data, _ := os.ReadFile("routes/routes.go")
 	if !strings.Contains(string(data), "GET /admin") || !strings.Contains(string(data), "POST /admin") {
 		t.Fatalf("route not added: %s", string(data))
+	}
+	if !strings.Contains(string(data), "middleware.RequireAdmin(pprof.Index)") {
+		t.Fatalf("pprof routes not added: %s", string(data))
 	}
 }
