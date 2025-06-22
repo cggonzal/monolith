@@ -325,6 +325,7 @@ func createModelFile(modelName string, fields []string) error {
 	camelName := toCamelCase(modelName)
 	buf.WriteString(fmt.Sprintf("type %s struct {\n", camelName))
 	buf.WriteString("\tgorm.Model\n")
+	buf.WriteString("\tIsActive bool `gorm:\"default:true\"`\n")
 
 	for _, f := range fields {
 		parts := strings.SplitN(f, ":", 2)
@@ -348,6 +349,35 @@ func createModelFile(modelName string, fields []string) error {
 	buf.WriteString("// This can be used for post-save actions or additional validation.\n")
 	buf.WriteString(fmt.Sprintf("func (m *%s) AfterSave(tx *gorm.DB) error {\n", camelName))
 	buf.WriteString("\treturn nil\n")
+	buf.WriteString("}\n\n")
+
+	pluralName := toCamelCase(inflection.Plural(modelName))
+	buf.WriteString(fmt.Sprintf("func Create%s(db *gorm.DB, m *%s) error {\n", camelName, camelName))
+	buf.WriteString("\treturn db.Create(m).Error\n")
+	buf.WriteString("}\n\n")
+
+	buf.WriteString(fmt.Sprintf("func Get%sByID(db *gorm.DB, id uint) (*%s, error) {\n", camelName, camelName))
+	buf.WriteString(fmt.Sprintf("\tvar m %s\n", camelName))
+	buf.WriteString("\tif err := db.First(&m, id).Error; err != nil {\n")
+	buf.WriteString("\t\treturn nil, err\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("\treturn &m, nil\n")
+	buf.WriteString("}\n\n")
+
+	buf.WriteString(fmt.Sprintf("func GetAll%s(db *gorm.DB) ([]%s, error) {\n", pluralName, camelName))
+	buf.WriteString(fmt.Sprintf("\tvar ms []%s\n", camelName))
+	buf.WriteString("\tif err := db.Find(&ms).Error; err != nil {\n")
+	buf.WriteString("\t\treturn nil, err\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("\treturn ms, nil\n")
+	buf.WriteString("}\n\n")
+
+	buf.WriteString(fmt.Sprintf("func Update%s(db *gorm.DB, m *%s) error {\n", camelName, camelName))
+	buf.WriteString("\treturn db.Save(m).Error\n")
+	buf.WriteString("}\n\n")
+
+	buf.WriteString(fmt.Sprintf("func Delete%s(db *gorm.DB, id uint) error {\n", camelName))
+	buf.WriteString(fmt.Sprintf("\treturn db.Model(&%s{}).Where(\"id = ?\", id).Update(\"is_active\", false).Error\n", camelName))
 	buf.WriteString("}\n")
 
 	formatted, err := format.Source(buf.Bytes())
@@ -417,16 +447,22 @@ func createControllerFile(name string, actions []string) error {
 	varName := toCamelCase(name) + "Ctrl"
 	modelName := toCamelCase(inflection.Singular(toSnakeCase(name)))
 	modelPath := filepath.Join("models", toSnakeCase(modelName)+".go")
+	pluralModelName := toCamelCase(inflection.Plural(toSnakeCase(modelName)))
 	hasModel := false
 	if _, err := os.Stat(modelPath); err == nil {
 		hasModel = true
 	}
 	needDB := false
 	needTemplates := false
+	needStrconv := false
 	for _, a := range actions {
 		switch a {
 		case "index", "show", "create", "edit", "update", "destroy":
 			needDB = true
+		}
+		switch a {
+		case "show", "edit", "update", "destroy":
+			needStrconv = true
 		}
 		switch a {
 		case "index", "show", "new", "edit":
@@ -442,6 +478,9 @@ func createControllerFile(name string, actions []string) error {
 	buf.WriteString("package controllers\n\n")
 
 	imports := []string{"\"net/http\""}
+	if needStrconv {
+		imports = append(imports, "\"strconv\"")
+	}
 	if needTemplates {
 		imports = append(imports, "\"monolith/views\"")
 	}
@@ -466,8 +505,7 @@ func createControllerFile(name string, actions []string) error {
 		case "index":
 			buf.WriteString(fmt.Sprintf("func (c *%s) Index(w http.ResponseWriter, r *http.Request) {\n", ctrlName))
 			if hasModel {
-				buf.WriteString(fmt.Sprintf("\tvar records []models.%s\n", modelName))
-				buf.WriteString("\tdb.GetDB().Find(&records)\n")
+				buf.WriteString(fmt.Sprintf("\trecords, _ := models.GetAll%s(db.GetDB())\n", pluralModelName))
 				buf.WriteString(fmt.Sprintf("\tviews.Render(w, \"%s_index.html.tmpl\", records)\n", toSnakeCase(name)))
 			} else {
 				buf.WriteString(fmt.Sprintf("\tviews.Render(w, \"%s_index.html.tmpl\", nil)\n", toSnakeCase(name)))
@@ -476,9 +514,9 @@ func createControllerFile(name string, actions []string) error {
 		case "show":
 			buf.WriteString(fmt.Sprintf("func (c *%s) Show(w http.ResponseWriter, r *http.Request) {\n", ctrlName))
 			if hasModel {
-				buf.WriteString("\tid := r.PathValue(\"id\")\n")
-				buf.WriteString(fmt.Sprintf("\tvar record models.%s\n", modelName))
-				buf.WriteString("\tdb.GetDB().First(&record, id)\n")
+				buf.WriteString("\tidStr := r.PathValue(\"id\")\n")
+				buf.WriteString("\tid, _ := strconv.Atoi(idStr)\n")
+				buf.WriteString(fmt.Sprintf("\trecord, _ := models.Get%sByID(db.GetDB(), uint(id))\n", modelName))
 				buf.WriteString(fmt.Sprintf("\tviews.Render(w, \"%s_show.html.tmpl\", record)\n", toSnakeCase(name)))
 			} else {
 				buf.WriteString(fmt.Sprintf("\tviews.Render(w, \"%s_show.html.tmpl\", nil)\n", toSnakeCase(name)))
@@ -493,16 +531,16 @@ func createControllerFile(name string, actions []string) error {
 			if hasModel {
 				buf.WriteString(fmt.Sprintf("\tvar record models.%s\n", modelName))
 				buf.WriteString("\t// TODO: parse form values into &record\n")
-				buf.WriteString("\tdb.GetDB().Create(&record)\n")
+				buf.WriteString(fmt.Sprintf("\t_ = models.Create%s(db.GetDB(), &record)\n", modelName))
 			}
 			buf.WriteString(fmt.Sprintf("\thttp.Redirect(w, r, \"/%s\", http.StatusSeeOther)\n", toSnakeCase(name)))
 			buf.WriteString("}\n\n")
 		case "edit":
 			buf.WriteString(fmt.Sprintf("func (c *%s) Edit(w http.ResponseWriter, r *http.Request) {\n", ctrlName))
 			if hasModel {
-				buf.WriteString("\tid := r.PathValue(\"id\")\n")
-				buf.WriteString(fmt.Sprintf("\tvar record models.%s\n", modelName))
-				buf.WriteString("\tdb.GetDB().First(&record, id)\n")
+				buf.WriteString("\tidStr := r.PathValue(\"id\")\n")
+				buf.WriteString("\tid, _ := strconv.Atoi(idStr)\n")
+				buf.WriteString(fmt.Sprintf("\trecord, _ := models.Get%sByID(db.GetDB(), uint(id))\n", modelName))
 				buf.WriteString(fmt.Sprintf("\tviews.Render(w, \"%s_edit.html.tmpl\", record)\n", toSnakeCase(name)))
 			} else {
 				buf.WriteString(fmt.Sprintf("\tviews.Render(w, \"%s_edit.html.tmpl\", nil)\n", toSnakeCase(name)))
@@ -511,12 +549,12 @@ func createControllerFile(name string, actions []string) error {
 		case "update":
 			buf.WriteString(fmt.Sprintf("func (c *%s) Update(w http.ResponseWriter, r *http.Request) {\n", ctrlName))
 			if hasModel {
-				buf.WriteString("\tid := r.PathValue(\"id\")\n")
-				buf.WriteString(fmt.Sprintf("\tvar record models.%s\n", modelName))
-				buf.WriteString("\tdb.GetDB().First(&record, id)\n")
+				buf.WriteString("\tidStr := r.PathValue(\"id\")\n")
+				buf.WriteString("\tid, _ := strconv.Atoi(idStr)\n")
+				buf.WriteString(fmt.Sprintf("\trecord, _ := models.Get%sByID(db.GetDB(), uint(id))\n", modelName))
 				buf.WriteString("\t// TODO: update record fields\n")
-				buf.WriteString("\tdb.GetDB().Save(&record)\n")
-				buf.WriteString(fmt.Sprintf("\thttp.Redirect(w, r, \"/%s/\"+id, http.StatusSeeOther)\n", toSnakeCase(name)))
+				buf.WriteString(fmt.Sprintf("\t_ = models.Update%s(db.GetDB(), record)\n", modelName))
+				buf.WriteString(fmt.Sprintf("\thttp.Redirect(w, r, \"/%s/\"+idStr, http.StatusSeeOther)\n", toSnakeCase(name)))
 			} else {
 				buf.WriteString(fmt.Sprintf("\thttp.Redirect(w, r, \"/%s\", http.StatusSeeOther)\n", toSnakeCase(name)))
 			}
@@ -524,8 +562,9 @@ func createControllerFile(name string, actions []string) error {
 		case "destroy":
 			buf.WriteString(fmt.Sprintf("func (c *%s) Destroy(w http.ResponseWriter, r *http.Request) {\n", ctrlName))
 			if hasModel {
-				buf.WriteString("\tid := r.PathValue(\"id\")\n")
-				buf.WriteString(fmt.Sprintf("\tdb.GetDB().Delete(&models.%s{}, id)\n", modelName))
+				buf.WriteString("\tidStr := r.PathValue(\"id\")\n")
+				buf.WriteString("\tid, _ := strconv.Atoi(idStr)\n")
+				buf.WriteString(fmt.Sprintf("\t_ = models.Delete%s(db.GetDB(), uint(id))\n", modelName))
 			}
 			buf.WriteString(fmt.Sprintf("\thttp.Redirect(w, r, \"/%s\", http.StatusSeeOther)\n", toSnakeCase(name)))
 			buf.WriteString("}\n\n")
