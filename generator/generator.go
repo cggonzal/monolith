@@ -591,9 +591,13 @@ func updateRoutesFile(name string, actions []string) error {
 	}
 	lines := strings.Split(string(data), "\n")
 	lines = ensureControllersImport(lines)
-	insertIdx := -1
+	startIdx, insertIdx := -1, -1
 	for i, line := range lines {
-		if strings.Contains(line, "pprof routes") {
+		if strings.HasPrefix(strings.TrimSpace(line), "func registerRoutes(") {
+			startIdx = i
+			continue
+		}
+		if startIdx != -1 && strings.TrimSpace(line) == "}" && leadingWhitespace(line) == leadingWhitespace(lines[startIdx]) {
 			insertIdx = i
 			break
 		}
@@ -602,7 +606,7 @@ func updateRoutesFile(name string, actions []string) error {
 		return fmt.Errorf("could not find insertion point in routes.go")
 	}
 
-	indent := leadingWhitespace(lines[insertIdx])
+	indent := leadingWhitespace(lines[startIdx+1])
 	ctrlVar := toCamelCase(name) + "Ctrl"
 	ctrlName := toCamelCase(name) + "Controller"
 	base := "/" + toSnakeCase(name)
@@ -1808,9 +1812,14 @@ func updateRoutesForAdmin() error {
 	lines = ensureControllersImport(lines)
 	lines = ensureMiddlewareImport(lines)
 	lines = ensurePprofImport(lines)
-	insertIdx := -1
+
+	startIdx, insertIdx := -1, -1
 	for i, line := range lines {
-		if strings.Contains(line, "pprof routes") {
+		if strings.HasPrefix(strings.TrimSpace(line), "func registerRoutes(") {
+			startIdx = i
+			continue
+		}
+		if startIdx != -1 && strings.TrimSpace(line) == "}" && leadingWhitespace(line) == leadingWhitespace(lines[startIdx]) {
 			insertIdx = i
 			break
 		}
@@ -1818,10 +1827,11 @@ func updateRoutesForAdmin() error {
 	if insertIdx == -1 {
 		return fmt.Errorf("could not find insertion point in routes.go")
 	}
-	indent := leadingWhitespace(lines[insertIdx])
+	indent := leadingWhitespace(lines[startIdx+1])
 	newLines := []string{
 		fmt.Sprintf("%smux.HandleFunc(\"GET /admin\", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))", indent),
 		fmt.Sprintf("%smux.HandleFunc(\"POST /admin\", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))", indent),
+		fmt.Sprintf("%s// pprof routes", indent),
 		fmt.Sprintf("%smux.HandleFunc(\"GET /debug/pprof/\", middleware.RequireAdmin(pprof.Index))", indent),
 		fmt.Sprintf("%smux.HandleFunc(\"GET /debug/pprof/cmdline\", middleware.RequireAdmin(pprof.Cmdline))", indent),
 		fmt.Sprintf("%smux.HandleFunc(\"GET /debug/pprof/profile\", middleware.RequireAdmin(pprof.Profile))", indent),

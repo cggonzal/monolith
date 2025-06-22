@@ -94,7 +94,6 @@ import (
 func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
     staticFileServer := http.FileServer(http.FS(staticFiles))
     _ = staticFileServer
-    // pprof routes
 }`)
 	os.MkdirAll("controllers", 0755)
 	os.MkdirAll("views", 0755)
@@ -131,7 +130,6 @@ import (
 func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
     staticFileServer := http.FileServer(http.FS(staticFiles))
     _ = staticFileServer
-    // pprof routes
 }`)
 	os.MkdirAll("controllers", 0755)
 	os.MkdirAll("views", 0755)
@@ -165,7 +163,6 @@ import (
 func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
     staticFileServer := http.FileServer(http.FS(staticFiles))
     _ = staticFileServer
-    // pprof routes
 }`)
 	os.MkdirAll(filepath.Join(dir, "jobs"), 0755)
 	os.MkdirAll(filepath.Join(dir, "models"), 0755)

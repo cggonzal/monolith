@@ -34,5 +34,4 @@ func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
 		ws.ServeWs(w, r)
 	})
 
-	// pprof routes
 }
