@@ -18,6 +18,10 @@ build:
 
 # Run all tests
 test:
+	go test ./...
+
+# Run all tests with verbose output
+testv:
 	go test -v ./...
 
 doc:
