@@ -4,6 +4,10 @@ Package models defines the database models used throughout the application.
 package models
 
 import (
+	"errors"
+	"log"
+	"strings"
+
 	"gorm.io/gorm"
 )
 
@@ -31,4 +35,32 @@ type Job struct {
 	Type       JobType   // Using our enum for job types.
 	Payload    string    // JSON encoded arguments.
 	Status     JobStatus // Using our enum for status types.
+}
+
+// Validate ensures the Job has required fields.
+func (j *Job) Validate() error {
+	switch j.Type {
+	case JobTypePrint, JobTypeEmail:
+	default:
+		log.Print("invalid job type")
+		return errors.New("invalid job type")
+	}
+
+	switch j.Status {
+	case JobStatusPending, JobStatusProcessing, JobStatusCompleted, JobStatusFailed:
+	default:
+		log.Print("invalid job status")
+		return errors.New("invalid job status")
+	}
+
+	if strings.TrimSpace(j.Payload) == "" {
+		log.Print("payload required")
+		return errors.New("payload required")
+	}
+	return nil
+}
+
+// BeforeSave calls Validate before persisting the Job.
+func (j *Job) BeforeSave(tx *gorm.DB) error {
+	return beforeSave(j, tx)
 }

@@ -334,7 +334,9 @@ func createModelFile(modelName string, fields []string) error {
 		}
 		buf.WriteString(fmt.Sprintf("\t%s %s\n", toCamelCase(name), typ))
 	}
-	buf.WriteString("}\n")
+	buf.WriteString("}\n\n")
+	buf.WriteString(fmt.Sprintf("func (m *%s) Validate() error {\n\treturn nil\n}\n\n", toCamelCase(modelName)))
+	buf.WriteString(fmt.Sprintf("func (m *%s) BeforeSave(tx *gorm.DB) error {\n\treturn beforeSave(m, tx)\n}\n", toCamelCase(modelName)))
 
 	formatted, err := format.Source(buf.Bytes())
 	if err != nil {
@@ -691,6 +693,8 @@ func createUserModelAuth() error {
 
 import (
     "errors"
+    "log"
+    "strings"
 
     "golang.org/x/crypto/bcrypt"
     "gorm.io/gorm"
@@ -703,6 +707,19 @@ type User struct {
     PasswordHash []byte
     IsActive     bool ` + "`gorm:\"default:true\"`" + `
     IsAdmin      bool ` + "`gorm:\"default:false\"`" + `
+}
+
+// Validate implements Validatable
+func (u *User) Validate() error {
+    if strings.TrimSpace(u.Email) == "" {
+        log.Print("email required")
+        return errors.New("email required")
+    }
+    return nil
+}
+
+func (u *User) BeforeSave(tx *gorm.DB) error {
+    return beforeSave(u, tx)
 }
 
 // GetUser fetches a user by email from the database

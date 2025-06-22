@@ -224,6 +224,25 @@ Example: Creating a user
 user, _ := models.CreateUser(db.GetDB(), "foo@example.com", "secret")
 ```
 
+#### Automatic validation
+
+Any model that implements the `Validatable` interface will have its `Validate`
+method called automatically before saving. The interface and generic hook live
+in `models/validation.go`:
+
+```go
+type Validatable interface {
+    Validate() error
+}
+
+func (m Validatable) BeforeSave(tx *gorm.DB) error {
+    return m.Validate()
+}
+```
+
+`Job` and `Message` implement this interface so attempts to persist them will
+fail if their fields are invalid.
+
 ### Sessions & Authentication
 
 Session helpers live in `session/session.go`:
