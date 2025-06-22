@@ -1058,10 +1058,10 @@ func createAuthControllerFile() error {
 	buf.WriteString("type AuthController struct{}\n\n")
 	buf.WriteString("var AuthCtrl = &AuthController{}\n\n")
 	buf.WriteString("func (ac *AuthController) ShowLoginForm(w http.ResponseWriter, r *http.Request) {\n")
-	buf.WriteString("\tviews.Render(w, \"login.html.tmpl\", nil)\n")
+	buf.WriteString("\tviews.Render(w, \"auth_login.html.tmpl\", nil)\n")
 	buf.WriteString("}\n\n")
 	buf.WriteString("func (ac *AuthController) ShowSignupForm(w http.ResponseWriter, r *http.Request) {\n")
-	buf.WriteString("\tviews.Render(w, \"signup.html.tmpl\", nil)\n")
+	buf.WriteString("\tviews.Render(w, \"auth_signup.html.tmpl\", nil)\n")
 	buf.WriteString("}\n\n")
 	buf.WriteString("func (ac *AuthController) Signup(w http.ResponseWriter, r *http.Request) {\n")
 	buf.WriteString("\tif err := r.ParseForm(); err != nil {\n")
@@ -1112,7 +1112,7 @@ func createAuthControllerFile() error {
 
 // createLoginTemplate generates a basic login template.
 func createLoginTemplate() error {
-	path := filepath.Join("views", "login.html.tmpl")
+	path := filepath.Join("views", "auth_login.html.tmpl")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil
@@ -1160,7 +1160,7 @@ func createLoginTemplate() error {
 }
 
 func createSignupTemplate() error {
-	path := filepath.Join("views", "signup.html.tmpl")
+	path := filepath.Join("views", "auth_signup.html.tmpl")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil

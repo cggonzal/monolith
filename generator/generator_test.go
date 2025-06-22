@@ -251,8 +251,8 @@ func TestRunAuthentication(t *testing.T) {
 		"middleware/auth.go",
 		"middleware/auth_test.go",
 		"controllers/auth_controller.go",
-		"views/login.html.tmpl",
-		"views/signup.html.tmpl",
+		"views/auth_login.html.tmpl",
+		"views/auth_signup.html.tmpl",
 	}
 	for _, f := range files {
 		if _, err := os.Stat(f); err != nil {
