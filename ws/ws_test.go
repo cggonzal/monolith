@@ -35,3 +35,26 @@ func TestBroadcastPersists(t *testing.T) {
 		t.Fatalf("unexpected message %#v", msg)
 	}
 }
+
+func TestSubscribeUnsubscribe(t *testing.T) {
+	db := setupDB(t)
+	h := newHub(db)
+	go h.Run()
+	c := &Client{hub: h, send: make(chan []byte, 1), subscriptions: make(map[string]bool)}
+	h.register <- Subscription{client: c, channel: "room"}
+	time.Sleep(10 * time.Millisecond)
+	if !c.subscriptions["room"] {
+		t.Fatalf("client not subscribed")
+	}
+	if _, ok := h.channels["room"][c]; !ok {
+		t.Fatalf("hub missing client")
+	}
+	h.unregister <- Subscription{client: c, channel: "room"}
+	time.Sleep(10 * time.Millisecond)
+	if len(c.subscriptions) != 0 {
+		t.Fatalf("unsubscribe failed")
+	}
+	if clients, ok := h.channels["room"]; ok && len(clients) != 0 {
+		t.Fatalf("hub still has client")
+	}
+}
