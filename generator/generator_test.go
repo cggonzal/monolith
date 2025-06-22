@@ -267,6 +267,10 @@ func TestRunAuthentication(t *testing.T) {
 	if !strings.Contains(string(db), "&models.User{}") {
 		t.Fatalf("db not updated: %s", string(db))
 	}
+	userModel, _ := os.ReadFile("models/user.go")
+	if !strings.Contains(string(userModel), "BeforeSave") || !strings.Contains(string(userModel), "AfterSave") {
+		t.Fatalf("hooks not added: %s", string(userModel))
+	}
 }
 
 func TestRunAdmin(t *testing.T) {
