@@ -719,6 +719,18 @@ type User struct {
     IsAdmin      bool ` + "`gorm:\"default:false\"`" + `
 }
 
+// BeforeSave is called by GORM before persisting a User.
+// Use this hook to validate or modify the model before saving.
+func (u *User) BeforeSave(tx *gorm.DB) error {
+    return nil
+}
+
+// AfterSave is triggered by GORM after a User has been saved.
+// This can be used for post-save actions or additional validation.
+func (u *User) AfterSave(tx *gorm.DB) error {
+    return nil
+}
+
 // GetUser fetches a user by email from the database
 func GetUser(db *gorm.DB, email string) (*User, error) {
     var user User
