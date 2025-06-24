@@ -24,7 +24,7 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 			"remoteAddr", r.RemoteAddr,
 			"userAgent", r.UserAgent(),
 			"status", fmt.Sprintf("%d %s", rw.status, http.StatusText(rw.status)),
-			"duration", time.Since(start),
+			"duration", time.Since(start).Milliseconds(),
 		)
 	})
 }
