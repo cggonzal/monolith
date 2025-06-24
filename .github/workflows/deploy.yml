@@ -27,7 +27,7 @@ jobs:
       run: go build -o monolith main.go
 
     - name: Test
-      run: go test -v ./...
+      run: go test ./...
 
     - name: Deploy to server
       run: ./server_management/deploy.sh ${{ github.event.inputs.server_host_ip }}
