@@ -113,12 +113,16 @@ func (jq *JobQueue) fetchJob() (*models.Job, error) {
 	var job models.Job
 	err := jq.db.Transaction(func(tx *gorm.DB) error {
 		// Lock the row so no other worker picks it up.
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		result := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where("status = ?", models.JobStatusPending).
 			Order("created_at").
 			Limit(1).
-			First(&job).Error; err != nil {
-			return err
+			Find(&job)
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
 		}
 		// Mark the job as processing.
 		job.Status = models.JobStatusProcessing
