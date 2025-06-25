@@ -170,6 +170,7 @@ func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
 	os.MkdirAll(filepath.Join(dir, "views"), 0755)
 	os.MkdirAll(filepath.Join(dir, "session"), 0755)
 	os.MkdirAll(filepath.Join(dir, "middleware"), 0755)
+	writeFile(t, filepath.Join(dir, "go.mod"), "module monolith\n\ngo 1.23\n")
 }
 
 func TestRunResource(t *testing.T) {
@@ -262,6 +263,10 @@ func TestRunAuthentication(t *testing.T) {
 	if !strings.Contains(string(userModel), "BeforeSave") || !strings.Contains(string(userModel), "AfterSave") {
 		t.Fatalf("hooks not added: %s", string(userModel))
 	}
+	modData, _ := os.ReadFile("go.mod")
+	if !strings.Contains(string(modData), "github.com/gorilla/sessions") || !strings.Contains(string(modData), "golang.org/x/crypto") {
+		t.Fatalf("go.mod not updated: %s", string(modData))
+	}
 }
 
 func TestRunAdmin(t *testing.T) {
@@ -293,5 +298,9 @@ func TestRunAdmin(t *testing.T) {
 	}
 	if !strings.Contains(string(data), "middleware.RequireAdmin(pprof.Index)") {
 		t.Fatalf("pprof routes not added: %s", string(data))
+	}
+	modData, _ := os.ReadFile("go.mod")
+	if !strings.Contains(string(modData), "github.com/gorilla/sessions") || !strings.Contains(string(modData), "golang.org/x/crypto") {
+		t.Fatalf("go.mod not updated: %s", string(modData))
 	}
 }
