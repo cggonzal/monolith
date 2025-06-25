@@ -23,7 +23,10 @@ func GetDB() *gorm.DB {
 // InitDB initializes the database connection
 func InitDB() {
 	var err error
-	dbHandle, err = gorm.Open(sqlite.Open("app.db"), &gorm.Config{}) // Change to postgres.Open(...) for PostgreSQL
+	// Apply recommended connection pragmas for better concurrency and durability
+	// See https://www.sqlite.org/pragma.html for details about each pragma.
+	dsn := "app.db?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=wal_autocheckpoint(0)"
+	dbHandle, err = gorm.Open(sqlite.Open(dsn), &gorm.Config{}) // Change to postgres.Open(...) for PostgreSQL
 	if err != nil {
 		log.Fatal("Failed to connect to the database:", err)
 	}
