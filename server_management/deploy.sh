@@ -17,7 +17,7 @@ APP_NAME="monolith"
 APP_DIR="/opt/$APP_NAME"
 
 KEEP="${KEEP:-5}"
-PRUNE="${PRUNE:-false}"
+PRUNE="${PRUNE:-true}"
 
 TS=$(date +%Y%m%d%H%M%S)
 RELEASE_DIR="$APP_DIR/releases/$TS"
