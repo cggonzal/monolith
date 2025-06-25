@@ -627,6 +627,7 @@ This will do a zero downtime deploy by calling,
 ```bash
 ./server_management/deploy.sh
 ```
+By default the script prunes old releases after deployment. Set `PRUNE=false` to skip pruning.
 
 ---
 
@@ -649,6 +650,6 @@ This will do a zero downtime deploy by calling,
 | `make build` | Build a statically linked binary |
 | `make run`   | `go run ./...` |
 | `make test`  | `go test ./...` |
-| `make deploy`|
+| `make deploy`| Zero downtime deploy via server_management/deploy.sh
 
 ---
