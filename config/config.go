@@ -6,6 +6,7 @@ packages.
 package config
 
 import (
+	"log/slog"
 	"os"
 )
 
@@ -25,3 +26,17 @@ var MAILGUN_API_BASE = "https://api.mailgun.net/v3"
 var SECRET_KEY = os.Getenv("SECRET_KEY")
 
 var MONOLITH_VERSION = "0.1.0"
+
+func init() {
+	// log warnings if secret key and other environment variables are not set
+	if SECRET_KEY == "" {
+		slog.Warn("SECRET_KEY is not set, using default value. This is insecure for production use.")
+		SECRET_KEY = "default_secret_key"
+	}
+	if MAILGUN_DOMAIN == "" {
+		slog.Warn("MAILGUN_DOMAIN is not set, email functionality will not function properly.")
+	}
+	if MAILGUN_API_KEY == "" {
+		slog.Warn("MAILGUN_API_KEY is not set, email functionality will not function properly.")
+	}
+}
