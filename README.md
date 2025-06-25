@@ -4,7 +4,8 @@
 
 Welcome to the **Monolith** reference guide.
 
-This document explains every major subsystem of the project and shows how the pieces fit together.  
+This document explains every major subsystem of the project and shows how the pieces fit together.
+
 If you are new, start with **Quick‑start** then come back to read the architecture chapters.
 
 
