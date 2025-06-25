@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"go/format"
+	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"unicode"
@@ -276,6 +278,9 @@ func runAuthentication(args []string) error {
 	if err := updateRoutesForAuth(); err != nil {
 		return err
 	}
+	if err := ensureAuthDependencies(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -306,6 +311,9 @@ func runAdmin(args []string) error {
 		return err
 	}
 	if err := updateRoutesForAdmin(); err != nil {
+		return err
+	}
+	if err := ensureAuthDependencies(); err != nil {
 		return err
 	}
 	return nil
@@ -1863,4 +1871,18 @@ func updateRoutesForAdmin() error {
 	}
 	fmt.Println("update", path)
 	return nil
+}
+
+// ensureAuthDependencies adds required authentication packages to go.mod if it exists.
+func ensureAuthDependencies() error {
+	if _, err := os.Stat("go.mod"); err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	cmd := exec.Command("go", "mod", "tidy")
+	cmd.Stdout = io.Discard
+	cmd.Stderr = io.Discard
+	return cmd.Run()
 }
