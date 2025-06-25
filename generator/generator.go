@@ -34,6 +34,7 @@ Examples:
   make generator resource widget name:string price:int
   make generator authentication
   make generator job MyJob
+
 `
 
 const modelHelp = `Usage: go run main.go generator model NAME [field:type...]
@@ -44,6 +45,7 @@ fields with the specified Go types.
 
 Example:
   make generator model Widget name:string price:int
+
 `
 
 const controllerHelp = `Usage: go run main.go generator controller NAME [actions]
@@ -54,6 +56,7 @@ generate the full set of CRUD actions.
 
 Example:
   make generator controller widgets index show
+
 `
 
 const resourceHelp = `Usage: go run main.go generator resource NAME [field:type...]
@@ -63,6 +66,7 @@ routes. Pass the singular model name; the controller will be pluralised.
 
 Example:
   make generator resource widget name:string price:int
+
 `
 
 const authenticationHelp = `Usage: go run main.go generator authentication
@@ -72,6 +76,7 @@ templates and routes. This generator takes no arguments.
 
 Example:
   make generator authentication
+
 `
 
 const jobHelp = `Usage: go run main.go generator job NAME
@@ -81,6 +86,7 @@ adds JobTypeNAME to models/jobs.go.
 
 Example:
   make generator job MyJob
+
 `
 
 const adminHelp = `Usage: go run main.go generator admin
@@ -90,6 +96,7 @@ does not exist, the authentication generator will be invoked automatically.
 
 Example:
   make generator admin
+
 `
 
 // Run dispatches to the specific generator based on args.
