@@ -27,7 +27,7 @@ var SECRET_KEY = os.Getenv("SECRET_KEY")
 
 var MONOLITH_VERSION = "0.1.0"
 
-func init() {
+func InitConfig() {
 	// log warnings if secret key and other environment variables are not set
 	if SECRET_KEY == "" {
 		slog.Warn("SECRET_KEY is not set, using default value. This is insecure for production use.")

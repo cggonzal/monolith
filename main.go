@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 
+	"monolith/config"
 	"monolith/db"
 	"monolith/generator"
 	"monolith/jobs"
@@ -36,6 +37,9 @@ func main() {
 	// Configure global structured logging
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
+
+	// initialize configuration
+	config.InitConfig()
 
 	// initialize database
 	db.InitDB()
