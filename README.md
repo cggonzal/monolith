@@ -1,6 +1,6 @@
 # Monolith Documentation
 
-[![Monolith](https://github.com/cggonzal/monolith/actions/workflows/go.yml/badge.svg)](https://github.com/cggonzal/monolith/actions/workflows/go.yml)
+[![Monolith](https://github.com/cggonzal/monolith/actions/workflows/ci.yml/badge.svg)](https://github.com/cggonzal/monolith/actions/workflows/ci.yml)
 
 Welcome to the **Monolith** reference guide.
 
