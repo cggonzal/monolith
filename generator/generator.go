@@ -1875,26 +1875,14 @@ func updateRoutesForAdmin() error {
 
 // ensureAuthDependencies adds required authentication packages to go.mod if it exists.
 func ensureAuthDependencies() error {
-	deps := []struct {
-		mod string
-		ver string
-	}{
-		{"github.com/gorilla/sessions", "v1.4.0"},
-		{"golang.org/x/crypto", "v0.39.0"},
-	}
 	if _, err := os.Stat("go.mod"); err != nil {
 		if os.IsNotExist(err) {
 			return nil
 		}
 		return err
 	}
-	for _, d := range deps {
-		cmd := exec.Command("go", "mod", "edit", fmt.Sprintf("-require=%s@%s", d.mod, d.ver))
-		cmd.Stdout = io.Discard
-		cmd.Stderr = io.Discard
-		if err := cmd.Run(); err != nil {
-			return err
-		}
-	}
-	return nil
+	cmd := exec.Command("go", "mod", "tidy")
+	cmd.Stdout = io.Discard
+	cmd.Stderr = io.Discard
+	return cmd.Run()
 }
