@@ -42,9 +42,12 @@ fi
 # ----- 2b. Install Litestream -------------------------------------------------
 if [ "$NO_LITESTREAM" != "true" ] && ! command -v litestream >/dev/null ; then
   echo "+ Installing Litestream"
-  curl -fsSL https://github.com/benbjohnson/litestream/releases/latest/download/litestream-linux-amd64.deb -o /tmp/litestream.deb
-  sudo dpkg -i /tmp/litestream.deb
-  rm /tmp/litestream.deb
+  
+  wget https://github.com/benbjohnson/litestream/releases/download/v0.3.13/litestream-v0.3.13-linux-amd64.deb
+
+  sudo dpkg -i litestream-v0.3.13-linux-amd64.deb
+
+  rm litestream-v0.3.13-linux-amd64.deb 
 fi
 
 # ----- 3. Create app directories ------------------------------------------
@@ -112,7 +115,8 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now $APP_NAME.socket
 sudo systemctl restart caddy       # picks up Caddyfile
 if [ "$NO_LITESTREAM" != "true" ]; then
-  sudo systemctl enable --now litestream.service
+  sudo systemctl enable litestream
+  sudo systemctl start litestream
 fi
 echo "✅ Server bootstrap complete."
 EOF
