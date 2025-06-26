@@ -17,7 +17,7 @@ Set `PRUNE=false` to keep all past releases.
 via `ACCESS_KEY_ID` and `SECRET_ACCESS_KEY` environment variables (or as the
 third and fourth command line arguments).
 
-To restore the latest backup locally:
+To restore the latest backup on the server, run the following on the server:
 
 ```bash
 litestream restore -config /etc/litestream.yml -o app.db

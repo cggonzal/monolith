@@ -24,6 +24,7 @@ If you are new, start with **Quick‑start** then come back to read the architec
    6. [Generating a resource](#generating-a-resource)
    7. [Generating authentication](#generating-authentication)
    8. [Generating an admin dashboard](#generating-an-admin-dashboard)
+   9. [Restoring Database](#restoring-database)
 4. [Core Concepts](#core-concepts)
    1. [Configuration](#configuration)
    2. [Database Layer](#database-layer)
@@ -175,7 +176,18 @@ exist it will be generated automatically.
 
 ---
 
+### Restoring database
+On the server:
+```
+litestream restore -config /etc/litestream.yml -o app.db
+```
 
+Locally:
+```
+litestream restore -o app.db s3://mybkt.localhost:9000/app.db
+```
+
+Note that you will have to change the bucket name and url above to match the name of the bucket you have set up.
 
 ## Core Concepts
 ### Configuration
