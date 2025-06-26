@@ -431,6 +431,10 @@ Example CPU profile for 30 s:
 go tool pprof http://localhost:9000/debug/pprof/profile?seconds=30
 ```
 
+Debugging the application with **Visual Studio Code** is also supported. Open
+the project in VS Code and use the `Launch Package` configuration provided in
+`.vscode/launch.json` to run the server under the debugger.
+
 ---
 ## Project Layout
 
