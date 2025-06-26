@@ -2,15 +2,35 @@
 # This script is meant to be run from the root of the monolith project.
 # Boot‑straps a fresh Ubuntu server for zero‑downtime Go deploys. Assumes that the ssh command can find your ssh key by default.
 # This script sets up a server with Caddy, systemd socket activation, and a basic Caddyfile.
-# Usage: ./server_setup.sh user@host example.com
+# Usage: ./server_setup.sh user@host example.com [--no-litestream]
 
 set -xeuo pipefail
+
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 user@host domain [--no-litestream]" >&2
+  exit 1
+fi
 
 REMOTE="$1"                 # e.g. ubuntu@203.0.113.5
 APP_NAME="monolith"         # systemd unit prefix and directory name
 DOMAIN="$2"                 # domain served by Caddy
 APP_DIR="/opt/$APP_NAME"    # where releases/ and current -> releaseX live
 BIN_PORT="9000"             # must match systemd socket + Caddy reverse_proxy
+
+INSTALL_LITESTREAM=true
+shift 2
+for arg in "$@"; do
+  case "$arg" in
+    --no-litestream)
+      INSTALL_LITESTREAM=false
+      ;;
+    "") ;;
+    *)
+      echo "Unknown option: $arg" >&2
+      exit 1
+      ;;
+  esac
+done
 
 ssh "$REMOTE" bash -s <<EOF
 set -xeuo pipefail
@@ -19,7 +39,15 @@ sudo apt-get update -qq
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
      curl tzdata git ca-certificates
 
-# ----- 2. Install Caddy ----------------------------------------------------
+# ----- 2. Install Litestream -----------------------------------------------
+if [ "$INSTALL_LITESTREAM" = true ] && ! command -v litestream >/dev/null ; then
+  echo "+ Installing Litestream"
+  curl -fsSL https://github.com/benbjohnson/litestream/releases/latest/download/litestream-linux-amd64 -o litestream
+  sudo install -m 755 litestream /usr/local/bin/litestream
+  rm litestream
+fi
+
+# ----- 3. Install Caddy ----------------------------------------------------
 if ! command -v caddy >/dev/null ; then
   echo "+ Installing Caddy"
   sudo apt-get install -y debian-keyring debian-archive-keyring apt-transport-https
@@ -31,11 +59,11 @@ if ! command -v caddy >/dev/null ; then
   sudo apt-get install -y caddy
 fi
 
-# ----- 3. Create app directories ------------------------------------------
+# ----- 4. Create app directories ------------------------------------------
 sudo mkdir -p $APP_DIR/releases
 sudo chown -R \$(whoami): \$(dirname $APP_DIR)
 
-# ----- 4. systemd socket + service ----------------------------------------
+# ----- 5. systemd socket + service ----------------------------------------
 sudo tee /etc/systemd/system/$APP_NAME.socket >/dev/null <<UNIT
 [Unit]
 Description=$APP_NAME listener (socket activation)
@@ -66,7 +94,7 @@ KillMode=mixed
 WantedBy=multi-user.target
 UNIT
 
-# ----- 5. Caddyfile --------------------------------------------------------
+# ----- 6. Caddyfile --------------------------------------------------------
 sudo tee /etc/caddy/Caddyfile >/dev/null <<CFG
 $DOMAIN {
 	encode zstd gzip
@@ -74,7 +102,7 @@ $DOMAIN {
 }
 CFG
 
-# ----- 6. Enable & start everything ---------------------------------------
+# ----- 7. Enable & start everything ---------------------------------------
 sudo systemctl daemon-reload
 sudo systemctl enable --now $APP_NAME.socket
 sudo systemctl restart caddy       # picks up Caddyfile

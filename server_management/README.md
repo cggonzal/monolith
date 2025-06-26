@@ -1,5 +1,6 @@
 # 1. One‑time server bootstrap
 `./server_setup.sh ubuntu@203.0.113.5 example.com`
+Optional: pass `--no-litestream` to skip installing [Litestream](https://github.com/benbjohnson/litestream).
 
 # 2. Any time you have new code
 `./deploy.sh ubuntu@203.0.113.5`
