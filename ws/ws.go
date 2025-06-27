@@ -80,7 +80,7 @@ func (h *Hub) Run() {
 			h.channels[sub.channel][sub.client] = true
 			sub.client.subscriptions[sub.channel] = true
 			h.mu.Unlock()
-			log.Printf("Client subscribed to channel %s", sub.channel)
+			slog.Info("client subscribed", "channel", sub.channel)
 
 		case sub := <-h.unregister:
 			h.mu.Lock()
@@ -94,7 +94,7 @@ func (h *Hub) Run() {
 				}
 			}
 			h.mu.Unlock()
-			log.Printf("Client unsubscribed from channel %s", sub.channel)
+			slog.Info("client unsubscribed", "channel", sub.channel)
 
 		case msg := <-h.broadcast:
 			// Persist the message asynchronously to avoid blocking broadcasts.
@@ -105,7 +105,7 @@ func (h *Hub) Run() {
 					CreatedAt: time.Now(),
 				}
 				if err := h.db.Create(&record).Error; err != nil {
-					log.Printf("DB error: %v", err)
+					slog.Error("DB error", "error", err)
 				}
 			}(msg.channel, msg.data)
 
@@ -167,7 +167,7 @@ func (c *Client) readPump() {
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err,
 				websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
+				slog.Error("read error", "error", err)
 			}
 			break
 		}
@@ -182,7 +182,7 @@ func (c *Client) readPump() {
 			Data       string `json:"data"`
 		}
 		if err := json.Unmarshal(message, &clientMsg); err != nil {
-			log.Printf("Invalid message: %s", message)
+			slog.Error("invalid message", "message", string(message))
 			continue
 		}
 
@@ -204,7 +204,7 @@ func (c *Client) readPump() {
 			}
 			c.hub.broadcast <- broadcastMsg
 		default:
-			log.Printf("Unknown command: %s", clientMsg.Command)
+			slog.Error("unknown command", "command", clientMsg.Command)
 		}
 	}
 }

@@ -28,13 +28,13 @@ func RunServer(staticFiles embed.FS) {
 	var ln net.Listener
 	if err == nil && len(listeners) > 0 {
 		ln = listeners[0]
-		log.Printf("using systemd listener on %s", ln.Addr())
+		slog.Info("using systemd listener", "addr", ln.Addr())
 	} else {
 		ln, err = net.Listen("tcp", "127.0.0.1:"+config.PORT)
 		if err != nil {
 			log.Fatalf("listen: %v", err)
 		}
-		log.Printf("socket activation unavailable, listening on %s", ln.Addr())
+		slog.Info("socket activation unavailable", "addr", ln.Addr())
 	}
 
 	slog.Info("Starting server", "address", ":"+config.PORT)
@@ -57,18 +57,18 @@ func RunServer(staticFiles embed.FS) {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		if err := server.Shutdown(ctx); err != nil {
-			log.Printf("HTTP shutdown: %v", err)
+			slog.Error("HTTP shutdown", "error", err)
 		}
 		close(idleConnsClosed)
 	}()
 
-	log.Printf("serving HTTP")
+	slog.Info("serving HTTP")
 	if err := server.Serve(ln); err != http.ErrServerClosed {
 		log.Fatalf("Serve: %v", err)
 	}
 
 	<-idleConnsClosed
-	log.Printf("goodbye")
+	slog.Info("goodbye")
 }
 
 // sdListeners returns the list of sockets passed by systemd via LISTEN_FDS.

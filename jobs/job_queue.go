@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"errors"
-	"log"
 	"log/slog"
 	"monolith/models"
 	"time"
@@ -72,12 +71,12 @@ func (jq *JobQueue) start() {
 
 // worker continuously fetches and processes jobs.
 func (jq *JobQueue) worker(workerID int) {
-	log.Printf("Worker %d started", workerID)
+	slog.Info("worker started", "workerID", workerID)
 	for {
 
 		job, err := jq.fetchJob()
 		if err != nil {
-			log.Printf("Worker %d encountered error fetching job: %v", workerID, err)
+			slog.Error("worker fetch error", "workerID", workerID, "error", err)
 			time.Sleep(2 * time.Second)
 			continue
 		}
@@ -87,15 +86,15 @@ func (jq *JobQueue) worker(workerID int) {
 			continue
 		}
 
-		log.Printf("Worker %d processing job %d of type %d", workerID, job.ID, job.Type)
+		slog.Info("processing job", "workerID", workerID, "jobID", job.ID, "type", job.Type)
 		jobFunc, exists := jq.registry[job.Type]
 		if !exists {
-			log.Printf("Worker %d: no registered function for job type %d", workerID, job.Type)
+			slog.Error("no registered job function", "workerID", workerID, "type", job.Type)
 			job.Status = models.JobStatusFailed
 		} else {
 			err = jobFunc(job.Payload)
 			if err != nil {
-				log.Printf("Worker %d: job %d failed: %v", workerID, job.ID, err)
+				slog.Error("job failed", "workerID", workerID, "jobID", job.ID, "error", err)
 				job.Status = models.JobStatusFailed
 			} else {
 				job.Status = models.JobStatusCompleted
@@ -103,7 +102,7 @@ func (jq *JobQueue) worker(workerID int) {
 		}
 		// Update the job status in the database.
 		if err := jq.db.Save(job).Error; err != nil {
-			log.Printf("Worker %d: failed to update job %d: %v", workerID, job.ID, err)
+			slog.Error("failed to update job", "workerID", workerID, "jobID", job.ID, "error", err)
 		}
 
 	}
@@ -182,23 +181,23 @@ func (jq *JobQueue) recurringScheduler() {
 func (jq *JobQueue) processRecurringJobs(now time.Time) {
 	var rjobs []models.RecurringJob
 	if err := jq.db.Where("next_run_at <= ?", now).Find(&rjobs).Error; err != nil {
-		log.Printf("recurring scheduler query failed: %v", err)
+		slog.Error("recurring scheduler query failed", "error", err)
 		return
 	}
 	for _, rj := range rjobs {
 		job := models.Job{Type: rj.Type, Payload: rj.Payload, Status: models.JobStatusPending}
 		if err := jq.db.Create(&job).Error; err != nil {
-			log.Printf("create job for recurring: %v", err)
+			slog.Error("create job for recurring", "error", err)
 			continue
 		}
 		next, err := nextCronTime(rj.CronExpr, now)
 		if err != nil {
-			log.Printf("compute next run: %v", err)
+			slog.Error("compute next run", "error", err)
 			continue
 		}
 		rj.NextRunAt = next
 		if err := jq.db.Save(&rj).Error; err != nil {
-			log.Printf("update recurring job: %v", err)
+			slog.Error("update recurring job", "error", err)
 		}
 	}
 }

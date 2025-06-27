@@ -6,7 +6,7 @@ are registered in `jobs/job_queue.go`.
 
 Use the generator to scaffold a new job:
 
-        make generator job Email
+	make generator job Email
 
 The generator creates `jobs/email_job.go` with a stub `EmailJob` function,
 adds a matching `JobTypeEmail` enum and registers it with the job queue for you.
@@ -15,7 +15,7 @@ package jobs
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 )
 
 // printJob is an example job function that expects a JSON payload with a "message" field.
@@ -26,7 +26,7 @@ func PrintJob(payload string) error {
 	if err := json.Unmarshal([]byte(payload), &data); err != nil {
 		return err
 	}
-	log.Printf("printJob: %s", data.Message)
+	slog.Info("printJob", "message", data.Message)
 	return nil
 }
 
