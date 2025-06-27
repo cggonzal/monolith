@@ -187,3 +187,21 @@ func TestMultipleWorkers(t *testing.T) {
 		}
 	}
 }
+
+func TestScheduleRecurring(t *testing.T) {
+	jq, db := setupQueue(t, 0)
+	jq.register(models.JobTypePrint, func(string) error { return nil })
+	if _, err := jq.ScheduleRecurring("@every 1s", models.JobTypePrint, `{"message":"hi"}`); err != nil {
+		t.Fatalf("ScheduleRecurring: %v", err)
+	}
+	jq.start()
+	time.Sleep(2200 * time.Millisecond)
+	jq.scheduler.Stop()
+	var count int64
+	if err := db.Model(&models.Job{}).Count(&count).Error; err != nil {
+		t.Fatalf("count: %v", err)
+	}
+	if count < 2 {
+		t.Fatalf("expected at least 2 jobs, got %d", count)
+	}
+}

@@ -10,6 +10,8 @@ import (
 	"monolith/config"
 	"monolith/db"
 
+	"github.com/robfig/cron/v3"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -23,6 +25,7 @@ type JobQueue struct {
 	db         *gorm.DB
 	numWorkers int
 	registry   map[models.JobType]JobFunc
+	scheduler  *cron.Cron
 }
 
 // to access the job queue, use GetJobQueue(). DO NOT use this variable directly except for inside the init()
@@ -50,10 +53,15 @@ func GetJobQueue() *JobQueue {
 
 // NewJobQueue creates a new JobQueue with a database connection and number of workers.
 func newJobQueue(db *gorm.DB, numWorkers int) *JobQueue {
+	parser := cron.NewParser(
+		cron.Second | cron.Minute | cron.Hour | cron.Dom |
+			cron.Month | cron.Dow | cron.Descriptor,
+	)
 	return &JobQueue{
 		db:         db,
 		numWorkers: numWorkers,
 		registry:   make(map[models.JobType]JobFunc),
+		scheduler:  cron.New(cron.WithParser(parser)),
 	}
 }
 
@@ -66,6 +74,9 @@ func (jq *JobQueue) register(jobType models.JobType, jobFunc JobFunc) {
 func (jq *JobQueue) start() {
 	for i := 0; i < jq.numWorkers; i++ {
 		go jq.worker(i)
+	}
+	if jq.scheduler != nil {
+		jq.scheduler.Start()
 	}
 }
 
@@ -146,6 +157,20 @@ func (jq *JobQueue) AddJob(jobType models.JobType, payload string) error {
 		Status:  models.JobStatusPending,
 	}
 	return jq.db.Create(&job).Error
+}
+
+// ScheduleRecurring schedules a job to run on the given cron expression.
+// The spec can be a traditional cron string or "@every <duration>".
+// It returns the cron entry ID for later removal if needed.
+func (jq *JobQueue) ScheduleRecurring(spec string, jobType models.JobType, payload string) (cron.EntryID, error) {
+	if jq.scheduler == nil {
+		return 0, errors.New("scheduler not initialized")
+	}
+	return jq.scheduler.AddFunc(spec, func() {
+		if err := jq.AddJob(jobType, payload); err != nil {
+			log.Printf("failed to enqueue recurring job: %v", err)
+		}
+	})
 }
 
 /*

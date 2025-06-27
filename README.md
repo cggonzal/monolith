@@ -375,9 +375,10 @@ jobs.Enqueue(models.JobTypePrint, `"Hello background!"`)
 
 Features:
 
-* FIFO ordering backed by the `jobs` DB table  
-* Automatic retries & exponential back‑off (see `JobQueue.process()`)  
+* FIFO ordering backed by the `jobs` DB table
+* Automatic retries & exponential back‑off (see `JobQueue.process()`)
 * Configurable workers via `config.JOB_QUEUE_NUM_WORKERS`
+* Recurring jobs via `ScheduleRecurring` using cron expressions
 
 ### Email Package
 
