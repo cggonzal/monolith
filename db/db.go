@@ -34,6 +34,7 @@ func InitDB() {
 	// Auto-migrate all registered models
 	dbHandle.AutoMigrate(
 		&models.Job{},
+		&models.RecurringJob{},
 		&models.Message{},
 	)
 }

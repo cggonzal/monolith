@@ -67,6 +67,7 @@ func (jq *JobQueue) start() {
 	for i := 0; i < jq.numWorkers; i++ {
 		go jq.worker(i)
 	}
+	go jq.recurringScheduler()
 }
 
 // worker continuously fetches and processes jobs.
@@ -146,6 +147,60 @@ func (jq *JobQueue) AddJob(jobType models.JobType, payload string) error {
 		Status:  models.JobStatusPending,
 	}
 	return jq.db.Create(&job).Error
+}
+
+// AddRecurringJob registers a job that should be enqueued on a recurring
+// schedule described by a cron expression. The provided payload is passed to the job handler each time.
+func (jq *JobQueue) AddRecurringJob(jobType models.JobType, payload string, cron string) error {
+	if cron == "" {
+		return errors.New("cron expression required")
+	}
+	next, err := nextCronTime(cron, time.Now())
+	if err != nil {
+		return err
+	}
+	rj := models.RecurringJob{
+		Type:      jobType,
+		Payload:   payload,
+		CronExpr:  cron,
+		NextRunAt: next,
+	}
+	return jq.db.Create(&rj).Error
+}
+
+// recurringScheduler periodically checks for recurring jobs that are due and
+// enqueues them. It runs indefinitely in its own goroutine.
+func (jq *JobQueue) recurringScheduler() {
+	for {
+		jq.processRecurringJobs(time.Now())
+		time.Sleep(time.Minute)
+	}
+}
+
+// processRecurringJobs enqueues all recurring jobs that should run at or before
+// the provided time. It is exposed for tests.
+func (jq *JobQueue) processRecurringJobs(now time.Time) {
+	var rjobs []models.RecurringJob
+	if err := jq.db.Where("next_run_at <= ?", now).Find(&rjobs).Error; err != nil {
+		log.Printf("recurring scheduler query failed: %v", err)
+		return
+	}
+	for _, rj := range rjobs {
+		job := models.Job{Type: rj.Type, Payload: rj.Payload, Status: models.JobStatusPending}
+		if err := jq.db.Create(&job).Error; err != nil {
+			log.Printf("create job for recurring: %v", err)
+			continue
+		}
+		next, err := nextCronTime(rj.CronExpr, now)
+		if err != nil {
+			log.Printf("compute next run: %v", err)
+			continue
+		}
+		rj.NextRunAt = next
+		if err := jq.db.Save(&rj).Error; err != nil {
+			log.Printf("update recurring job: %v", err)
+		}
+	}
 }
 
 /*
