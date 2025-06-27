@@ -30,7 +30,6 @@ const (
 // Job represents a unit of work.
 type Job struct {
 	gorm.Model           // Adds ID, CreatedAt, UpdatedAt, DeletedAt fields
-	IsActive   bool      `gorm:"default:true"`
 	Type       JobType   // Using our enum for job types.
 	Payload    string    // JSON encoded arguments.
 	Status     JobStatus // Using our enum for status types.
@@ -41,7 +40,6 @@ type Job struct {
 // enqueued.
 type RecurringJob struct {
 	gorm.Model
-	IsActive  bool `gorm:"default:true"`
 	Type      JobType
 	Payload   string
 	CronExpr  string

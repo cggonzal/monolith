@@ -181,7 +181,7 @@ func (jq *JobQueue) recurringScheduler() {
 // the provided time. It is exposed for tests.
 func (jq *JobQueue) processRecurringJobs(now time.Time) {
 	var rjobs []models.RecurringJob
-	if err := jq.db.Where("is_active = ? AND next_run_at <= ?", true, now).Find(&rjobs).Error; err != nil {
+	if err := jq.db.Where("next_run_at <= ?", now).Find(&rjobs).Error; err != nil {
 		log.Printf("recurring scheduler query failed: %v", err)
 		return
 	}
