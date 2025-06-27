@@ -21,7 +21,7 @@ func setupQueue(t *testing.T, workers int) (*JobQueue, *gorm.DB) {
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	if err := db.AutoMigrate(&models.Job{}); err != nil {
+	if err := db.AutoMigrate(&models.Job{}, &models.RecurringJob{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 	jq := newJobQueue(db, workers)
@@ -185,5 +185,27 @@ func TestMultipleWorkers(t *testing.T) {
 		if j.Status != models.JobStatusCompleted {
 			t.Fatalf("job %d status %v", j.ID, j.Status)
 		}
+	}
+}
+
+func TestRecurringJob(t *testing.T) {
+	jq, db := setupQueue(t, 1)
+	jq.register(models.JobTypePrint, func(string) error { return nil })
+	jq.start()
+	payload := `{"cron":"* * * * *","payload":"{}"}`
+	if err := jq.AddRecurringJob(models.JobTypePrint, payload); err != nil {
+		t.Fatalf("AddRecurringJob: %v", err)
+	}
+	var rj models.RecurringJob
+	if err := db.First(&rj).Error; err != nil {
+		t.Fatalf("query recurring: %v", err)
+	}
+	if err := db.Model(&rj).Update("next_run_at", time.Now().Add(-time.Minute)).Error; err != nil {
+		t.Fatalf("update: %v", err)
+	}
+	jq.processRecurringJobs(time.Now())
+	var job models.Job
+	if err := db.First(&job).Error; err != nil {
+		t.Fatalf("queued job missing: %v", err)
 	}
 }

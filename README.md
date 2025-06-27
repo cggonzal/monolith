@@ -125,6 +125,13 @@ payload := `{"message":"Hello"}`
 jobs.GetJobQueue().AddJob(models.JobTypePrint, payload)
 ```
 
+To schedule a recurring job using a cron expression:
+
+```go
+rec := `{"cron":"0 0 * * *","payload":"{\"message\":\"Hello\"}"}`
+jobs.GetJobQueue().AddRecurringJob(models.JobTypePrint, rec)
+```
+
 `jobs/job_queue.go` registers job handlers and the queue starts automatically.
 
 ### Interactive debug session
@@ -375,9 +382,10 @@ jobs.Enqueue(models.JobTypePrint, `"Hello background!"`)
 
 Features:
 
-* FIFO ordering backed by the `jobs` DB table  
-* Automatic retries & exponential back‑off (see `JobQueue.process()`)  
+* FIFO ordering backed by the `jobs` DB table
+* Automatic retries & exponential back‑off (see `JobQueue.process()`)
 * Configurable workers via `config.JOB_QUEUE_NUM_WORKERS`
+* Recurring jobs with `AddRecurringJob`
 
 ### Email Package
 
