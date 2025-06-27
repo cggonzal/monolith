@@ -88,6 +88,8 @@ make run
 # open http://localhost:9000
 ```
 
+Set the `SECRET_KEY` environment variable to a random string before running the server.
+
 The first launch creates **app.db** and auto‑migrates the schema.
 
 ---
@@ -655,6 +657,7 @@ By default the script prunes old releases after deployment. Set `PRUNE=false` to
 | `DATABASE_URL` | Postgres DSN (if you switch drivers) | – |
 | `MAILGUN_DOMAIN` | Mailgun domain used for sending mail | – |
 | `MAILGUN_API_KEY` | Private API key for Mailgun | – |
+| `SECRET_KEY` | Key used to sign session cookies; must be set to a random string | – |
 
 ### Make Targets
 
