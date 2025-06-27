@@ -192,8 +192,7 @@ func TestRecurringJob(t *testing.T) {
 	jq, db := setupQueue(t, 1)
 	jq.register(models.JobTypePrint, func(string) error { return nil })
 	jq.start()
-	payload := `{"cron":"* * * * *","payload":"{}"}`
-	if err := jq.AddRecurringJob(models.JobTypePrint, payload); err != nil {
+	if err := jq.AddRecurringJob(models.JobTypePrint, "{}", "* * * * *"); err != nil {
 		t.Fatalf("AddRecurringJob: %v", err)
 	}
 	var rj models.RecurringJob

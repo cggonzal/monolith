@@ -128,8 +128,8 @@ jobs.GetJobQueue().AddJob(models.JobTypePrint, payload)
 To schedule a recurring job using a cron expression:
 
 ```go
-rec := `{"cron":"0 0 * * *","payload":"{\"message\":\"Hello\"}"}`
-jobs.GetJobQueue().AddRecurringJob(models.JobTypePrint, rec)
+payload := `{"message":"Hello"}`
+jobs.GetJobQueue().AddRecurringJob(models.JobTypePrint, payload, "0 0 * * *")
 ```
 
 `jobs/job_queue.go` registers job handlers and the queue starts automatically.

@@ -1,7 +1,6 @@
 package jobs
 
 import (
-	"encoding/json"
 	"errors"
 	"log"
 	"log/slog"
@@ -151,31 +150,19 @@ func (jq *JobQueue) AddJob(jobType models.JobType, payload string) error {
 }
 
 // AddRecurringJob registers a job that should be enqueued on a recurring
-// schedule. The payload must be a JSON object with two fields:
-// "cron"   – a cron expression describing the schedule (minute and hour fields
-//
-//	are supported)
-//
-// "payload" – the actual payload passed to the job handler when it runs.
-func (jq *JobQueue) AddRecurringJob(jobType models.JobType, payload string) error {
-	var p struct {
-		Cron    string `json:"cron"`
-		Payload string `json:"payload"`
-	}
-	if err := json.Unmarshal([]byte(payload), &p); err != nil {
-		return err
-	}
-	if p.Cron == "" {
+// schedule described by a cron expression. The provided payload is passed to the job handler each time.
+func (jq *JobQueue) AddRecurringJob(jobType models.JobType, payload string, cron string) error {
+	if cron == "" {
 		return errors.New("cron expression required")
 	}
-	next, err := nextCronTime(p.Cron, time.Now())
+	next, err := nextCronTime(cron, time.Now())
 	if err != nil {
 		return err
 	}
 	rj := models.RecurringJob{
 		Type:      jobType,
-		Payload:   p.Payload,
-		CronExpr:  p.Cron,
+		Payload:   payload,
+		CronExpr:  cron,
 		NextRunAt: next,
 	}
 	return jq.db.Create(&rj).Error
