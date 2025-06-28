@@ -208,3 +208,66 @@ func TestRecurringJob(t *testing.T) {
 		t.Fatalf("queued job missing: %v", err)
 	}
 }
+
+func TestCronRunsAtFutureTime(t *testing.T) {
+	jq, db := setupQueue(t, 0)
+	jq.register(models.JobTypePrint, func(string) error { return nil })
+	if err := jq.AddRecurringJob(models.JobTypePrint, "{}", "* * * * *"); err != nil {
+		t.Fatalf("AddRecurringJob: %v", err)
+	}
+	var rj models.RecurringJob
+	if err := db.First(&rj).Error; err != nil {
+		t.Fatalf("query recurring: %v", err)
+	}
+	now := time.Now()
+	if err := db.Model(&rj).Update("next_run_at", now.Add(1*time.Second)).Error; err != nil {
+		t.Fatalf("update: %v", err)
+	}
+	jq.processRecurringJobs(now)
+	var count int64
+	if err := db.Model(&models.Job{}).Count(&count).Error; err != nil {
+		t.Fatalf("count: %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("expected no job queued yet")
+	}
+	jq.processRecurringJobs(now.Add(2 * time.Second))
+	if err := db.Model(&models.Job{}).Count(&count).Error; err != nil {
+		t.Fatalf("count: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("expected job to be queued after time elapsed")
+	}
+}
+
+func TestNextCronTime(t *testing.T) {
+	base := time.Date(2023, time.June, 30, 12, 34, 56, 0, time.UTC)
+	tests := []struct {
+		expr string
+		from time.Time
+		want time.Time
+	}{
+		{"* * * * *", base, time.Date(2023, time.June, 30, 12, 35, 0, 0, time.UTC)},
+		{"*/5 * * * *", time.Date(2023, time.June, 30, 12, 34, 0, 0, time.UTC), time.Date(2023, time.June, 30, 12, 35, 0, 0, time.UTC)},
+		{"30 14 * * *", time.Date(2023, time.June, 30, 14, 29, 0, 0, time.UTC), time.Date(2023, time.June, 30, 14, 30, 0, 0, time.UTC)},
+		{"30 14 * * *", time.Date(2023, time.June, 30, 14, 31, 0, 0, time.UTC), time.Date(2023, time.July, 1, 14, 30, 0, 0, time.UTC)},
+		{"0 6 * * *", time.Date(2023, time.June, 30, 5, 59, 0, 0, time.UTC), time.Date(2023, time.June, 30, 6, 0, 0, 0, time.UTC)},
+		{"0 0 5 * 1", time.Date(2023, time.June, 3, 23, 59, 0, 0, time.UTC), time.Date(2023, time.June, 5, 0, 0, 0, 0, time.UTC)},
+		{"0 0 1 7 *", time.Date(2023, time.June, 15, 0, 0, 0, 0, time.UTC), time.Date(2023, time.July, 1, 0, 0, 0, 0, time.UTC)},
+		{"0 0 * 12 *", time.Date(2023, time.November, 30, 0, 0, 0, 0, time.UTC), time.Date(2023, time.December, 1, 0, 0, 0, 0, time.UTC)},
+		{"0 0 1 * 1", time.Date(2023, time.June, 10, 0, 0, 0, 0, time.UTC), time.Date(2023, time.June, 12, 0, 0, 0, 0, time.UTC)},
+		{"0 0 * * 7", time.Date(2023, time.June, 10, 0, 0, 0, 0, time.UTC), time.Date(2023, time.June, 11, 0, 0, 0, 0, time.UTC)},
+		{"0 */3 * * *", time.Date(2023, time.June, 10, 2, 10, 0, 0, time.UTC), time.Date(2023, time.June, 10, 3, 0, 0, 0, time.UTC)},
+		{"0 0 */2 * *", time.Date(2023, time.June, 1, 0, 0, 0, 0, time.UTC), time.Date(2023, time.June, 2, 0, 0, 0, 0, time.UTC)},
+		{"0 0 10 * 1", time.Date(2023, time.June, 9, 12, 0, 0, 0, time.UTC), time.Date(2023, time.June, 10, 0, 0, 0, 0, time.UTC)},
+	}
+	for _, tc := range tests {
+		got, err := nextCronTime(tc.expr, tc.from)
+		if err != nil {
+			t.Fatalf("nextCronTime(%s): %v", tc.expr, err)
+		}
+		if !got.Equal(tc.want) {
+			t.Fatalf("expr %s from %v expected %v got %v", tc.expr, tc.from, tc.want, got)
+		}
+	}
+}
