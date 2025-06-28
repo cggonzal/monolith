@@ -61,16 +61,16 @@ func main() {
 
 	// Add demo jobs.
 	// Enqueue a "print" job.
-	payloadPrint, _ := json.Marshal(map[string]string{"message": "Hello, World!"})
-	if err := jobQueue.AddJob(JobTypePrint, string(payloadPrint)); err != nil {
-		log.Printf("failed to add job: %v", err)
-	}
+       payloadPrint, _ := json.Marshal(map[string]string{"message": "Hello, World!"})
+       if err := jobQueue.AddJob(JobTypePrint, payloadPrint); err != nil {
+               log.Printf("failed to add job: %v", err)
+       }
 
 	// Enqueue a "sum" job.
-	payloadSum, _ := json.Marshal(map[string]int{"a": 10, "b": 20})
-	if err := jobQueue.AddJob(JobTypeSum, string(payloadSum)); err != nil {
-		log.Printf("failed to add job: %v", err)
-	}
+       payloadSum, _ := json.Marshal(map[string]int{"a": 10, "b": 20})
+       if err := jobQueue.AddJob(JobTypeSum, payloadSum); err != nil {
+               log.Printf("failed to add job: %v", err)
+       }
 
 	// Let the queue process jobs for a while.
 	time.Sleep(10 * time.Second)

@@ -123,14 +123,14 @@ All messages are persisted and broadcast to every subscriber of `chat`.
 ### Background job Example
 
 ```go
-payload := `{"message":"Hello"}`
+payload := []byte(`{"message":"Hello"}`)
 jobs.GetJobQueue().AddJob(models.JobTypePrint, payload)
 ```
 
 To schedule a recurring job using a cron expression:
 
 ```go
-payload := `{"message":"Hello"}`
+payload := []byte(`{"message":"Hello"}`)
 jobs.GetJobQueue().AddRecurringJob(models.JobTypePrint, payload, "0 0 * * *")
 ```
 

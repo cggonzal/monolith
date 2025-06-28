@@ -16,5 +16,5 @@ func SendEmail(subject, body, sender string, recipients []string) error {
 	if err != nil {
 		return err
 	}
-	return jobs.GetJobQueue().AddJob(models.JobTypeEmail, string(b))
+	return jobs.GetJobQueue().AddJob(models.JobTypeEmail, b)
 }
