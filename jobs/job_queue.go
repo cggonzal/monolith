@@ -14,7 +14,7 @@ import (
 )
 
 // JobFunc defines the signature for functions that process jobs.
-type JobFunc func(payload string) error
+type JobFunc func(payload []byte) error
 
 // JobQueue handles enqueuing and processing jobs.
 // It uses a registry to map job types to their processing functions.
@@ -101,7 +101,7 @@ func (jq *JobQueue) worker(workerID int) {
 				slog.Error("no registered job function", "workerID", workerID, "type", job.Type)
 				job.Status = models.JobStatusFailed
 			} else {
-				err = jobFunc(job.Payload)
+				err = jobFunc([]byte(job.Payload))
 				if err != nil {
 					slog.Error("job failed", "workerID", workerID, "jobID", job.ID, "error", err)
 					job.Status = models.JobStatusFailed

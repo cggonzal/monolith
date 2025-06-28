@@ -19,11 +19,11 @@ import (
 )
 
 // printJob is an example job function that expects a JSON payload with a "message" field.
-func PrintJob(payload string) error {
+func PrintJob(payload []byte) error {
 	var data struct {
 		Message string `json:"message"`
 	}
-	if err := json.Unmarshal([]byte(payload), &data); err != nil {
+	if err := json.Unmarshal(payload, &data); err != nil {
 		return err
 	}
 	slog.Info("printJob", "message", data.Message)

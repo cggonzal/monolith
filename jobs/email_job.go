@@ -20,9 +20,9 @@ type EmailPayload struct {
 }
 
 // EmailJob sends an email via Mailgun using the REST API.
-func EmailJob(payload string) error {
+func EmailJob(payload []byte) error {
 	var p EmailPayload
-	if err := json.Unmarshal([]byte(payload), &p); err != nil {
+	if err := json.Unmarshal(payload, &p); err != nil {
 		return err
 	}
 	if config.MAILGUN_API_KEY == "" || config.MAILGUN_DOMAIN == "" {
