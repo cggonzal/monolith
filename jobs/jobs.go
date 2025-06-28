@@ -6,10 +6,10 @@ are registered in `jobs/job_queue.go`.
 
 Use the generator to scaffold a new job:
 
-	make generator job Email
+	make generator job DoSomething
 
-The generator creates `jobs/email_job.go` with a stub `EmailJob` function,
-adds a matching `JobTypeEmail` enum and registers it with the job queue for you.
+The generator creates `jobs/do_something_job.go` with a stub `DoSomethingJob` function,
+adds a matching `JobTypeDoSomething` enum and registers it with the job queue for you.
 */
 package jobs
 
