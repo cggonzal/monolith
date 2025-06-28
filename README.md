@@ -376,10 +376,10 @@ subscribers concurrently.
 
 ```go
 jobs.RegisterHandler(models.JobTypePrint, func(j *models.Job) error {
-    fmt.Println(j.Payload)
+    fmt.Println(string(j.Payload))
     return nil
 })
-jobs.Enqueue(models.JobTypePrint, `"Hello background!"`)
+jobs.Enqueue(models.JobTypePrint, []byte(`"Hello background!"`))
 ```
 
 Features:

@@ -101,7 +101,7 @@ func (jq *JobQueue) worker(workerID int) {
 				slog.Error("no registered job function", "workerID", workerID, "type", job.Type)
 				job.Status = models.JobStatusFailed
 			} else {
-				err = jobFunc([]byte(job.Payload))
+				err = jobFunc(job.Payload)
 				if err != nil {
 					slog.Error("job failed", "workerID", workerID, "jobID", job.ID, "error", err)
 					job.Status = models.JobStatusFailed
@@ -155,11 +155,11 @@ func (jq *JobQueue) fetchJob() (*models.Job, error) {
 }
 
 // AddJob enqueues a new job with status "pending".
-// The payload should be a JSON-encoded string representing the arguments.
+// The payload should be JSON-encoded bytes representing the arguments.
 func (jq *JobQueue) AddJob(jobType models.JobType, payload []byte) error {
 	job := models.Job{
 		Type:    jobType,
-		Payload: string(payload),
+		Payload: payload,
 		Status:  models.JobStatusPending,
 	}
 	if err := jq.db.Create(&job).Error; err != nil {
@@ -181,7 +181,7 @@ func (jq *JobQueue) AddRecurringJob(jobType models.JobType, payload []byte, cron
 	}
 	rj := models.RecurringJob{
 		Type:      jobType,
-		Payload:   string(payload),
+		Payload:   payload,
 		CronExpr:  cron,
 		NextRunAt: next,
 	}

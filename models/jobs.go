@@ -31,7 +31,7 @@ const (
 type Job struct {
 	gorm.Model           // Adds ID, CreatedAt, UpdatedAt, DeletedAt fields
 	Type       JobType   // Using our enum for job types.
-	Payload    string    // JSON encoded arguments.
+	Payload    []byte    // JSON encoded arguments.
 	Status     JobStatus // Using our enum for status types.
 }
 
@@ -41,7 +41,7 @@ type Job struct {
 type RecurringJob struct {
 	gorm.Model
 	Type      JobType
-	Payload   string
+	Payload   []byte
 	CronExpr  string
 	NextRunAt time.Time
 }
