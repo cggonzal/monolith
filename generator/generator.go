@@ -1289,10 +1289,21 @@ func createJobFile(name string) error {
 		return nil
 	}
 	funcName := name + "Job"
+	payloadName := name + "Payload"
 	var buf bytes.Buffer
 	buf.WriteString("package jobs\n\n")
+	buf.WriteString("import (\n")
+	buf.WriteString("\t\"encoding/json\"\n")
+	buf.WriteString(")\n\n")
+	buf.WriteString(fmt.Sprintf("type %s struct {\n", payloadName))
+	buf.WriteString("\tFirstArgument string `json:\"first_argument\"`\n")
+	buf.WriteString("}\n\n")
 	buf.WriteString(fmt.Sprintf("func %s(payload string) error {\n", funcName))
-	buf.WriteString("\t// TODO: implement job\n")
+	buf.WriteString(fmt.Sprintf("\tvar p %s\n", payloadName))
+	buf.WriteString("\tif err := json.Unmarshal([]byte(payload), &p); err != nil {\n")
+	buf.WriteString("\t\treturn err\n")
+	buf.WriteString("\t}\n\n")
+	buf.WriteString("\t// TODO: implement job\n\n")
 	buf.WriteString("\treturn nil\n")
 	buf.WriteString("}\n")
 	formatted, err := format.Source(buf.Bytes())
