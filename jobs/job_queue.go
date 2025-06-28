@@ -72,6 +72,16 @@ func (jq *JobQueue) start() {
 }
 
 // notify wakes workers that may be waiting for new jobs.
+//
+// The notify() function in the JobQueue struct is responsible for waking up worker goroutines
+// that may be waiting for new jobs to process. Here’s how it works, step-by-step:
+//
+// 1. The function tries to send an empty struct (struct{}) into the notifyCh channel.
+// 2. The channel notifyCh is buffered (with a size equal to the number of workers), so it can hold a limited number of notifications.
+// 3. If the channel is not full, the notification is sent, and a waiting worker will be unblocked and can check for new jobs.
+// 4. If the channel is already full (all workers are already notified or awake), the default case is executed, and nothing happens—this prevents blocking or overfilling the channel.
+//
+// This mechanism ensures that workers are efficiently notified of new jobs without unnecessary wake-ups or blocking.
 func (jq *JobQueue) notify() {
 	select {
 	case jq.notifyCh <- struct{}{}:
