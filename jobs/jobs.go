@@ -19,11 +19,11 @@ import (
 )
 
 // printJob is an example job function that expects a JSON payload with a "message" field.
-func PrintJob(payload string) error {
+func PrintJob(payload []byte) error {
 	var data struct {
 		Message string `json:"message"`
 	}
-	if err := json.Unmarshal([]byte(payload), &data); err != nil {
+	if err := json.Unmarshal(payload, &data); err != nil {
 		return err
 	}
 	slog.Info("printJob", "message", data.Message)
@@ -61,16 +61,16 @@ func main() {
 
 	// Add demo jobs.
 	// Enqueue a "print" job.
-	payloadPrint, _ := json.Marshal(map[string]string{"message": "Hello, World!"})
-	if err := jobQueue.AddJob(JobTypePrint, string(payloadPrint)); err != nil {
-		log.Printf("failed to add job: %v", err)
-	}
+       payloadPrint, _ := json.Marshal(map[string]string{"message": "Hello, World!"})
+       if err := jobQueue.AddJob(JobTypePrint, payloadPrint); err != nil {
+               log.Printf("failed to add job: %v", err)
+       }
 
 	// Enqueue a "sum" job.
-	payloadSum, _ := json.Marshal(map[string]int{"a": 10, "b": 20})
-	if err := jobQueue.AddJob(JobTypeSum, string(payloadSum)); err != nil {
-		log.Printf("failed to add job: %v", err)
-	}
+       payloadSum, _ := json.Marshal(map[string]int{"a": 10, "b": 20})
+       if err := jobQueue.AddJob(JobTypeSum, payloadSum); err != nil {
+               log.Printf("failed to add job: %v", err)
+       }
 
 	// Let the queue process jobs for a while.
 	time.Sleep(10 * time.Second)

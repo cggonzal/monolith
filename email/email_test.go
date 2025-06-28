@@ -45,7 +45,7 @@ func TestSendEmail(t *testing.T) {
 		t.Fatalf("type %v", job.Type)
 	}
 	var p map[string]any
-	if err := json.Unmarshal([]byte(job.Payload), &p); err != nil {
+	if err := json.Unmarshal(job.Payload, &p); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
 	if p["subject"] != "s" {

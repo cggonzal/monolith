@@ -14,7 +14,7 @@ import (
 )
 
 // JobFunc defines the signature for functions that process jobs.
-type JobFunc func(payload string) error
+type JobFunc func(payload []byte) error
 
 // JobQueue handles enqueuing and processing jobs.
 // It uses a registry to map job types to their processing functions.
@@ -155,8 +155,8 @@ func (jq *JobQueue) fetchJob() (*models.Job, error) {
 }
 
 // AddJob enqueues a new job with status "pending".
-// The payload should be a JSON-encoded string representing the arguments.
-func (jq *JobQueue) AddJob(jobType models.JobType, payload string) error {
+// The payload should be JSON-encoded bytes representing the arguments.
+func (jq *JobQueue) AddJob(jobType models.JobType, payload []byte) error {
 	job := models.Job{
 		Type:    jobType,
 		Payload: payload,
@@ -171,7 +171,7 @@ func (jq *JobQueue) AddJob(jobType models.JobType, payload string) error {
 
 // AddRecurringJob registers a job that should be enqueued on a recurring
 // schedule described by a cron expression. The provided payload is passed to the job handler each time.
-func (jq *JobQueue) AddRecurringJob(jobType models.JobType, payload string, cron string) error {
+func (jq *JobQueue) AddRecurringJob(jobType models.JobType, payload []byte, cron string) error {
 	if cron == "" {
 		return errors.New("cron expression required")
 	}
@@ -255,16 +255,16 @@ func main() {
 
 	// Add demo jobs.
 	// Enqueue a "print" job.
-	payloadPrint, _ := json.Marshal(map[string]string{"message": "Hello, World!"})
-	if err := jobQueue.AddJob(JobTypePrint, string(payloadPrint)); err != nil {
-		log.Printf("failed to add job: %v", err)
-	}
+       payloadPrint, _ := json.Marshal(map[string]string{"message": "Hello, World!"})
+       if err := jobQueue.AddJob(JobTypePrint, payloadPrint); err != nil {
+               log.Printf("failed to add job: %v", err)
+       }
 
 	// Enqueue a "sum" job.
-	payloadSum, _ := json.Marshal(map[string]int{"a": 10, "b": 20})
-	if err := jobQueue.AddJob(JobTypeSum, string(payloadSum)); err != nil {
-		log.Printf("failed to add job: %v", err)
-	}
+       payloadSum, _ := json.Marshal(map[string]int{"a": 10, "b": 20})
+       if err := jobQueue.AddJob(JobTypeSum, payloadSum); err != nil {
+               log.Printf("failed to add job: %v", err)
+       }
 
 	// Let the queue process jobs for a while.
 	time.Sleep(10 * time.Second)

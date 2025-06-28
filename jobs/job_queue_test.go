@@ -34,8 +34,8 @@ func setupQueue(t *testing.T, workers int) (*JobQueue, *gorm.DB) {
 
 func TestAddAndFetchJob(t *testing.T) {
 	jq, db := setupQueue(t, 0)
-	jq.register(models.JobTypePrint, func(string) error { return nil })
-	if err := jq.AddJob(models.JobTypePrint, `{"message":"hi"}`); err != nil {
+	jq.register(models.JobTypePrint, func([]byte) error { return nil })
+	if err := jq.AddJob(models.JobTypePrint, []byte(`{"message":"hi"}`)); err != nil {
 		t.Fatalf("AddJob: %v", err)
 	}
 	var job models.Job
@@ -74,12 +74,12 @@ func TestAddAndFetchJob(t *testing.T) {
 func TestWorkerSuccess(t *testing.T) {
 	jq, db := setupQueue(t, 1)
 	done := make(chan struct{}, 1)
-	jq.register(models.JobTypePrint, func(string) error {
+	jq.register(models.JobTypePrint, func([]byte) error {
 		done <- struct{}{}
 		return nil
 	})
 	jq.start()
-	if err := jq.AddJob(models.JobTypePrint, "{}"); err != nil {
+	if err := jq.AddJob(models.JobTypePrint, []byte("{}")); err != nil {
 		t.Fatalf("AddJob: %v", err)
 	}
 	select {
@@ -105,12 +105,12 @@ func TestWorkerSuccess(t *testing.T) {
 func TestWorkerFailure(t *testing.T) {
 	jq, db := setupQueue(t, 1)
 	done := make(chan struct{}, 1)
-	jq.register(models.JobTypePrint, func(string) error {
+	jq.register(models.JobTypePrint, func([]byte) error {
 		done <- struct{}{}
 		return errors.New("boom")
 	})
 	jq.start()
-	if err := jq.AddJob(models.JobTypePrint, "{}"); err != nil {
+	if err := jq.AddJob(models.JobTypePrint, []byte("{}")); err != nil {
 		t.Fatalf("AddJob: %v", err)
 	}
 	<-done
@@ -131,9 +131,9 @@ func TestWorkerFailure(t *testing.T) {
 
 func TestUnregisteredJob(t *testing.T) {
 	jq, db := setupQueue(t, 1)
-	jq.register(models.JobTypePrint, func(string) error { return nil })
+	jq.register(models.JobTypePrint, func([]byte) error { return nil })
 	jq.start()
-	if err := jq.AddJob(models.JobTypeEmail, "{}"); err != nil {
+	if err := jq.AddJob(models.JobTypeEmail, []byte("{}")); err != nil {
 		t.Fatalf("AddJob: %v", err)
 	}
 	time.Sleep(100 * time.Millisecond)
@@ -150,7 +150,7 @@ func TestMultipleWorkers(t *testing.T) {
 	jq, db := setupQueue(t, 3)
 	var mu sync.Mutex
 	count := 0
-	jq.register(models.JobTypePrint, func(string) error {
+	jq.register(models.JobTypePrint, func([]byte) error {
 		mu.Lock()
 		count++
 		mu.Unlock()
@@ -158,7 +158,7 @@ func TestMultipleWorkers(t *testing.T) {
 	})
 	jq.start()
 	for i := 0; i < 5; i++ {
-		if err := jq.AddJob(models.JobTypePrint, fmt.Sprintf("{\"id\":%d}", i)); err != nil {
+		if err := jq.AddJob(models.JobTypePrint, []byte(fmt.Sprintf("{\"id\":%d}", i))); err != nil {
 			t.Fatalf("AddJob: %v", err)
 		}
 	}
@@ -190,9 +190,9 @@ func TestMultipleWorkers(t *testing.T) {
 
 func TestRecurringJob(t *testing.T) {
 	jq, db := setupQueue(t, 1)
-	jq.register(models.JobTypePrint, func(string) error { return nil })
+	jq.register(models.JobTypePrint, func([]byte) error { return nil })
 	jq.start()
-	if err := jq.AddRecurringJob(models.JobTypePrint, "{}", "* * * * *"); err != nil {
+	if err := jq.AddRecurringJob(models.JobTypePrint, []byte("{}"), "* * * * *"); err != nil {
 		t.Fatalf("AddRecurringJob: %v", err)
 	}
 	var rj models.RecurringJob
@@ -211,8 +211,8 @@ func TestRecurringJob(t *testing.T) {
 
 func TestCronRunsAtFutureTime(t *testing.T) {
 	jq, db := setupQueue(t, 0)
-	jq.register(models.JobTypePrint, func(string) error { return nil })
-	if err := jq.AddRecurringJob(models.JobTypePrint, "{}", "* * * * *"); err != nil {
+	jq.register(models.JobTypePrint, func([]byte) error { return nil })
+	if err := jq.AddRecurringJob(models.JobTypePrint, []byte("{}"), "* * * * *"); err != nil {
 		t.Fatalf("AddRecurringJob: %v", err)
 	}
 	var rj models.RecurringJob

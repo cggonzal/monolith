@@ -45,7 +45,7 @@ func TestEmailJob(t *testing.T) {
 
 	p := EmailPayload{Subject: "subj", Body: "body", Sender: "from@example.com", To: []string{"a@example.com"}}
 	b, _ := json.Marshal(p)
-	if err := EmailJob(string(b)); err != nil {
+	if err := EmailJob(b); err != nil {
 		t.Fatalf("EmailJob error: %v", err)
 	}
 	if received.Get("subject") != "subj" || received.Get("text") != "body" {
