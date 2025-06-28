@@ -22,6 +22,7 @@ type JobQueue struct {
 	db         *gorm.DB
 	numWorkers int
 	registry   map[models.JobType]JobFunc
+	notifyCh   chan struct{}
 }
 
 // to access the job queue, use GetJobQueue(). DO NOT use this variable directly except for inside the init()
@@ -53,6 +54,7 @@ func newJobQueue(db *gorm.DB, numWorkers int) *JobQueue {
 		db:         db,
 		numWorkers: numWorkers,
 		registry:   make(map[models.JobType]JobFunc),
+		notifyCh:   make(chan struct{}, numWorkers),
 	}
 }
 
@@ -69,42 +71,47 @@ func (jq *JobQueue) start() {
 	go jq.recurringScheduler()
 }
 
+// notify wakes workers that may be waiting for new jobs.
+func (jq *JobQueue) notify() {
+	select {
+	case jq.notifyCh <- struct{}{}:
+	default:
+	}
+}
+
 // worker continuously fetches and processes jobs.
 func (jq *JobQueue) worker(workerID int) {
 	slog.Info("worker started", "workerID", workerID)
 	for {
-
 		job, err := jq.fetchJob()
-		if err != nil {
-			slog.Error("worker fetch error", "workerID", workerID, "error", err)
-			time.Sleep(2 * time.Second)
-			continue
-		}
-		if job == nil {
-			// No pending job found; wait before polling again.
-			time.Sleep(2 * time.Second)
-			continue
-		}
-
-		slog.Info("processing job", "workerID", workerID, "jobID", job.ID, "type", job.Type)
-		jobFunc, exists := jq.registry[job.Type]
-		if !exists {
-			slog.Error("no registered job function", "workerID", workerID, "type", job.Type)
-			job.Status = models.JobStatusFailed
-		} else {
-			err = jobFunc(job.Payload)
-			if err != nil {
-				slog.Error("job failed", "workerID", workerID, "jobID", job.ID, "error", err)
+		if err == nil && job != nil {
+			slog.Info("processing job", "workerID", workerID, "jobID", job.ID, "type", job.Type)
+			jobFunc, exists := jq.registry[job.Type]
+			if !exists {
+				slog.Error("no registered job function", "workerID", workerID, "type", job.Type)
 				job.Status = models.JobStatusFailed
 			} else {
-				job.Status = models.JobStatusCompleted
+				err = jobFunc(job.Payload)
+				if err != nil {
+					slog.Error("job failed", "workerID", workerID, "jobID", job.ID, "error", err)
+					job.Status = models.JobStatusFailed
+				} else {
+					job.Status = models.JobStatusCompleted
+				}
 			}
-		}
-		// Update the job status in the database.
-		if err := jq.db.Save(job).Error; err != nil {
-			slog.Error("failed to update job", "workerID", workerID, "jobID", job.ID, "error", err)
+			if err := jq.db.Save(job).Error; err != nil {
+				slog.Error("failed to update job", "workerID", workerID, "jobID", job.ID, "error", err)
+			}
+			continue
 		}
 
+		if err != nil {
+			slog.Error("worker fetch error", "workerID", workerID, "error", err)
+		}
+		select {
+		case <-jq.notifyCh:
+		case <-time.After(100 * time.Millisecond):
+		}
 	}
 }
 
@@ -145,7 +152,11 @@ func (jq *JobQueue) AddJob(jobType models.JobType, payload string) error {
 		Payload: payload,
 		Status:  models.JobStatusPending,
 	}
-	return jq.db.Create(&job).Error
+	if err := jq.db.Create(&job).Error; err != nil {
+		return err
+	}
+	jq.notify()
+	return nil
 }
 
 // AddRecurringJob registers a job that should be enqueued on a recurring
@@ -190,6 +201,7 @@ func (jq *JobQueue) processRecurringJobs(now time.Time) {
 			slog.Error("create job for recurring", "error", err)
 			continue
 		}
+		jq.notify()
 		next, err := nextCronTime(rj.CronExpr, now)
 		if err != nil {
 			slog.Error("compute next run", "error", err)
