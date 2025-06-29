@@ -1070,6 +1070,7 @@ func createAuthControllerFile() error {
 	buf.WriteString("package controllers\n\n")
 	buf.WriteString("import (\n")
 	buf.WriteString("\t\"net/http\"\n\n")
+	buf.WriteString("\t\"monolith/csrf\"\n")
 	buf.WriteString("\t\"monolith/db\"\n")
 	buf.WriteString("\t\"monolith/models\"\n")
 	buf.WriteString("\t\"monolith/session\"\n")
@@ -1078,10 +1079,18 @@ func createAuthControllerFile() error {
 	buf.WriteString("type AuthController struct{}\n\n")
 	buf.WriteString("var AuthCtrl = &AuthController{}\n\n")
 	buf.WriteString("func (ac *AuthController) ShowLoginForm(w http.ResponseWriter, r *http.Request) {\n")
-	buf.WriteString("\tviews.Render(w, \"auth_login.html.tmpl\", nil)\n")
+	buf.WriteString("\tdata := map[string]any{\n")
+	buf.WriteString("\t\t\"csrf_token\": csrf.GetCSRFTokenForForm(w, r),\n")
+	buf.WriteString("\t\t\"csrf_meta\": csrf.GetCSRFMetaTag(w, r),\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("\tviews.Render(w, \"auth_login.html.tmpl\", data)\n")
 	buf.WriteString("}\n\n")
 	buf.WriteString("func (ac *AuthController) ShowSignupForm(w http.ResponseWriter, r *http.Request) {\n")
-	buf.WriteString("\tviews.Render(w, \"auth_signup.html.tmpl\", nil)\n")
+	buf.WriteString("\tdata := map[string]any{\n")
+	buf.WriteString("\t\t\"csrf_token\": csrf.GetCSRFTokenForForm(w, r),\n")
+	buf.WriteString("\t\t\"csrf_meta\": csrf.GetCSRFMetaTag(w, r),\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("\tviews.Render(w, \"auth_signup.html.tmpl\", data)\n")
 	buf.WriteString("}\n\n")
 	buf.WriteString("func (ac *AuthController) Signup(w http.ResponseWriter, r *http.Request) {\n")
 	buf.WriteString("\tif err := r.ParseForm(); err != nil {\n")
@@ -1143,6 +1152,7 @@ func createLoginTemplate() error {
 {{define "title"}}<title>Login</title>{{end}}
 
 {{block "meta" .}}
+    {{.csrf_meta}}
 {{end}}
 
  {{block "header" .}}
@@ -1159,6 +1169,7 @@ func createLoginTemplate() error {
 {{define "body"}}
     <h1>Login</h1>
     <form method="POST" action="/login">
+        {{.csrf_token}}
         <label>Email: <input type="email" name="email"></label><br>
         <label>Password: <input type="password" name="password"></label><br>
         <button type="submit">Login</button>
@@ -1191,6 +1202,7 @@ func createSignupTemplate() error {
 {{define "title"}}<title>Sign Up</title>{{end}}
 
 {{block "meta" .}}
+    {{.csrf_meta}}
 {{end}}
 
  {{block "header" .}}
@@ -1207,6 +1219,7 @@ func createSignupTemplate() error {
 {{define "body"}}
     <h1>Sign Up</h1>
     <form method="POST" action="/signup">
+        {{.csrf_token}}
         <label>Email: <input type="email" name="email"></label><br>
         <label>Password: <input type="password" name="password"></label><br>
         <button type="submit">Create Account</button>
@@ -1662,6 +1675,7 @@ func createAdminControllerFile() error {
 	buf.WriteString("package controllers\n\n")
 	buf.WriteString("import (\n")
 	buf.WriteString("\t\"net/http\"\n")
+	buf.WriteString("\t\"monolith/csrf\"\n")
 	buf.WriteString("\t\"monolith/views\"\n")
 	buf.WriteString(")\n\n")
 	buf.WriteString("type AdminController struct{}\n\n")
@@ -1689,7 +1703,11 @@ func createAdminControllerFile() error {
 	buf.WriteString("\t\t\t}\n")
 	buf.WriteString("\t\t}\n")
 	buf.WriteString("\t}\n")
-	buf.WriteString("\tviews.Render(w, \"admin_dashboard.html.tmpl\", nil)\n")
+	buf.WriteString("\tdata := map[string]any{\n")
+	buf.WriteString("\t\t\"csrf_token\": csrf.GetCSRFTokenForForm(w, r),\n")
+	buf.WriteString("\t\t\"csrf_meta\": csrf.GetCSRFMetaTag(w, r),\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("\tviews.Render(w, \"admin_dashboard.html.tmpl\", data)\n")
 	buf.WriteString("}\n")
 	formatted, err := format.Source(buf.Bytes())
 	if err != nil {
@@ -1709,11 +1727,13 @@ func createAdminTemplate() error {
 		return nil
 	}
 	var buf bytes.Buffer
+
 	buf.WriteString(`{{template "base.html.tmpl" .}}
 
 {{define "title"}}<title>Admin Dashboard</title>{{end}}
 
 {{block "meta" .}}
+    {{.csrf_meta}}
 {{end}}
 
  {{block "header" .}}
@@ -1733,6 +1753,7 @@ func createAdminTemplate() error {
     <div id="chart" style="height:300px;"></div>
     <h2>Download Profile</h2>
     <form method="POST">
+        {{.csrf_token}}
         <label>Profile Type:
             <select name="profile_type">
                 <option value="cpu">CPU</option>
