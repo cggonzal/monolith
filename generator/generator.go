@@ -689,17 +689,15 @@ func createTemplateFiles(name string, actions []string) error {
 				continue
 			}
 			var buf bytes.Buffer
-			buf.WriteString(`{{template "base.html.tmpl" .}}
+			buf.WriteString(`{{define "title"}}<title></title>{{end}}
 
-{{define "title"}}<title></title>{{end}}
-
-{{block "meta" .}}
+{{define "meta"}}
 {{end}}
 
- {{block "header" .}}
- {{end}}
+{{define "header"}}
+{{end}}
 
-{{block "scripts" .}}
+{{define "scripts"}}
 {{end}}
 
 {{define "stylesheet"}}
@@ -710,12 +708,12 @@ func createTemplateFiles(name string, actions []string) error {
 {{define "body"}}
 {{end}}
 
-
 {{define "footer"}}
 <footer>
 </footer>
 {{end}}
-`)
+
+{{template "base.html.tmpl" .}}`)
 			if err := os.WriteFile(file, buf.Bytes(), 0644); err != nil {
 				return err
 			}
@@ -1159,10 +1157,10 @@ func createLoginTemplate() error {
     {{.csrf_meta}}
 {{end}}
 
-{{block "header" .}}
+{{define "header"}}
 {{end}}
 
-{{block "scripts" .}}
+{{define "scripts"}}
 {{end}}
 
 {{define "stylesheet"}}
@@ -1208,10 +1206,10 @@ func createSignupTemplate() error {
     {{.csrf_meta}}
 {{end}}
 
-{{block "header" .}}
+{{define "header"}}
 {{end}}
 
-{{block "scripts" .}}
+{{define "scripts"}}
 {{end}}
 
 {{define "stylesheet"}}
@@ -1732,18 +1730,16 @@ func createAdminTemplate() error {
 	}
 	var buf bytes.Buffer
 
-	buf.WriteString(`{{template "base.html.tmpl" .}}
+	buf.WriteString(`{{define "title"}}<title>Admin Dashboard</title>{{end}}
 
-{{define "title"}}<title>Admin Dashboard</title>{{end}}
-
-{{block "meta" .}}
+{{define "meta"}}
     {{.csrf_meta}}
 {{end}}
 
- {{block "header" .}}
- {{end}}
+{{define "header"}}
+{{end}}
 
-{{block "scripts" .}}
+{{define "scripts"}}
 {{end}}
 
 {{define "stylesheet"}}
@@ -1778,7 +1774,8 @@ func createAdminTemplate() error {
 <footer>
 </footer>
 {{end}}
-`)
+
+{{template "base.html.tmpl" .}}`)
 	if err := os.WriteFile(path, buf.Bytes(), 0644); err != nil {
 		return err
 	}
