@@ -1153,16 +1153,14 @@ func createLoginTemplate() error {
 		return nil
 	}
 	var buf bytes.Buffer
-	buf.WriteString(`{{template "base.html.tmpl" .}}
+	buf.WriteString(`{{define "title"}}<title>Login</title>{{end}}
 
-{{define "title"}}<title>Login</title>{{end}}
-
-{{block "meta" .}}
+{{define "meta"}}
     {{.csrf_meta}}
 {{end}}
 
- {{block "header" .}}
- {{end}}
+{{block "header" .}}
+{{end}}
 
 {{block "scripts" .}}
 {{end}}
@@ -1183,11 +1181,12 @@ func createLoginTemplate() error {
     <a href="/signup">Sign up</a>
 {{end}}
 
-
 {{define "footer"}}
 <footer>
 </footer>
 {{end}}
+
+{{template "base.html.tmpl" .}}
 `)
 	if err := os.WriteFile(path, buf.Bytes(), 0644); err != nil {
 		return err
@@ -1203,16 +1202,14 @@ func createSignupTemplate() error {
 		return nil
 	}
 	var buf bytes.Buffer
-	buf.WriteString(`{{template "base.html.tmpl" .}}
+	buf.WriteString(`{{define "title"}}<title>Sign Up</title>{{end}}
 
-{{define "title"}}<title>Sign Up</title>{{end}}
-
-{{block "meta" .}}
+{{define "meta"}}
     {{.csrf_meta}}
 {{end}}
 
- {{block "header" .}}
- {{end}}
+{{block "header" .}}
+{{end}}
 
 {{block "scripts" .}}
 {{end}}
@@ -1233,11 +1230,12 @@ func createSignupTemplate() error {
     <a href="/login">Login</a>
 {{end}}
 
-
 {{define "footer"}}
 <footer>
 </footer>
 {{end}}
+
+{{template "base.html.tmpl" .}}
 `)
 	if err := os.WriteFile(path, buf.Bytes(), 0644); err != nil {
 		return err
