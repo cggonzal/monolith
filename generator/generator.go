@@ -868,48 +868,74 @@ func AuthenticateUser(db *gorm.DB, email, password string) (*User, error) {
 // createSessionFile sets up cookie session helpers for login state.
 func createSessionFile() error {
 	path := filepath.Join("session", "session.go")
+
+	var content []byte
 	if _, err := os.Stat(path); err == nil {
-		fmt.Println("exists", path)
-		return nil
+		existing, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		content = existing
+	} else if os.IsNotExist(err) {
+		var buf bytes.Buffer
+		buf.WriteString("package session\n\n")
+		buf.WriteString("import (\n")
+		buf.WriteString("\t\"monolith/config\"\n")
+		buf.WriteString("\t\"net/http\"\n\n")
+		buf.WriteString("\t\"github.com/gorilla/sessions\"\n")
+		buf.WriteString(")\n\n")
+		buf.WriteString("const SESSION_NAME_KEY = \"session\"\n")
+		buf.WriteString("const LOGGED_IN_KEY = \"logged_in\"\n")
+		buf.WriteString("const EMAIL_KEY = \"email\"\n\n")
+		buf.WriteString("var store *sessions.CookieStore\n\n")
+		buf.WriteString("// InitSession initializes the session store with the secret key\n")
+		buf.WriteString("func InitSession() {\n")
+		buf.WriteString("\tstore = sessions.NewCookieStore([]byte(config.SECRET_KEY))\n")
+		buf.WriteString("}\n\n")
+		buf.WriteString("// GetSession retrieves the session from the request\n")
+		buf.WriteString("func GetSession(r *http.Request) (*sessions.Session, error) {\n")
+		buf.WriteString("\treturn store.Get(r, SESSION_NAME_KEY)\n")
+		buf.WriteString("}\n")
+		content = buf.Bytes()
+	} else {
+		return err
 	}
-	var buf bytes.Buffer
-	buf.WriteString("package session\n\n")
-	buf.WriteString("import (\n")
-	buf.WriteString("\t\"net/http\"\n")
-	buf.WriteString("\t\"monolith/config\"\n")
-	buf.WriteString("\t\"github.com/gorilla/sessions\"\n")
-	buf.WriteString(")\n\n")
-	buf.WriteString("const SESSION_NAME_KEY = \"session\"\n")
-	buf.WriteString("const LOGGED_IN_KEY = \"logged_in\"\n")
-	buf.WriteString("const EMAIL_KEY = \"email\"\n\n")
-	buf.WriteString("var store *sessions.CookieStore\n\n")
-	buf.WriteString("// InitStore initializes the session store with the secret key\n")
-	buf.WriteString("func InitStore() {\n")
-	buf.WriteString("\tstore = sessions.NewCookieStore([]byte(config.SECRET_KEY))\n")
-	buf.WriteString("}\n\n")
-	buf.WriteString("// GetSession retrieves the session from the request\n")
-	buf.WriteString("func GetSession(r *http.Request) (*sessions.Session, error) {\n")
-	buf.WriteString("\treturn store.Get(r, SESSION_NAME_KEY)\n")
-	buf.WriteString("}\n\n")
-	buf.WriteString("func SetLoggedIn(w http.ResponseWriter, r *http.Request, email string) {\n")
-	buf.WriteString("\tsession, _ := GetSession(r)\n")
-	buf.WriteString("\tsession.Options = &sessions.Options{MaxAge: 7 * 24 * 60 * 60, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil}\n")
-	buf.WriteString("\tsession.Values[LOGGED_IN_KEY] = true\n")
-	buf.WriteString("\tsession.Values[EMAIL_KEY] = email\n")
-	buf.WriteString("\tsession.Save(r, w)\n")
-	buf.WriteString("}\n\n")
-	buf.WriteString("func Logout(w http.ResponseWriter, r *http.Request) {\n")
-	buf.WriteString("\tsession, _ := GetSession(r)\n")
-	buf.WriteString("\tdelete(session.Values, LOGGED_IN_KEY)\n")
-	buf.WriteString("\tdelete(session.Values, EMAIL_KEY)\n")
-	buf.WriteString("\tsession.Save(r, w)\n")
-	buf.WriteString("}\n\n")
-	buf.WriteString("func IsLoggedIn(r *http.Request) bool {\n")
-	buf.WriteString("\tsession, _ := GetSession(r)\n")
-	buf.WriteString("\tloggedIn, ok := session.Values[LOGGED_IN_KEY].(bool)\n")
-	buf.WriteString("\treturn ok && loggedIn\n")
-	buf.WriteString("}\n")
-	formatted, err := format.Source(buf.Bytes())
+
+	if !bytes.Contains(content, []byte("SetLoggedIn(")) {
+		content = append(content, []byte(`
+
+func SetLoggedIn(w http.ResponseWriter, r *http.Request, email string) {
+        session, _ := GetSession(r)
+        session.Options = &sessions.Options{MaxAge: 7 * 24 * 60 * 60, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil}
+        session.Values[LOGGED_IN_KEY] = true
+        session.Values[EMAIL_KEY] = email
+        session.Save(r, w)
+}
+`)...)
+	}
+	if !bytes.Contains(content, []byte("Logout(")) {
+		content = append(content, []byte(`
+
+func Logout(w http.ResponseWriter, r *http.Request) {
+        session, _ := GetSession(r)
+        delete(session.Values, LOGGED_IN_KEY)
+        delete(session.Values, EMAIL_KEY)
+        session.Save(r, w)
+}
+`)...)
+	}
+	if !bytes.Contains(content, []byte("IsLoggedIn(")) {
+		content = append(content, []byte(`
+
+func IsLoggedIn(r *http.Request) bool {
+        session, _ := GetSession(r)
+        loggedIn, ok := session.Values[LOGGED_IN_KEY].(bool)
+        return ok && loggedIn
+}
+`)...)
+	}
+
+	formatted, err := format.Source(content)
 	if err != nil {
 		return err
 	}
