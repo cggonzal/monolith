@@ -12,7 +12,7 @@ import (
 
 var JOB_QUEUE_NUM_WORKERS = 4
 
-var PORT = "9000" // change to os.Getenv("PORT") if you want to use an environment variable
+var PORT = os.Getenv("PORT")
 
 // Mailgun configuration. Set MAILGUN_DOMAIN and MAILGUN_API_KEY environment
 // variables in production. MAILGUN_API_BASE rarely changes and defaults to the
@@ -32,6 +32,10 @@ func InitConfig() {
 	if SECRET_KEY == "" {
 		slog.Warn("SECRET_KEY is not set, using default value. This is insecure for production use.")
 		SECRET_KEY = "default_secret_key"
+	}
+	if PORT == "" {
+		slog.Info("PORT is not set, using default value: 9000")
+		PORT = "9000"
 	}
 	if MAILGUN_DOMAIN == "" {
 		slog.Warn("MAILGUN_DOMAIN is not set, email functionality will not function properly.")
