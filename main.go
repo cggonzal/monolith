@@ -11,6 +11,7 @@ import (
 	"monolith/generator"
 	"monolith/jobs"
 	"monolith/server_management"
+	"monolith/session"
 	"monolith/views"
 	"monolith/ws"
 )
@@ -40,6 +41,9 @@ func main() {
 
 	// initialize configuration
 	config.InitConfig()
+
+	// initialize session
+	session.InitSession()
 
 	// initialize database
 	db.InitDB()

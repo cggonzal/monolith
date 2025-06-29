@@ -58,3 +58,12 @@ func GetCSRFTokenForForm(w http.ResponseWriter, r *http.Request) template.HTML {
 	token := ensureToken(w, r)
 	return template.HTML("<input type=\"hidden\" name=\"csrf_token\" value=\"" + token + "\">")
 }
+
+// GetCSRFTokens returns both the form token and meta tag token using the same
+// underlying token to ensure consistency.
+func GetCSRFTokens(w http.ResponseWriter, r *http.Request) (template.HTML, template.HTML) {
+	token := ensureToken(w, r)
+	formToken := template.HTML("<input type=\"hidden\" name=\"csrf_token\" value=\"" + token + "\">")
+	metaToken := template.HTML("<meta name=\"csrf-token\" content=\"" + token + "\">")
+	return formToken, metaToken
+}
