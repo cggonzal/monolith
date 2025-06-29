@@ -1073,7 +1073,6 @@ func createAuthControllerFile() error {
 	var buf bytes.Buffer
 	buf.WriteString("package controllers\n\n")
 	buf.WriteString("import (\n")
-	buf.WriteString("\t\"html/template\"\n")
 	buf.WriteString("\t\"net/http\"\n\n")
 	buf.WriteString("\t\"monolith/csrf\"\n")
 	buf.WriteString("\t\"monolith/db\"\n")
