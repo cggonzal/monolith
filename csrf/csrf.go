@@ -3,6 +3,7 @@ package csrf
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"html/template"
 	"net/http"
 )
 
@@ -45,15 +46,15 @@ func GetCSRFToken(w http.ResponseWriter, r *http.Request) string {
 
 // GetCSRFMetaTag returns a meta tag containing the CSRF token. This can be
 // included in templates so JavaScript can read the token for AJAX requests.
-func GetCSRFMetaTag(w http.ResponseWriter, r *http.Request) string {
+func GetCSRFMetaTag(w http.ResponseWriter, r *http.Request) template.HTML {
 	token := ensureToken(w, r)
-	return "<meta name=\"csrf-token\" content=\"" + token + "\">"
+	return template.HTML("<meta name=\"csrf-token\" content=\"" + token + "\">")
 }
 
 // GetCSRFTokenForForm ensures a CSRF token cookie exists and returns a hidden
 // input element containing the token. Pass the returned string directly into
 // template data as {{csrf_token}}.
-func GetCSRFTokenForForm(w http.ResponseWriter, r *http.Request) string {
+func GetCSRFTokenForForm(w http.ResponseWriter, r *http.Request) template.HTML {
 	token := ensureToken(w, r)
-	return "<input type=\"hidden\" name=\"csrf_token\" value=\"" + token + "\">"
+	return template.HTML("<input type=\"hidden\" name=\"csrf_token\" value=\"" + token + "\">")
 }

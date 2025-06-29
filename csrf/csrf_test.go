@@ -12,7 +12,7 @@ func TestGetCSRFTokenForFormSetsCookie(t *testing.T) {
 
 	field := GetCSRFTokenForForm(w, req)
 
-	if !strings.Contains(field, "name=\"csrf_token\"") {
+	if !strings.Contains(string(field), "name=\"csrf_token\"") {
 		t.Fatalf("token field missing name attribute")
 	}
 	cookies := w.Result().Cookies()
@@ -23,7 +23,7 @@ func TestGetCSRFTokenForFormSetsCookie(t *testing.T) {
 	if token == "" {
 		t.Fatalf("empty token in cookie")
 	}
-	if !strings.Contains(field, token) {
+	if !strings.Contains(string(field), token) {
 		t.Fatalf("token not in hidden field")
 	}
 }
@@ -52,7 +52,7 @@ func TestGetCSRFMetaTagIncludesToken(t *testing.T) {
 		t.Fatalf("expected cookie")
 	}
 	token := cookies[0].Value
-	if !strings.Contains(meta, token) {
+	if !strings.Contains(string(meta), token) {
 		t.Fatalf("meta tag missing token")
 	}
 }
