@@ -41,8 +41,9 @@ func main() {
 
 	// initialize configuration
 	config.InitConfig()
-	// initialize session store
-	session.InitStore()
+
+	// initialize session
+	session.InitSession()
 
 	// initialize database
 	db.InitDB()
