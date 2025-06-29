@@ -889,7 +889,7 @@ func createSessionFile() error {
 	buf.WriteString("}\n\n")
 	buf.WriteString("func SetLoggedIn(w http.ResponseWriter, r *http.Request, email string) {\n")
 	buf.WriteString("\tsession, _ := GetSession(r)\n")
-	buf.WriteString("\tsession.Options = &sessions.Options{MaxAge: 7 * 24 * 60 * 60, SameSite: http.SameSiteLaxMode}\n")
+	buf.WriteString("\tsession.Options = &sessions.Options{MaxAge: 7 * 24 * 60 * 60, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil}\n")
 	buf.WriteString("\tsession.Values[LOGGED_IN_KEY] = true\n")
 	buf.WriteString("\tsession.Values[EMAIL_KEY] = email\n")
 	buf.WriteString("\tsession.Save(r, w)\n")
