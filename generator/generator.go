@@ -784,9 +784,12 @@ func createUserModelAuth() error {
 
 import (
     "errors"
+    "net/http"
 
+    "github.com/gorilla/sessions"
     "golang.org/x/crypto/bcrypt"
     "gorm.io/gorm"
+    "monolith/session"
 )
 
 // User represents a user in the database
@@ -847,6 +850,30 @@ func AuthenticateUser(db *gorm.DB, email, password string) (*User, error) {
     }
     return user, nil
 }
+
+// SetLoggedIn marks the session as logged in and stores the email
+func SetLoggedIn(w http.ResponseWriter, r *http.Request, email string) {
+    s, _ := session.GetSession(r)
+    s.Options = &sessions.Options{MaxAge: 7 * 24 * 60 * 60, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil}
+    s.Values[session.LOGGED_IN_KEY] = true
+    s.Values[session.EMAIL_KEY] = email
+    s.Save(r, w)
+}
+
+// Logout clears login related session values
+func Logout(w http.ResponseWriter, r *http.Request) {
+    s, _ := session.GetSession(r)
+    delete(s.Values, session.LOGGED_IN_KEY)
+    delete(s.Values, session.EMAIL_KEY)
+    s.Save(r, w)
+}
+
+// IsLoggedIn checks if the request is associated with a logged in session
+func IsLoggedIn(r *http.Request) bool {
+    s, _ := session.GetSession(r)
+    loggedIn, ok := s.Values[session.LOGGED_IN_KEY].(bool)
+    return ok && loggedIn
+}
 `)
 		formatted, err := format.Source(buf.Bytes())
 		if err != nil {
@@ -888,24 +915,6 @@ func createSessionFile() error {
 	buf.WriteString("// GetSession retrieves the session from the request\n")
 	buf.WriteString("func GetSession(r *http.Request) (*sessions.Session, error) {\n")
 	buf.WriteString("\treturn store.Get(r, SESSION_NAME_KEY)\n")
-	buf.WriteString("}\n\n")
-	buf.WriteString("func SetLoggedIn(w http.ResponseWriter, r *http.Request, email string) {\n")
-	buf.WriteString("\tsession, _ := GetSession(r)\n")
-	buf.WriteString("\tsession.Options = &sessions.Options{MaxAge: 7 * 24 * 60 * 60, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil}\n")
-	buf.WriteString("\tsession.Values[LOGGED_IN_KEY] = true\n")
-	buf.WriteString("\tsession.Values[EMAIL_KEY] = email\n")
-	buf.WriteString("\tsession.Save(r, w)\n")
-	buf.WriteString("}\n\n")
-	buf.WriteString("func Logout(w http.ResponseWriter, r *http.Request) {\n")
-	buf.WriteString("\tsession, _ := GetSession(r)\n")
-	buf.WriteString("\tdelete(session.Values, LOGGED_IN_KEY)\n")
-	buf.WriteString("\tdelete(session.Values, EMAIL_KEY)\n")
-	buf.WriteString("\tsession.Save(r, w)\n")
-	buf.WriteString("}\n\n")
-	buf.WriteString("func IsLoggedIn(r *http.Request) bool {\n")
-	buf.WriteString("\tsession, _ := GetSession(r)\n")
-	buf.WriteString("\tloggedIn, ok := session.Values[LOGGED_IN_KEY].(bool)\n")
-	buf.WriteString("\treturn ok && loggedIn\n")
 	buf.WriteString("}\n")
 	formatted, err := format.Source(buf.Bytes())
 	if err != nil {
@@ -923,18 +932,22 @@ func createSessionFile() error {
 
 // createSessionTestFile sets up tests for session helpers.
 func createSessionTestFile() error {
-	path := filepath.Join("session", "session_test.go")
+	path := filepath.Join("models", "user_test.go")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil
 	}
 	var buf bytes.Buffer
-	buf.WriteString("package session\n\n")
+	buf.WriteString("package models\n\n")
 	buf.WriteString("import (\n")
+	buf.WriteString("\t\"monolith/config\"\n")
+	buf.WriteString("\t\"monolith/session\"\n")
 	buf.WriteString("\t\"net/http/httptest\"\n")
 	buf.WriteString("\t\"testing\"\n")
 	buf.WriteString(")\n\n")
 	buf.WriteString("func TestSessionLoginLogout(t *testing.T) {\n")
+	buf.WriteString("\tconfig.InitConfig()\n")
+	buf.WriteString("\tsession.InitSession()\n")
 	buf.WriteString("\treq := httptest.NewRequest(\"GET\", \"/\", nil)\n")
 	buf.WriteString("\tw := httptest.NewRecorder()\n")
 	buf.WriteString("\tSetLoggedIn(w, req, \"test@example.com\")\n")
@@ -977,13 +990,13 @@ func createAuthMiddlewareFile() error {
 	var buf bytes.Buffer
 	buf.WriteString("package middleware\n\n")
 	buf.WriteString("import (\n")
-	buf.WriteString("\t\"monolith/session\"\n")
+	buf.WriteString("\t\"monolith/models\"\n")
 	buf.WriteString("\t\"net/http\"\n")
 	buf.WriteString(")\n\n")
 	buf.WriteString("// RequireLogin ensures the user is logged in before accessing a route\n")
 	buf.WriteString("func RequireLogin(next http.HandlerFunc) http.HandlerFunc {\n")
 	buf.WriteString("\treturn func(w http.ResponseWriter, r *http.Request) {\n")
-	buf.WriteString("\t\tif !session.IsLoggedIn(r) {\n")
+	buf.WriteString("\t\tif !models.IsLoggedIn(r) {\n")
 	buf.WriteString("\t\t\thttp.Redirect(w, r, \"/login\", http.StatusSeeOther)\n")
 	buf.WriteString("\t\t\treturn\n")
 	buf.WriteString("\t\t}\n")
@@ -1014,12 +1027,16 @@ func createAuthMiddlewareTestFile() error {
 	var buf bytes.Buffer
 	buf.WriteString("package middleware\n\n")
 	buf.WriteString("import (\n")
+	buf.WriteString("\t\"monolith/config\"\n")
+	buf.WriteString("\t\"monolith/session\"\n")
 	buf.WriteString("\t\"net/http\"\n")
 	buf.WriteString("\t\"net/http/httptest\"\n")
-	buf.WriteString("\t\"testing\"\n\n")
-	buf.WriteString("\t\"monolith/session\"\n")
+	buf.WriteString("\t\"testing\"\n")
+	buf.WriteString("\t\"monolith/models\"\n")
 	buf.WriteString(")\n\n")
 	buf.WriteString("func TestRequireLogin(t *testing.T) {\n")
+	buf.WriteString("\tconfig.InitConfig()\n")
+	buf.WriteString("\tsession.InitSession()\n")
 	buf.WriteString("\thandlerCalled := false\n")
 	buf.WriteString("\thandler := RequireLogin(func(w http.ResponseWriter, r *http.Request) {\n")
 	buf.WriteString("\t\thandlerCalled = true\n")
@@ -1035,7 +1052,7 @@ func createAuthMiddlewareTestFile() error {
 	buf.WriteString("\t}\n\n")
 	buf.WriteString("\treq2 := httptest.NewRequest(\"GET\", \"/\", nil)\n")
 	buf.WriteString("\tw2 := httptest.NewRecorder()\n")
-	buf.WriteString("\tsession.SetLoggedIn(w2, req2, \"test@example.com\")\n")
+	buf.WriteString("\tmodels.SetLoggedIn(w2, req2, \"test@example.com\")\n")
 	buf.WriteString("\tcookie := w2.Result().Cookies()[0]\n")
 	buf.WriteString("\treq2.AddCookie(cookie)\n")
 	buf.WriteString("\tw3 := httptest.NewRecorder()\n")
@@ -1075,7 +1092,6 @@ func createAuthControllerFile() error {
 	buf.WriteString("\t\"monolith/csrf\"\n")
 	buf.WriteString("\t\"monolith/db\"\n")
 	buf.WriteString("\t\"monolith/models\"\n")
-	buf.WriteString("\t\"monolith/session\"\n")
 	buf.WriteString("\t\"monolith/views\"\n")
 	buf.WriteString(")\n\n")
 	buf.WriteString("type AuthController struct{}\n\n")
@@ -1111,7 +1127,7 @@ func createAuthControllerFile() error {
 	buf.WriteString("\t\thttp.Error(w, \"could not create user\", http.StatusInternalServerError)\n")
 	buf.WriteString("\t\treturn\n")
 	buf.WriteString("\t}\n")
-	buf.WriteString("\tsession.SetLoggedIn(w, r, email)\n")
+	buf.WriteString("\tmodels.SetLoggedIn(w, r, email)\n")
 	buf.WriteString("\thttp.Redirect(w, r, \"/\", http.StatusSeeOther)\n")
 	buf.WriteString("}\n\n")
 	buf.WriteString("func (ac *AuthController) Login(w http.ResponseWriter, r *http.Request) {\n")
@@ -1125,11 +1141,11 @@ func createAuthControllerFile() error {
 	buf.WriteString("\t\thttp.Error(w, \"invalid credentials\", http.StatusUnauthorized)\n")
 	buf.WriteString("\t\treturn\n")
 	buf.WriteString("\t}\n")
-	buf.WriteString("\tsession.SetLoggedIn(w, r, email)\n")
+	buf.WriteString("\tmodels.SetLoggedIn(w, r, email)\n")
 	buf.WriteString("\thttp.Redirect(w, r, \"/\", http.StatusSeeOther)\n")
 	buf.WriteString("}\n\n")
 	buf.WriteString("func (ac *AuthController) Logout(w http.ResponseWriter, r *http.Request) {\n")
-	buf.WriteString("\tsession.Logout(w, r)\n")
+	buf.WriteString("\tmodels.Logout(w, r)\n")
 	buf.WriteString("\thttp.Redirect(w, r, \"/\", http.StatusSeeOther)\n")
 	buf.WriteString("}\n")
 	formatted, err := format.Source(buf.Bytes())
@@ -1800,7 +1816,7 @@ func createAdminMiddlewareFile() error {
 	buf.WriteString("// RequireAdmin ensures the user is logged in and an admin before accessing a route\n")
 	buf.WriteString("func RequireAdmin(next http.HandlerFunc) http.HandlerFunc {\n")
 	buf.WriteString("\treturn func(w http.ResponseWriter, r *http.Request) {\n")
-	buf.WriteString("\t\tif !session.IsLoggedIn(r) {\n")
+	buf.WriteString("\t\tif !models.IsLoggedIn(r) {\n")
 	buf.WriteString("\t\t\thttp.Redirect(w, r, \"/login\", http.StatusSeeOther)\n")
 	buf.WriteString("\t\t\treturn\n")
 	buf.WriteString("\t\t}\n")
