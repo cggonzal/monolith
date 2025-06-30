@@ -932,7 +932,7 @@ func createSessionFile() error {
 
 // createSessionTestFile sets up tests for session helpers.
 func createSessionTestFile() error {
-	path := filepath.Join("models", "session_test.go")
+	path := filepath.Join("models", "user_test.go")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil
@@ -944,6 +944,8 @@ func createSessionTestFile() error {
 	buf.WriteString("\t\"testing\"\n")
 	buf.WriteString(")\n\n")
 	buf.WriteString("func TestSessionLoginLogout(t *testing.T) {\n")
+	buf.WriteString("\tconfig.InitConfig()\n")
+	buf.WriteString("\tsession.InitSession()\n")
 	buf.WriteString("\treq := httptest.NewRequest(\"GET\", \"/\", nil)\n")
 	buf.WriteString("\tw := httptest.NewRecorder()\n")
 	buf.WriteString("\tSetLoggedIn(w, req, \"test@example.com\")\n")
@@ -1029,6 +1031,8 @@ func createAuthMiddlewareTestFile() error {
 	buf.WriteString("\t\"monolith/models\"\n")
 	buf.WriteString(")\n\n")
 	buf.WriteString("func TestRequireLogin(t *testing.T) {\n")
+	buf.WriteString("\tconfig.InitConfig()\n")
+	buf.WriteString("\tsession.InitSession()\n")
 	buf.WriteString("\thandlerCalled := false\n")
 	buf.WriteString("\thandler := RequireLogin(func(w http.ResponseWriter, r *http.Request) {\n")
 	buf.WriteString("\t\thandlerCalled = true\n")

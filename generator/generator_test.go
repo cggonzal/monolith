@@ -239,7 +239,7 @@ func TestRunAuthentication(t *testing.T) {
 	files := []string{
 		"models/user.go",
 		"session/session.go",
-		"models/session_test.go",
+		"models/user_test.go",
 		"middleware/auth.go",
 		"middleware/auth_test.go",
 		"controllers/auth_controller.go",
