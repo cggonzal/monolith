@@ -29,5 +29,5 @@ You can test the server using a WebSocket client. For example, you can send the 
 4. **WebSocket Upgrade:**  
    The `/ws` HTTP endpoint upgrades HTTP connections to WebSocket connections using gorilla/websocket.
 
-5. **Running the Server:**  
-   Finally, the server listens on port 9000 by default (configurable via `BIN_PORT`).
+5. **Running the Server:**
+   Finally, the server listens on port 9000 by default (configurable via `PORT`).

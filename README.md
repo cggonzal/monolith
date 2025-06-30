@@ -171,7 +171,7 @@ CRUD actions, templates and RESTful routes under `/widgets`.
 make generator authentication
 ```
 
-Adds a basic `User` model, login/logout handlers and middleware for sessions.
+Scaffolds a `User` model with session helpers, login & signup templates, and authentication middleware.
 
 ### Generating an admin dashboard
 
@@ -199,7 +199,7 @@ Everything dynamic (port and database DSN) is read from **environment variables*
 
 | Variable | Default | Used in |
 | -------- | ------- | ------- |
-| `BIN_PORT` | `9000` | HTTP listener |
+| `PORT` | `9000` | HTTP listener |
 | `LISTEN_FDS`, `LISTEN_PID` | – | systemd socket activation |
 
 ### Database Layer
@@ -320,7 +320,7 @@ http.ListenAndServe(":9000", handler)
 
 ### Routing & HTTP controllers
 
-All controllers are in `controllers/` and are wired inside `main.go` using the **new routing syntax** (Go 1.22+):
+All controllers are in `controllers/` and are wired inside `main.go` using the **new routing syntax** (Go 1.23+):
 
 ```go
 mux.HandleFunc("GET /", controllers.Home)
@@ -653,7 +653,7 @@ By default the script prunes old releases after deployment. Set `PRUNE=false` to
 
 | Name | Description | Default |
 | ---- | ----------- | ------- |
-| `BIN_PORT` | Fallback TCP port when not using socket activation | `9000` |
+| `PORT` | Fallback TCP port when not using socket activation | `9000` |
 | `DATABASE_URL` | Postgres DSN (if you switch drivers) | – |
 | `MAILGUN_DOMAIN` | Mailgun domain used for sending mail | – |
 | `MAILGUN_API_KEY` | Private API key for Mailgun | – |
@@ -667,6 +667,7 @@ By default the script prunes old releases after deployment. Set `PRUNE=false` to
 | `make build` | Build a statically linked binary |
 | `make run`   | `go run ./...` |
 | `make test`  | `go test ./...` |
+| `make clean` | Clear test cache |
 | `make deploy`| Zero downtime deploy via server_management/deploy.sh
 
 ---
