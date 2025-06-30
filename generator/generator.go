@@ -1694,36 +1694,75 @@ func createAdminControllerFile() error {
 	buf.WriteString("import (\n")
 	buf.WriteString("\t\"net/http\"\n")
 	buf.WriteString("\t\"monolith/csrf\"\n")
+	buf.WriteString("\t\"monolith/db\"\n")
 	buf.WriteString("\t\"monolith/views\"\n")
 	buf.WriteString(")\n\n")
 	buf.WriteString("type AdminController struct{}\n\n")
 	buf.WriteString("var AdminCtrl = &AdminController{}\n\n")
 	buf.WriteString("func (ac *AdminController) Dashboard(w http.ResponseWriter, r *http.Request) {\n")
+	buf.WriteString("\tdbHandle := db.GetDB()\n")
 	buf.WriteString("\tif r.Method == http.MethodPost {\n")
 	buf.WriteString("\t\tif err := r.ParseForm(); err == nil {\n")
-	buf.WriteString("\t\t\ttyp := r.FormValue(\"profile_type\")\n")
-	buf.WriteString("\t\t\tdur := r.FormValue(\"seconds\")\n")
-	buf.WriteString("\t\t\tswitch typ {\n")
-	buf.WriteString("\t\t\tcase \"cpu\":\n")
-	buf.WriteString("\t\t\t\tif dur == \"\" { dur = \"30\" }\n")
-	buf.WriteString("\t\t\t\thttp.Redirect(w, r, \"/debug/pprof/profile?seconds=\"+dur, http.StatusSeeOther)\n")
-	buf.WriteString("\t\t\t\treturn\n")
-	buf.WriteString("\t\t\tcase \"heap\":\n")
-	buf.WriteString("\t\t\t\thttp.Redirect(w, r, \"/debug/pprof/heap\", http.StatusSeeOther)\n")
-	buf.WriteString("\t\t\t\treturn\n")
-	buf.WriteString("\t\t\tcase \"mem\":\n")
-	buf.WriteString("\t\t\t\thttp.Redirect(w, r, \"/debug/pprof/allocs\", http.StatusSeeOther)\n")
-	buf.WriteString("\t\t\t\treturn\n")
-	buf.WriteString("\t\t\tcase \"trace\":\n")
-	buf.WriteString("\t\t\t\tif dur == \"\" { dur = \"1\" }\n")
-	buf.WriteString("\t\t\t\thttp.Redirect(w, r, \"/debug/pprof/trace?seconds=\"+dur, http.StatusSeeOther)\n")
-	buf.WriteString("\t\t\t\treturn\n")
+	buf.WriteString("\t\t\tmodel := r.FormValue(\"model\")\n")
+	buf.WriteString("\t\t\taction := r.FormValue(\"action\")\n")
+	buf.WriteString("\t\t\tif model != \"\" {\n")
+	buf.WriteString("\t\t\t\tvals := map[string]any{}\n")
+	buf.WriteString("\t\t\t\tfor k, v := range r.PostForm {\n")
+	buf.WriteString("\t\t\t\t\tif k == \"model\" || k == \"action\" || k == \"id\" || k == \"csrf_token\" {\n")
+	buf.WriteString("\t\t\t\t\t\tcontinue\n")
+	buf.WriteString("\t\t\t\t\t}\n")
+	buf.WriteString("\t\t\t\t\tif len(v) > 0 { vals[k] = v[0] }\n")
+	buf.WriteString("\t\t\t\t}\n")
+	buf.WriteString("\t\t\t\tswitch action {\n")
+	buf.WriteString("\t\t\t\tcase \"create\":\n")
+	buf.WriteString("\t\t\t\t\tdbHandle.Table(model).Create(vals)\n")
+	buf.WriteString("\t\t\t\tcase \"update\":\n")
+	buf.WriteString("\t\t\t\t\tid := r.FormValue(\"id\")\n")
+	buf.WriteString("\t\t\t\t\tdbHandle.Table(model).Where(\"id = ?\", id).Updates(vals)\n")
+	buf.WriteString("\t\t\t\tcase \"delete\":\n")
+	buf.WriteString("\t\t\t\t\tid := r.FormValue(\"id\")\n")
+	buf.WriteString("\t\t\t\t\tdbHandle.Table(model).Where(\"id = ?\", id).Delete(nil)\n")
+	buf.WriteString("\t\t\t\t}\n")
+	buf.WriteString("\t\t\t} else {\n")
+	buf.WriteString("\t\t\t\ttyp := r.FormValue(\"profile_type\")\n")
+	buf.WriteString("\t\t\t\tdur := r.FormValue(\"seconds\")\n")
+	buf.WriteString("\t\t\t\tswitch typ {\n")
+	buf.WriteString("\t\t\t\tcase \"cpu\":\n")
+	buf.WriteString("\t\t\t\t\tif dur == \"\" { dur = \"30\" }\n")
+	buf.WriteString("\t\t\t\t\thttp.Redirect(w, r, \"/debug/pprof/profile?seconds=\"+dur, http.StatusSeeOther)\n")
+	buf.WriteString("\t\t\t\t\treturn\n")
+	buf.WriteString("\t\t\t\tcase \"heap\":\n")
+	buf.WriteString("\t\t\t\t\thttp.Redirect(w, r, \"/debug/pprof/heap\", http.StatusSeeOther)\n")
+	buf.WriteString("\t\t\t\t\treturn\n")
+	buf.WriteString("\t\t\t\tcase \"mem\":\n")
+	buf.WriteString("\t\t\t\t\thttp.Redirect(w, r, \"/debug/pprof/allocs\", http.StatusSeeOther)\n")
+	buf.WriteString("\t\t\t\t\treturn\n")
+	buf.WriteString("\t\t\t\tcase \"trace\":\n")
+	buf.WriteString("\t\t\t\t\tif dur == \"\" { dur = \"1\" }\n")
+	buf.WriteString("\t\t\t\t\thttp.Redirect(w, r, \"/debug/pprof/trace?seconds=\"+dur, http.StatusSeeOther)\n")
+	buf.WriteString("\t\t\t\t\treturn\n")
+	buf.WriteString("\t\t\t\t}\n")
 	buf.WriteString("\t\t\t}\n")
 	buf.WriteString("\t\t}\n")
 	buf.WriteString("\t}\n")
+	buf.WriteString("\tmodels, _ := dbHandle.Migrator().GetTables()\n")
 	buf.WriteString("\tdata := map[string]any{\n")
 	buf.WriteString("\t\t\"csrf_token\": csrf.GetCSRFTokenForForm(w, r),\n")
 	buf.WriteString("\t\t\"csrf_meta\": csrf.GetCSRFMetaTag(w, r),\n")
+	buf.WriteString("\t\t\"models\":     models,\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("\tmodel := r.URL.Query().Get(\"model\")\n")
+	buf.WriteString("\tif model != \"\" {\n")
+	buf.WriteString("\t\tcols, _ := dbHandle.Migrator().ColumnTypes(model)\n")
+	buf.WriteString("\t\tvar colNames []string\n")
+	buf.WriteString("\t\tfor _, c := range cols {\n")
+	buf.WriteString("\t\t\tcolNames = append(colNames, c.Name())\n")
+	buf.WriteString("\t\t}\n")
+	buf.WriteString("\t\tvar rows []map[string]any\n")
+	buf.WriteString("\t\tdbHandle.Table(model).Find(&rows)\n")
+	buf.WriteString("\t\tdata[\"current_model\"] = model\n")
+	buf.WriteString("\t\tdata[\"columns\"] = colNames\n")
+	buf.WriteString("\t\tdata[\"rows\"] = rows\n")
 	buf.WriteString("\t}\n")
 	buf.WriteString("\tviews.Render(w, \"admin_dashboard.html.tmpl\", data)\n")
 	buf.WriteString("}\n")
@@ -1752,43 +1791,93 @@ func createAdminTemplate() error {
     {{.csrf_meta}}
 {{end}}
 
-{{define "header"}}
-{{end}}
-
-{{define "scripts"}}
-{{end}}
-
 {{define "stylesheet"}}
 <style>
     @import url("https://cdn.simplecss.org/simple.css");
+    table {width:100%;border-collapse:collapse;}
+    th, td {border:1px solid #ccc;padding:4px;}
 </style>
 {{end}}
 
 {{define "body"}}
-    <h1>Admin Dashboard</h1>
-    <div id="chart" style="height:300px;"></div>
-    <h2>Download Profile</h2>
-    <form method="POST">
-        {{.csrf_token}}
-        <label>Profile Type:
-            <select name="profile_type">
-                <option value="cpu">CPU</option>
-                <option value="heap">Heap</option>
-                <option value="mem">Memory</option>
-                <option value="trace">Trace</option>
-            </select>
-        </label>
-        <label>Duration (seconds):
-            <input type="number" name="seconds" value="30">
-        </label>
-        <button type="submit">Download</button>
-    </form>
+<h1>Admin Dashboard</h1>
+
+<h2>Models</h2>
+<ul>
+    {{range .models}}
+    <li><a href="/admin?model={{.}}">{{.}}</a></li>
+    {{end}}
+</ul>
+
+{{if .current_model}}
+<h2>{{.current_model}}</h2>
+<table>
+    <thead>
+        <tr>
+            {{range .columns}}<th>{{.}}</th>{{end}}
+            <th>Delete</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range $idx, $row := .rows}}
+        <tr>
+            {{range $.columns}}
+            <td>{{index $row .}}</td>
+            {{end}}
+            <td>
+                <form method="POST" style="display:inline">
+                    {{$.csrf_token}}
+                    <input type="hidden" name="model" value="{{$.current_model}}">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="id" value="{{index $row "id"}}">
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+
+<h3>Add / Update {{.current_model}}</h3>
+<form method="POST">
+    {{.csrf_token}}
+    <input type="hidden" name="model" value="{{.current_model}}">
+    <label>Action:
+        <select name="action">
+            <option value="create">Create</option>
+            <option value="update">Update</option>
+        </select>
+    </label>
+    <label>ID (for update): <input type="text" name="id"></label><br>
+    {{range .columns}}
+    {{if ne . "id"}}
+    <label>{{.}}: <input type="text" name="{{.}}"></label><br>
+    {{end}}
+    {{end}}
+    <button type="submit">Submit</button>
+</form>
 {{end}}
 
+<h2>Download Profile</h2>
+<form method="POST">
+    {{.csrf_token}}
+    <label>Profile Type:
+        <select name="profile_type">
+            <option value="cpu">CPU</option>
+            <option value="heap">Heap</option>
+            <option value="mem">Memory</option>
+            <option value="trace">Trace</option>
+        </select>
+    </label>
+    <label>Duration (seconds):
+        <input type="number" name="seconds" value="30">
+    </label>
+    <button type="submit">Download</button>
+</form>
+{{end}}
 
 {{define "footer"}}
-<footer>
-</footer>
+<footer></footer>
 {{end}}
 
 {{template "base.html.tmpl" .}}`)
