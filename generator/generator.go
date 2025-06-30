@@ -940,6 +940,8 @@ func createSessionTestFile() error {
 	var buf bytes.Buffer
 	buf.WriteString("package models\n\n")
 	buf.WriteString("import (\n")
+	buf.WriteString("\t\"monolith/config\"\n")
+	buf.WriteString("\t\"monolith/session\"\n")
 	buf.WriteString("\t\"net/http/httptest\"\n")
 	buf.WriteString("\t\"testing\"\n")
 	buf.WriteString(")\n\n")
@@ -1025,9 +1027,11 @@ func createAuthMiddlewareTestFile() error {
 	var buf bytes.Buffer
 	buf.WriteString("package middleware\n\n")
 	buf.WriteString("import (\n")
+	buf.WriteString("\t\"monolith/config\"\n")
+	buf.WriteString("\t\"monolith/session\"\n")
 	buf.WriteString("\t\"net/http\"\n")
 	buf.WriteString("\t\"net/http/httptest\"\n")
-	buf.WriteString("\t\"testing\"\n\n")
+	buf.WriteString("\t\"testing\"\n")
 	buf.WriteString("\t\"monolith/models\"\n")
 	buf.WriteString(")\n\n")
 	buf.WriteString("func TestRequireLogin(t *testing.T) {\n")
