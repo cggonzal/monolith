@@ -239,7 +239,7 @@ func TestRunAuthentication(t *testing.T) {
 	files := []string{
 		"models/user.go",
 		"session/session.go",
-		"session/session_test.go",
+		"models/session_test.go",
 		"middleware/auth.go",
 		"middleware/auth_test.go",
 		"controllers/auth_controller.go",
@@ -262,6 +262,9 @@ func TestRunAuthentication(t *testing.T) {
 	userModel, _ := os.ReadFile("models/user.go")
 	if !strings.Contains(string(userModel), "BeforeSave") || !strings.Contains(string(userModel), "AfterSave") {
 		t.Fatalf("hooks not added: %s", string(userModel))
+	}
+	if !strings.Contains(string(userModel), "SetLoggedIn") || !strings.Contains(string(userModel), "IsLoggedIn") {
+		t.Fatalf("session helpers not added: %s", string(userModel))
 	}
 	modData, _ := os.ReadFile("go.mod")
 	if !strings.Contains(string(modData), "github.com/gorilla/sessions") || !strings.Contains(string(modData), "golang.org/x/crypto") {
