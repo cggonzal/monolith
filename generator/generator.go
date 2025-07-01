@@ -1711,7 +1711,7 @@ func createAdminControllerFile() error {
 	buf.WriteString("\t\t\t\t\tif k == \"model\" || k == \"action\" || k == \"id\" || k == \"csrf_token\" {\n")
 	buf.WriteString("\t\t\t\t\t\tcontinue\n")
 	buf.WriteString("\t\t\t\t\t}\n")
-	buf.WriteString("\t\t\t\t\tif len(v) > 0 { vals[k] = v[0] }\n")
+	buf.WriteString("\t\t\t\t\tif len(v) > 0 && v[0] != \"\" { vals[k] = v[0] }\n")
 	buf.WriteString("\t\t\t\t}\n")
 	buf.WriteString("\t\t\t\tswitch action {\n")
 	buf.WriteString("\t\t\t\tcase \"create\":\n")
@@ -1849,6 +1849,7 @@ func createAdminTemplate() error {
         </select>
     </label>
     <label>ID (for update): <input type="text" name="id"></label><br>
+    <small>Leave any field blank to retain its current value.</small><br>
     {{range .columns}}
     {{if ne . "id"}}
     <label>{{.}}: <input type="text" name="{{.}}"></label><br>
