@@ -44,5 +44,5 @@ func Render(wr io.Writer, name string, data interface{}) error {
 	if !ok {
 		return fmt.Errorf("template %s not found", name)
 	}
-	return t.ExecuteTemplate(wr, name, data)
+	return t.ExecuteTemplate(wr, "base.html.tmpl", data)
 }
