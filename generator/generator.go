@@ -623,12 +623,11 @@ func updateRoutesFile(name string, actions []string) error {
 
 	indent := leadingWhitespace(lines[startIdx+1])
 	ctrlVar := toCamelCase(name) + "Ctrl"
-	ctrlName := toCamelCase(name) + "Controller"
 	base := "/" + toSnakeCase(name)
 
 	var newLines []string
 	newLines = append(newLines, "")
-	newLines = append(newLines, fmt.Sprintf("%s// routes for %s", indent, ctrlName))
+	newLines = append(newLines, fmt.Sprintf("%s// %s routes", indent, base[1:]))
 	for _, act := range actions {
 		switch act {
 		case "index":
@@ -1277,6 +1276,8 @@ func updateRoutesForAuth() error {
 	}
 	indent := leadingWhitespace(lines[insertIdx-1])
 	newLines := []string{
+		"",
+		fmt.Sprintf("%s// login routes", indent),
 		fmt.Sprintf("%smux.HandleFunc(\"GET /login\", controllers.AuthCtrl.ShowLoginForm)", indent),
 		fmt.Sprintf("%smux.HandleFunc(\"POST /login\", controllers.AuthCtrl.Login)", indent),
 		fmt.Sprintf("%smux.HandleFunc(\"GET /signup\", controllers.AuthCtrl.ShowSignupForm)", indent),
@@ -1982,14 +1983,18 @@ func updateRoutesForAdmin() error {
 	}
 	indent := leadingWhitespace(lines[startIdx+1])
 	newLines := []string{
+		"",
+		fmt.Sprintf("%s// admin routes", indent),
 		fmt.Sprintf("%smux.HandleFunc(\"GET /admin\", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))", indent),
 		fmt.Sprintf("%smux.HandleFunc(\"POST /admin\", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))", indent),
+		"",
 		fmt.Sprintf("%s// pprof routes", indent),
 		fmt.Sprintf("%smux.HandleFunc(\"GET /debug/pprof/\", middleware.RequireAdmin(pprof.Index))", indent),
 		fmt.Sprintf("%smux.HandleFunc(\"GET /debug/pprof/cmdline\", middleware.RequireAdmin(pprof.Cmdline))", indent),
 		fmt.Sprintf("%smux.HandleFunc(\"GET /debug/pprof/profile\", middleware.RequireAdmin(pprof.Profile))", indent),
 		fmt.Sprintf("%smux.HandleFunc(\"GET /debug/pprof/symbol\", middleware.RequireAdmin(pprof.Symbol))", indent),
 		fmt.Sprintf("%smux.HandleFunc(\"GET /debug/pprof/trace\", middleware.RequireAdmin(pprof.Trace))", indent),
+		"",
 	}
 
 	for _, nl := range newLines {
