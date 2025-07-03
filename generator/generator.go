@@ -713,7 +713,7 @@ func createTemplateFiles(name string, actions []string) error {
 </footer>
 {{end}}
 
-{{template "base.html.tmpl" .}}`)
+`)
 			if err := os.WriteFile(file, buf.Bytes(), 0644); err != nil {
 				return err
 			}
@@ -1200,7 +1200,6 @@ func createLoginTemplate() error {
 </footer>
 {{end}}
 
-{{template "base.html.tmpl" .}}
 `)
 	if err := os.WriteFile(path, buf.Bytes(), 0644); err != nil {
 		return err
@@ -1249,7 +1248,6 @@ func createSignupTemplate() error {
 </footer>
 {{end}}
 
-{{template "base.html.tmpl" .}}
 `)
 	if err := os.WriteFile(path, buf.Bytes(), 0644); err != nil {
 		return err
@@ -1881,7 +1879,7 @@ func createAdminTemplate() error {
 <footer></footer>
 {{end}}
 
-{{template "base.html.tmpl" .}}`)
+`)
 	if err := os.WriteFile(path, buf.Bytes(), 0644); err != nil {
 		return err
 	}
