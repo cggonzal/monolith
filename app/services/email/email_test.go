@@ -6,8 +6,8 @@ import (
 	"testing"
 	"unsafe"
 
-	"monolith/jobs"
-	"monolith/models"
+	"monolith/app/jobs"
+	"monolith/app/models"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"

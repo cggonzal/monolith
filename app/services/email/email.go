@@ -3,8 +3,8 @@ package email
 import (
 	"encoding/json"
 
-	"monolith/jobs"
-	"monolith/models"
+	"monolith/app/jobs"
+	"monolith/app/models"
 )
 
 // SendEmail enqueues an email job using the global job queue.

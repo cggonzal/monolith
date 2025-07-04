@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"testing"
 
-	"monolith/config"
+	"monolith/app/config"
 )
 
 func TestEmailJob(t *testing.T) {

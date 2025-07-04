@@ -1,7 +1,7 @@
 package session
 
 import (
-	"monolith/config"
+	"monolith/app/config"
 	"net/http"
 
 	"github.com/gorilla/sessions"

@@ -16,12 +16,12 @@ package jobs
 import (
 	"errors"
 	"log/slog"
-	"monolith/models"
+	"monolith/app/models"
 	"strconv"
 	"strings"
 	"time"
 
-	"monolith/config"
+	"monolith/app/config"
 	"monolith/db"
 
 	"gorm.io/gorm"

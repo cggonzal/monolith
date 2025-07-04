@@ -7,7 +7,7 @@ package db
 import (
 	"log"
 
-	"monolith/models"
+	"monolith/app/models"
 
 	// "gorm.io/driver/postgres" // Change to postgres if desired
 	"github.com/glebarez/sqlite" // Pure go SQLite driver, checkout https://github.com/glebarez/sqlite for details

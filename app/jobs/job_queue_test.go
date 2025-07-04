@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"monolith/models"
+	"monolith/app/models"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"

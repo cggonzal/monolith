@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"strings"
 
-	"monolith/config"
+	"monolith/app/config"
 )
 
 type EmailPayload struct {
