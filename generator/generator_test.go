@@ -104,7 +104,7 @@ func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
 	if _, err := os.Stat("controllers/widgets_controller.go"); err != nil {
 		t.Fatalf("controller file: %v", err)
 	}
-	if _, err := os.Stat("views/widgets_index.html.tmpl"); err != nil {
+	if _, err := os.Stat(filepath.Join("views", "widgets", "widgets_index.html.tmpl")); err != nil {
 		t.Fatalf("index template: %v", err)
 	}
 	data, _ := os.ReadFile("routes/routes.go")
@@ -243,8 +243,8 @@ func TestRunAuthentication(t *testing.T) {
 		"middleware/auth.go",
 		"middleware/auth_test.go",
 		"controllers/auth_controller.go",
-		"views/auth_login.html.tmpl",
-		"views/auth_signup.html.tmpl",
+		filepath.Join("views", "auth", "auth_login.html.tmpl"),
+		filepath.Join("views", "auth", "auth_signup.html.tmpl"),
 	}
 	for _, f := range files {
 		if _, err := os.Stat(f); err != nil {
@@ -285,7 +285,7 @@ func TestRunAdmin(t *testing.T) {
 	files := []string{
 		"models/user.go",
 		"controllers/admin_controller.go",
-		"views/admin_dashboard.html.tmpl",
+		filepath.Join("views", "admin", "admin_dashboard.html.tmpl"),
 		"middleware/admin.go",
 		"middleware/admin_test.go",
 		"session/email.go",

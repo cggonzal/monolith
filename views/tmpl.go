@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"path/filepath"
+	"io/fs"
 	"strings"
 )
 
@@ -17,25 +17,20 @@ var templates map[string]*template.Template
 // parse all templates and store them in the template cache
 func InitTemplates(templateFiles embed.FS) {
 	templates = make(map[string]*template.Template)
-	entries, err := templateFiles.ReadDir("views")
-	if err != nil {
-		panic(err)
-	}
-
-	for _, e := range entries {
-		if e.IsDir() || !strings.HasSuffix(e.Name(), ".html.tmpl") {
-			continue
+	fs.WalkDir(templateFiles, "views", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
 		}
-
-		// skip the base layout itself
-		if e.Name() == "base.html.tmpl" {
-			continue
+		if d.IsDir() || !strings.HasSuffix(d.Name(), ".html.tmpl") {
+			return nil
 		}
-
-		file := filepath.Join("views", e.Name())
-		t := template.Must(template.ParseFS(templateFiles, "views/base.html.tmpl", file))
-		templates[e.Name()] = t
-	}
+		if d.Name() == "base.html.tmpl" {
+			return nil
+		}
+		t := template.Must(template.ParseFS(templateFiles, "views/base.html.tmpl", path))
+		templates[d.Name()] = t
+		return nil
+	})
 }
 
 // Render executes a named template with the provided data and writes the output to the given writer.
