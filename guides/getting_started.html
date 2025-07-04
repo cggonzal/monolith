@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Getting Started — Monolith Guides</title>
+  <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+</head>
+<body class="guide">
+  <header id="page-header">
+    <div class="wrapper clearfix">
+      <nav id="feature-nav">
+        <div class="header-logo">
+          <a href="index.html">Monolith Guides</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <article>
+      <header id="feature">
+        <div class="wrapper">
+          <h1>Getting Started</h1>
+          <p>Learn how to launch a basic blog with Monolith.</p>
+        </div>
+      </header>
+      <div id="article-body" class="wrapper">
+        <h2>Installation</h2>
+        <p>Clone the repository and start the development server:</p>
+        <pre><code>$ git clone &lt;repo&gt; &amp;&amp; cd monolith
+$ make # or 'make run' if <code>air</code> is not installed</code></pre>
+        <p>Visit <code>http://localhost:9000</code> in your browser. The first run creates <code>app.db</code> and migrates the schema.</p>
+        <h2>Creating a blog</h2>
+        <p>Use the resource generator to scaffold posts:</p>
+        <pre><code>$ make generator resource post title:string body:text</code></pre>
+        <p>This generates a <code>Post</code> model, a controller with CRUD actions, templates and routes under <code>/posts</code>.</p>
+        <p>Run the server and you have a simple blog where you can create, edit and delete posts.</p>
+      </div>
+    </article>
+  </main>
+</body>
+</html>

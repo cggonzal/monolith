@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CSRF Protection — Monolith Guides</title>
+  <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+</head>
+<body class="guide">
+  <header id="page-header">
+    <div class="wrapper clearfix">
+      <nav id="feature-nav">
+        <div class="header-logo">
+          <a href="index.html">Monolith Guides</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <article>
+      <header id="feature">
+        <div class="wrapper">
+          <h1>CSRF Protection</h1>
+          <p>Cross-site request forgery helpers and middleware.</p>
+        </div>
+      </header>
+      <div id="article-body" class="wrapper">
+        <p>The <code>csrf/</code> package provides helpers to embed a token in HTML forms or expose it via meta tags for JavaScript. <code>middleware/CSRFMiddleware</code> verifies the token on mutating requests and returns <code>403 Forbidden</code> when it is missing or invalid.</p>
+      </div>
+    </article>
+  </main>
+</body>
+</html>
