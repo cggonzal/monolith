@@ -49,11 +49,16 @@
                   <li><a href="#running-migrations">Running Migrations</a></li>
                 </ul>
               </li>
+              <li><a href="#generating-a-controller-and-view">Generating a Controller and View</a></li>
               <li><a href="#routes">Routes</a></li>
               <li><a href="#controllers-and-actions">Controllers &amp; Actions</a></li>
               <li><a href="#views-and-templates">Views &amp; Templates</a></li>
+              <li><a href="#background-jobs">Background Jobs</a></li>
+              <li><a href="#real-time-websockets">Real-Time WebSockets</a></li>
               <li><a href="#adding-authentication">Adding Authentication</a></li>
+              <li><a href="#a-requests-response-through-monolith">A Request's Response Through Monolith</a></li>
               <li><a href="#deploying-to-production">Deploying to Production</a></li>
+              <li><a href="#configuration">Configuration</a></li>
               <li><a href="#whats-next">What's Next?</a></li>
             </ol>
           </nav>
@@ -100,19 +105,51 @@ $ make       # or 'make run' if air is not installed</code></pre>
             <p>Monolith performs auto-migration on startup. Generated models are registered in <code>db/db.go</code> so the database schema stays in sync.</p>
             <h3 id="running-migrations"><a class="anchorlink" href="#running-migrations" data-turbo="false"><span>5.2.</span> Running Migrations</a></h3>
             <p>No separate command is required. Start the server and new migrations run automatically.</p>
-            <h2 id="routes"><a class="anchorlink" href="#routes" data-turbo="false"><span>6.</span> Routes</a></h2>
+            <h2 id="generating-a-controller-and-view"><a class="anchorlink" href="#generating-a-controller-and-view" data-turbo="false"><span>6.</span> Generating a Controller and View</a></h2>
+            <p>Create a dashboard controller with:</p>
+            <pre><code class="highlight console">$ make generator controller dashboard index</code></pre>
+            <p>The generator adds <code>controllers/DashboardController.go</code>, <code>views/dashboard/index.html.tmpl</code> and updates <code>routes/routes.go</code>.</p>
+            <p>Edit the controller to load posts and pass them to the view:</p>
+            <pre><code class="highlight go">posts, _ := models.GetAllPosts(db.GetDB())
+views.Render(w, "dashboard/index.html.tmpl", map[string]any{"posts": posts})</code></pre>
+            <p>Visit <code>/dashboard</code> to see the list of posts.</p>
+            <h2 id="routes"><a class="anchorlink" href="#routes" data-turbo="false"><span>7.</span> Routes</a></h2>
             <p>Route definitions live in <code>routes/routes.go</code>. The generator inserts RESTful routes for resources automatically. You can manually add custom routes using helper functions like <code>routes.Get</code>, <code>routes.Post</code>, and so on.</p>
-            <h2 id="controllers-and-actions"><a class="anchorlink" href="#controllers-and-actions" data-turbo="false"><span>7.</span> Controllers &amp; Actions</a></h2>
+            <h2 id="controllers-and-actions"><a class="anchorlink" href="#controllers-and-actions" data-turbo="false"><span>8.</span> Controllers &amp; Actions</a></h2>
             <p>Controllers handle HTTP requests and render templates or JSON. Generated controllers implement the standard CRUD actions: <code>Index</code>, <code>Show</code>, <code>New</code>, <code>Create</code>, <code>Edit</code>, <code>Update</code>, and <code>Destroy</code>.</p>
-            <h2 id="views-and-templates"><a class="anchorlink" href="#views-and-templates" data-turbo="false"><span>8.</span> Views &amp; Templates</a></h2>
+            <h2 id="views-and-templates"><a class="anchorlink" href="#views-and-templates" data-turbo="false"><span>9.</span> Views &amp; Templates</a></h2>
             <p>Templates live under <code>views/</code> and use Go's <code>html/template</code> syntax. Layouts provide a common wrapper for pages. Static assets like CSS and JavaScript go in <code>static/</code>.</p>
-            <h2 id="adding-authentication"><a class="anchorlink" href="#adding-authentication" data-turbo="false"><span>9.</span> Adding Authentication</a></h2>
+            <h2 id="background-jobs"><a class="anchorlink" href="#background-jobs" data-turbo="false"><span>10.</span> Background Jobs</a></h2>
+            <p>Long-running work executes outside the request cycle using the built-in queue. Generate a job:</p>
+            <pre><code class="highlight console">$ make generator job Report</code></pre>
+            <p>This creates <code>jobs/report_job.go</code> and registers <code>JobTypeReport</code>. Enqueue it from a controller:</p>
+            <pre><code class="highlight go">payload := []byte(`{"message":"stats"}`)
+jobs.GetJobQueue().AddJob(models.JobTypeReport, payload)</code></pre>
+            <h3 id="sending-email">Sending Email</h3>
+            <p>The <code>email</code> package wraps job enqueuing for mail delivery:</p>
+            <pre><code class="highlight go">email.SendEmail("Hello", "Welcome!", "no-reply@example.com", []string{"user@example.com"})</code></pre>
+            <h2 id="real-time-websockets"><a class="anchorlink" href="#real-time-websockets" data-turbo="false"><span>11.</span> Real-Time WebSockets</a></h2>
+            <p>Connect to <code>/ws</code> and send JSON commands to publish or subscribe to channels:</p>
+            <pre><code class="highlight javascript">{"command":"subscribe","identifier":"ChatChannel"}
+{"command":"message","identifier":"ChatChannel","data":"Hello"}</code></pre>
+            <p>Messages are persisted and broadcast to all subscribers.</p>
+            <h2 id="adding-authentication"><a class="anchorlink" href="#adding-authentication" data-turbo="false"><span>12.</span> Adding Authentication</a></h2>
             <p>Generate a user model and session helpers with:</p>
             <pre><code class="highlight console">$ make generator authentication</code></pre>
             <p>This command creates signup and login pages and wires session management through encrypted cookies.</p>
-            <h2 id="deploying-to-production"><a class="anchorlink" href="#deploying-to-production" data-turbo="false"><span>10.</span> Deploying to Production</a></h2>
+            <p>Protect routes by wrapping handlers with <code>session.RequireUser</code>:</p>
+            <pre><code class="highlight go">routes.Get("/dashboard", session.RequireUser(DashboardCtrl.Index))</code></pre>
+            <h2 id="a-requests-response-through-monolith"><a class="anchorlink" href="#a-requests-response-through-monolith" data-turbo="false"><span>13.</span> A Request's Response Through Monolith</a></h2>
+            <p>Requests match routes in <code>routes/routes.go</code>. The chosen controller retrieves data from models and finally calls <code>views.Render</code> which writes HTML to the response.</p>
+            <h2 id="deploying-to-production"><a class="anchorlink" href="#deploying-to-production" data-turbo="false"><span>14.</span> Deploying to Production</a></h2>
             <p>Build a static binary with <code>make build</code> and run it behind a reverse proxy like Nginx. For zero-downtime restarts, see the <a href="server_management.html">Server Management guide</a>.</p>
-            <h2 id="whats-next"><a class="anchorlink" href="#whats-next" data-turbo="false"><span>11.</span> What's Next?</a></h2>
+            <p>Bootstrap a server once with:</p>
+            <pre><code class="highlight console">$ server_management/server_setup.sh user@host example.com</code></pre>
+            <p>Deploy new releases with:</p>
+            <pre><code class="highlight console">$ server_management/deploy.sh user@host</code></pre>
+            <h2 id="configuration"><a class="anchorlink" href="#configuration" data-turbo="false"><span>15.</span> Configuration</a></h2>
+            <p>The file <code>config/config.go</code> defines constants and reads environment variables such as <code>PORT</code>, <code>SECRET_KEY</code>, <code>MAILGUN_DOMAIN</code> and <code>MAILGUN_API_KEY</code>. Call <code>config.InitConfig()</code> on startup to apply defaults.</p>
+            <h2 id="whats-next"><a class="anchorlink" href="#whats-next" data-turbo="false"><span>16.</span> What's Next?</a></h2>
             <p>Your blog is now ready for content! Explore the other guides for deeper information about each subsystem. Happy hacking!</p>
           </section>
         </div>
