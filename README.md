@@ -134,7 +134,7 @@ payload := []byte(`{"message":"Hello"}`)
 jobs.GetJobQueue().AddRecurringJob(models.JobTypePrint, payload, "0 0 * * *")
 ```
 
-`jobs/job_queue.go` registers job handlers and the queue starts automatically.
+`app/jobs/job_queue.go` registers job handlers and the queue starts automatically.
 
 ### Interactive debug session
 
@@ -153,8 +153,8 @@ go tool pprof heap.out
 make generator job Email
 ```
 
-Edit `jobs/email_job.go` and implement the `EmailJob` function. The generator
-also registers the new type in `jobs/job_queue.go`.
+Edit `app/jobs/email_job.go` and implement the `EmailJob` function. The generator
+also registers the new type in `app/jobs/job_queue.go`.
 
 ### Generating a resource
 
@@ -162,7 +162,7 @@ also registers the new type in `jobs/job_queue.go`.
 make generator resource widget name:string price:int
 ```
 
-This creates `models/widget.go` plus a fully‑wired `widgets` controller with
+This creates `app/models/widget.go` plus a fully‑wired `widgets` controller with
 CRUD actions, templates and RESTful routes under `/widgets`.
 
 ### Generating authentication
@@ -189,7 +189,7 @@ exist it will be generated automatically.
 ## Core Concepts
 ### Configuration
 
-`config/config.go` contains **constants** that rarely change at runtime, e.g.
+`app/config/config.go` contains **constants** that rarely change at runtime, e.g.
 
 ```go
 const JOB_QUEUE_NUM_WORKERS = 4
@@ -223,9 +223,9 @@ gorm.Open(postgres.Open(os.Getenv("DATABASE_URL")), &gorm.Config{})
 
 | Model | File | Purpose |
 | ----- | ---- | ------- |
-| `User` | `models/user.go` | Registered users (email, avatar, flags) |
-| `Job`  | `models/job.go` | Background work unit with `Type` & `Status` enums |
-| `Message` | `models/ws.go` | Persisted WebSocket chat message |
+| `User` | `app/models/user.go` | Registered users (email, avatar, flags) |
+| `Job`  | `app/models/job.go` | Background work unit with `Type` & `Status` enums |
+| `Message` | `app/models/ws.go` | Persisted WebSocket chat message |
 
 All models embed GORM timestamps, so you automatically get `CreatedAt` / `UpdatedAt`.
 
@@ -241,7 +241,7 @@ user, _ := models.CreateUser(db.GetDB(), "foo@example.com", "secret")
 
 ### Sessions & Authentication
 
-Session helpers live in `session/session.go`:
+Session helpers live in `app/session/session.go`:
 
 * **SecureCookie** store (`gorilla/sessions`)
 * `SetLoggedIn`, `Logout`, `IsLoggedIn`
@@ -253,7 +253,7 @@ If `session.IsLoggedIn(r)` is **false**, the `middleware.RequireLogin` decorator
 
 ### CSRF Protection
 
-`csrf/` provides helpers to embed a CSRF token into HTML forms or expose it to JavaScript. `middleware/CSRFMiddleware` verifies the token on every mutating request and returns **403 Forbidden** if it is missing or invalid.
+`app/csrf/` provides helpers to embed a CSRF token into HTML forms or expose it to JavaScript. `app/middleware/CSRFMiddleware` verifies the token on every mutating request and returns **403 Forbidden** if it is missing or invalid.
 
 Use `csrf.GetCSRFTokenForForm` inside your controllers when rendering templates:
 
@@ -305,9 +305,9 @@ Three middlewares are shipped:
 
 | File | Function | Description |
 | ---- | -------- | ----------- |
-| `middleware/logging.go` | `LoggingMiddleware` | Structured request log using `log/slog` |
-| `middleware/auth.go` | `RequireLogin` | Gate routes behind authentication |
-| `middleware/csrf.go` | `CSRFMiddleware` | Validate CSRF token for unsafe requests |
+| `app/middleware/logging.go` | `LoggingMiddleware` | Structured request log using `log/slog` |
+| `app/middleware/auth.go` | `RequireLogin` | Gate routes behind authentication |
+| `app/middleware/csrf.go` | `CSRFMiddleware` | Validate CSRF token for unsafe requests |
 
 Compose them like:
 
@@ -320,26 +320,29 @@ http.ListenAndServe(":9000", handler)
 
 ### Routing & HTTP controllers
 
-All controllers are in `controllers/` and are wired inside `main.go` using the **new routing syntax** (Go 1.23+):
+All controllers are in `app/controllers/` and are wired inside `main.go` using the **new routing syntax** (Go 1.23+):
 
 ```go
 mux.HandleFunc("GET /", controllers.Home)
 mux.HandleFunc("POST /items/new", controllers.CreateItemHandler)
 ```
 
-Templates are parsed once during startup through `controllers.InitTemplates(embed.FS)` giving you the full power of Go’s `html/template`.
+Templates are parsed once during startup through `views.InitTemplates(embed.FS)` giving you the full power of Go’s `html/template`.
 
 ### Templates & Static Assets
 
 Assets live beside code but are **embedded** thanks to the `embed` package:
 
 ```go
-//go:embed static templates
-var staticFiles, templateFiles embed.FS
+//go:embed static/*
+var staticFiles embed.FS
+
+//go:embed app/views/**
+var templateFiles embed.FS
 ```
 
 * `static/` is served under `/static/…`
-* `templates/*.html.tmpl` are executed server‑side
+* `app/views/*.html.tmpl` are executed server‑side
 
 This makes the final binary self‑contained & easy to deploy.
 
@@ -451,17 +454,20 @@ the project in VS Code and use the `Launch Package` configuration provided in
 ```
 .
 ├── main.go                  # Program entry‑point
-├── config/                  # Compile‑time configuration knobs
-│   └── config.go
+├── app/
+│   ├── config/             # Compile‑time configuration knobs
+│   ├── controllers/        # HTTP controllers (HTML + auth callbacks)
+│   ├── middleware/         # Reusable HTTP middleware
+│   ├── session/            # Session helpers
+│   ├── csrf/               # CSRF helpers
+│   ├── routes/             # Route definitions
+│   ├── services/           # Business logic helpers
+│   ├── jobs/               # Simple in‑process job queue
+│   ├── models/             # GORM models (User, Job, Message)
+│   └── views/              # `embed`ded HTML templates
 ├── db/                      # DB connection bootstrap
 │   └── db.go
-├── models/                  # GORM models (User, Job, Message)
-├── controllers/                # HTTP controllers (HTML + auth callbacks)
-├── middleware/              # Reusable HTTP middleware
-├── session/                 # Session helpers
 ├── ws/                      # WebSocket hub, client & message types
-├── jobs/                    # Simple in‑process job queue
-├── templates/               # `embed`ded HTML templates
 ├── static/                  # `embed`ded public files
 ├── server_management/       # systemd helpers + deployment scripts
 └── tests, Makefile, etc.
@@ -494,8 +500,8 @@ Use the generator to scaffold a job:
 make generator job Email
 ```
 
-This creates `jobs/email_job.go` with a stub `EmailJob` function, registers it
-in `jobs/job_queue.go` and adds `JobTypeEmail` to `models/job.go`.
+This creates `app/jobs/email_job.go` with a stub `EmailJob` function, registers it
+in `app/jobs/job_queue.go` and adds `JobTypeEmail` to `app/models/job.go`.
 
 ### Custom WebSocket Channel
 
@@ -525,7 +531,7 @@ Supported types are `model`, `controller`, `resource`, `authentication`, `job` a
 make generator model Widget name:string price:int
 ```
 
-Creates `models/widget.go` with a `Widget` struct and updates `db/db.go` so the
+Creates `app/models/widget.go` with a `Widget` struct and updates `db/db.go` so the
 model is automatically migrated. The file also defines empty `BeforeSave` and
 `AfterSave` hooks which you can use to validate your model before and after it
 is saved.
@@ -538,8 +544,8 @@ Controllers are typically named using the plural form:
 make generator controller widgets index show
 ```
 
-This generates `controllers/widgets_controller.go`, inserts matching routes into
-`routes/routes.go` and creates templates like `templates/widgets_index.html.tmpl`.
+This generates `app/controllers/widgets_controller.go`, inserts matching routes into
+`app/routes/routes.go` and creates templates like `app/views/widgets/widgets_index.html.tmpl`.
 
 ### Resource
 
@@ -568,8 +574,8 @@ login and logout.
 make generator job MyJob
 ```
 
-Creates `jobs/my_job_job.go` with a stub `MyJobJob` function, registers it in
-`jobs/job_queue.go` and adds `JobTypeMyJob` to `models/job.go`.
+Creates `app/jobs/my_job_job.go` with a stub `MyJobJob` function, registers it in
+`app/jobs/job_queue.go` and adds `JobTypeMyJob` to `app/models/job.go`.
 
 ### Admin
 
@@ -591,7 +597,7 @@ Run the unit tests by running following in the root of the repo:
 make test
 ```
 
-`controllers/controllers_test.go` shows how to spin up an in‑memory HTTP server and assert redirects.
+`app/controllers/controllers_test.go` shows how to spin up an in‑memory HTTP server and assert redirects.
 
 ---
 ## Development
