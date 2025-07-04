@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Email — Monolith Guides</title>
+  <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+</head>
+<body class="guide">
+  <header id="page-header">
+    <div class="wrapper clearfix">
+      <nav id="feature-nav">
+        <div class="header-logo">
+          <a href="index.html">Monolith Guides</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <article>
+      <header id="feature">
+        <div class="wrapper">
+          <h1>Email</h1>
+          <p>Asynchronous email helper.</p>
+        </div>
+      </header>
+      <div id="article-body" class="wrapper">
+        <p>The <code>email/</code> package exposes <code>SendEmail</code> which enqueues an email-sending job. Delivery happens through Mailgun once a worker processes the job. Configure <code>MAILGUN_DOMAIN</code> and <code>MAILGUN_API_KEY</code> so workers can talk to Mailgun.</p>
+      </div>
+    </article>
+  </main>
+</body>
+</html>

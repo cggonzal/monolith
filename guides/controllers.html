@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Controllers — Monolith Guides</title>
+  <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+</head>
+<body class="guide">
+  <header id="page-header">
+    <div class="wrapper clearfix">
+      <nav id="feature-nav">
+        <div class="header-logo">
+          <a href="index.html">Monolith Guides</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <article>
+      <header id="feature">
+        <div class="wrapper">
+          <h1>Controllers</h1>
+          <p>HTTP controllers route requests and render templates.</p>
+        </div>
+      </header>
+      <div id="article-body" class="wrapper">
+        <p>Handlers in <code>controllers/</code> receive incoming requests. Each controller is a Go type with methods for its actions. Routes defined in <code>routes/routes.go</code> connect URLs to these methods. Controllers fetch data from models and pass it to templates in the <code>views</code> directory for rendering.</p>
+      </div>
+    </article>
+  </main>
+</body>
+</html>

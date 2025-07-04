@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Configuration — Monolith Guides</title>
+  <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+</head>
+<body class="guide">
+  <header id="page-header">
+    <div class="wrapper clearfix">
+      <nav id="feature-nav">
+        <div class="header-logo">
+          <a href="index.html">Monolith Guides</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <article>
+      <header id="feature">
+        <div class="wrapper">
+          <h1>Configuration</h1>
+          <p>Application constants and environment variables.</p>
+        </div>
+      </header>
+      <div id="article-body" class="wrapper">
+        <p>The <code>config/</code> directory defines compile-time constants that are imported across the project. Settings such as <code>JOB_QUEUE_NUM_WORKERS</code> live here. Anything dynamic, like the port or database DSN, is read from environment variables in <code>main.go</code> or the relevant package.</p>
+      </div>
+    </article>
+  </main>
+</body>
+</html>

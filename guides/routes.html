@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Routing — Monolith Guides</title>
+  <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+</head>
+<body class="guide">
+  <header id="page-header">
+    <div class="wrapper clearfix">
+      <nav id="feature-nav">
+        <div class="header-logo">
+          <a href="index.html">Monolith Guides</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <article>
+      <header id="feature">
+        <div class="wrapper">
+          <h1>Routing</h1>
+          <p>Define URL mappings for the application.</p>
+        </div>
+      </header>
+      <div id="article-body" class="wrapper">
+        <p>Routing is configured in <code>routes/routes.go</code> using Go's standard <code>ServeMux</code>. Each path maps to a controller action and middleware wraps the mux to provide logging, sessions and CSRF protection.</p>
+      </div>
+    </article>
+  </main>
+</body>
+</html>
