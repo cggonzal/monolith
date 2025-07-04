@@ -879,10 +879,10 @@ body.guide a:link {
   text-decoration: underline;
 }
 body.guide a:hover, body.guide a:active {
-  color: rgb(223.1818181818, 22.3181818182, 26.7818181818);
+  color: #0088B3;
 }
 body.guide a:visited {
-  color: rgb(107.2727272727, 10.7272727273, 12.8727272727);
+  color: #005580;
 }
 body.guide a.skip-link {
   background-color: #FAF9F8;
