@@ -39,7 +39,7 @@ Examples:
 
 const modelHelp = `Usage: go run main.go generator model NAME [field:type...]
 
-Creates models/NAME.go with a struct embedding gorm.Model and updates db/db.go
+Creates app/models/NAME.go with a struct embedding gorm.Model and updates db/db.go
 so the model is migrated automatically. Optional field arguments add struct
 fields with the specified Go types.
 
@@ -50,8 +50,8 @@ Example:
 
 const controllerHelp = `Usage: go run main.go generator controller NAME [actions]
 
-Generates controllers/NAME_controller.go and matching templates. If actions are
-provided, RESTful routes are inserted into routes/routes.go. Use "all" to
+Generates app/controllers/NAME_controller.go and matching views. If actions are
+provided, RESTful routes are inserted into app/routes/routes.go. Use "all" to
 generate the full set of CRUD actions.
 
 Example:
@@ -61,7 +61,7 @@ Example:
 
 const resourceHelp = `Usage: go run main.go generator resource NAME [field:type...]
 
-Creates a model and a pluralised controller with all CRUD actions, templates and
+Creates a model and a pluralised controller with all CRUD actions, views and
 routes. Pass the singular model name; the controller will be pluralised.
 
 Example:
@@ -81,8 +81,8 @@ Example:
 
 const jobHelp = `Usage: go run main.go generator job NAME
 
-Creates jobs/NAME_job.go with a stub function, registers it in the job queue and
-adds JobTypeNAME to models/job.go.
+Creates app/jobs/NAME_job.go with a stub function, registers it in the job queue and
+adds JobTypeNAME to app/models/job.go.
 
 Example:
   make generator job MyJob
@@ -326,7 +326,7 @@ func runAdmin(args []string) error {
 	return nil
 }
 
-// createModelFile generates the model struct file in models/ directory.
+// createModelFile generates the model struct file in app/models/.
 func createModelFile(modelName string, fields []string) error {
 	fileName := toSnakeCase(modelName) + ".go"
 	path := filepath.Join("app", "models", fileName)
