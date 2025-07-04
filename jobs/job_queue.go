@@ -45,7 +45,7 @@ func InitJobQueue() {
 	jobQueue = newJobQueue(db.GetDB(), config.JOB_QUEUE_NUM_WORKERS)
 
 	// register all jobs
-	jobQueue.register(models.JobTypePrint, PrintJob)
+	jobQueue.register(models.JobTypeExample, ExampleJob)
 	jobQueue.register(models.JobTypeEmail, EmailJob)
 
 	// start the job queue only if a database connection is available

@@ -13,7 +13,7 @@ import (
 type JobType int
 
 const (
-	JobTypePrint JobType = iota
+	JobTypeExample JobType = iota
 	JobTypeEmail
 )
 
