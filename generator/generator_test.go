@@ -197,7 +197,7 @@ func TestRunJob(t *testing.T) {
 	os.Chdir(dir)
 	defer os.Chdir(wd)
 
-	writeFile(t, "models/jobs.go", `package models
+	writeFile(t, "models/job.go", `package models
 type JobType int
 const (
     JobTypePrint JobType = iota
@@ -216,7 +216,7 @@ func init() {
 	if _, err := os.Stat("jobs/email_job_test.go"); err != nil {
 		t.Fatalf("job test: %v", err)
 	}
-	data, _ := os.ReadFile("models/jobs.go")
+	data, _ := os.ReadFile("models/job.go")
 	if !strings.Contains(string(data), "JobTypeEmail") {
 		t.Fatalf("enum not updated: %s", string(data))
 	}

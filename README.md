@@ -224,7 +224,7 @@ gorm.Open(postgres.Open(os.Getenv("DATABASE_URL")), &gorm.Config{})
 | Model | File | Purpose |
 | ----- | ---- | ------- |
 | `User` | `models/user.go` | Registered users (email, avatar, flags) |
-| `Job`  | `models/jobs.go` | Background work unit with `Type` & `Status` enums |
+| `Job`  | `models/job.go` | Background work unit with `Type` & `Status` enums |
 | `Message` | `models/ws.go` | Persisted WebSocket chat message |
 
 All models embed GORM timestamps, so you automatically get `CreatedAt` / `UpdatedAt`.
@@ -495,7 +495,7 @@ make generator job Email
 ```
 
 This creates `jobs/email_job.go` with a stub `EmailJob` function, registers it
-in `jobs/job_queue.go` and adds `JobTypeEmail` to `models/jobs.go`.
+in `jobs/job_queue.go` and adds `JobTypeEmail` to `models/job.go`.
 
 ### Custom WebSocket Channel
 
@@ -569,7 +569,7 @@ make generator job MyJob
 ```
 
 Creates `jobs/my_job_job.go` with a stub `MyJobJob` function, registers it in
-`jobs/job_queue.go` and adds `JobTypeMyJob` to `models/jobs.go`.
+`jobs/job_queue.go` and adds `JobTypeMyJob` to `models/job.go`.
 
 ### Admin
 

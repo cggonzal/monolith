@@ -82,7 +82,7 @@ Example:
 const jobHelp = `Usage: go run main.go generator job NAME
 
 Creates jobs/NAME_job.go with a stub function, registers it in the job queue and
-adds JobTypeNAME to models/jobs.go.
+adds JobTypeNAME to models/job.go.
 
 Example:
   make generator job MyJob
@@ -1347,7 +1347,7 @@ func createJobFile(name string) error {
 }
 
 func updateJobTypeEnum(name string) error {
-	path := filepath.Join("models", "jobs.go")
+	path := filepath.Join("models", "job.go")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
