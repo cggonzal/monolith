@@ -1371,7 +1371,7 @@ func updateJobTypeEnum(name string) error {
 	lines := strings.Split(string(data), "\n")
 	start, end := -1, -1
 	for i, line := range lines {
-		if strings.Contains(line, "JobTypePrint") {
+		if strings.Contains(line, "JobTypeExample") {
 			for j := i; j >= 0; j-- {
 				if strings.Contains(lines[j], "const (") {
 					start = j

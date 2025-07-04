@@ -200,12 +200,12 @@ func TestRunJob(t *testing.T) {
 	writeFile(t, "models/job.go", `package models
 type JobType int
 const (
-    JobTypePrint JobType = iota
+    JobTypeExample JobType = iota
 )`)
 	writeFile(t, "jobs/job_queue.go", `package jobs
 import "monolith/models"
 func init() {
-    jobQueue.register(models.JobTypePrint, PrintJob)
+    jobQueue.register(models.JobTypeExample, ExampleJob)
 }`)
 	if err := runJob([]string{"Email"}); err != nil {
 		t.Fatalf("runJob: %v", err)
