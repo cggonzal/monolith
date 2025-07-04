@@ -17,7 +17,7 @@ var templates map[string]*template.Template
 // parse all templates and store them in the template cache
 func InitTemplates(templateFiles embed.FS) {
 	templates = make(map[string]*template.Template)
-	fs.WalkDir(templateFiles, "views", func(path string, d fs.DirEntry, err error) error {
+	fs.WalkDir(templateFiles, "app/views", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -27,7 +27,7 @@ func InitTemplates(templateFiles embed.FS) {
 		if d.Name() == "base.html.tmpl" {
 			return nil
 		}
-		t := template.Must(template.ParseFS(templateFiles, "views/base.html.tmpl", path))
+		t := template.Must(template.ParseFS(templateFiles, "app/views/base.html.tmpl", path))
 		templates[d.Name()] = t
 		return nil
 	})

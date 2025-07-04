@@ -297,7 +297,7 @@ func runAdmin(args []string) error {
 		fmt.Print(adminHelp)
 		return errors.New("admin generator takes no arguments")
 	}
-	if _, err := os.Stat(filepath.Join("models", "user.go")); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join("app", "models", "user.go")); os.IsNotExist(err) {
 		if err := runAuthentication([]string{}); err != nil {
 			return err
 		}
@@ -329,7 +329,7 @@ func runAdmin(args []string) error {
 // createModelFile generates the model struct file in models/ directory.
 func createModelFile(modelName string, fields []string) error {
 	fileName := toSnakeCase(modelName) + ".go"
-	path := filepath.Join("models", fileName)
+	path := filepath.Join("app", "models", fileName)
 	if _, err := os.Stat(path); err == nil {
 		return fmt.Errorf("%s already exists", path)
 	}
@@ -453,7 +453,7 @@ func updateDBFile(modelName string) error {
 // createControllerFile generates a controller with the specified actions.
 func createControllerFile(name string, actions []string) error {
 	file := toSnakeCase(name) + "_controller.go"
-	path := filepath.Join("controllers", file)
+	path := filepath.Join("app", "controllers", file)
 	if _, err := os.Stat(path); err == nil {
 		return fmt.Errorf("%s already exists", path)
 	}
@@ -461,7 +461,7 @@ func createControllerFile(name string, actions []string) error {
 	ctrlName := toCamelCase(name) + "Controller"
 	varName := toCamelCase(name) + "Ctrl"
 	modelName := toCamelCase(inflection.Singular(toSnakeCase(name)))
-	modelPath := filepath.Join("models", toSnakeCase(modelName)+".go")
+	modelPath := filepath.Join("app", "models", toSnakeCase(modelName)+".go")
 	pluralModelName := toCamelCase(inflection.Plural(toSnakeCase(modelName)))
 	hasModel := false
 	if _, err := os.Stat(modelPath); err == nil {
@@ -497,10 +497,10 @@ func createControllerFile(name string, actions []string) error {
 		imports = append(imports, "\"strconv\"")
 	}
 	if needTemplates {
-		imports = append(imports, "\"monolith/views\"")
+		imports = append(imports, "\"monolith/app/views\"")
 	}
 	if needDB {
-		imports = append(imports, "\"monolith/db\"", "\"monolith/models\"")
+		imports = append(imports, "\"monolith/db\"", "\"monolith/app/models\"")
 	}
 	if len(imports) > 1 {
 		buf.WriteString("import (\n")
@@ -599,7 +599,7 @@ func createControllerFile(name string, actions []string) error {
 
 // updateRoutesFile injects new routes for the controller actions.
 func updateRoutesFile(name string, actions []string) error {
-	path := filepath.Join("routes", "routes.go")
+	path := filepath.Join("app", "routes", "routes.go")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -680,7 +680,7 @@ func updateRoutesFile(name string, actions []string) error {
 // createTemplateFiles generates HTML views for GET actions.
 func createTemplateFiles(name string, actions []string) error {
 	snake := toSnakeCase(name)
-	dir := filepath.Join("views", snake)
+	dir := filepath.Join("app", "views", snake)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
@@ -729,7 +729,7 @@ func createTemplateFiles(name string, actions []string) error {
 
 // createModelTestFile creates a placeholder _test.go file for the model.
 func createModelTestFile(modelName string) error {
-	file := filepath.Join("models", toSnakeCase(modelName)+"_test.go")
+	file := filepath.Join("app", "models", toSnakeCase(modelName)+"_test.go")
 	if _, err := os.Stat(file); err == nil {
 		fmt.Println("exists", file)
 		return nil
@@ -751,7 +751,7 @@ func createModelTestFile(modelName string) error {
 
 // createControllerTestFile creates a placeholder _test.go for the controller.
 func createControllerTestFile(name string) error {
-	file := filepath.Join("controllers", toSnakeCase(name)+"_controller_test.go")
+	file := filepath.Join("app", "controllers", toSnakeCase(name)+"_controller_test.go")
 	if _, err := os.Stat(file); err == nil {
 		fmt.Println("exists", file)
 		return nil
@@ -774,7 +774,7 @@ func createControllerTestFile(name string) error {
 // createUserModelAuth writes a basic User model used for authentication if it
 // doesn't already exist and ensures it is migrated in db/db.go.
 func createUserModelAuth() error {
-	path := filepath.Join("models", "user.go")
+	path := filepath.Join("app", "models", "user.go")
 	exists := false
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
@@ -793,7 +793,7 @@ import (
     "github.com/gorilla/sessions"
     "golang.org/x/crypto/bcrypt"
     "gorm.io/gorm"
-    "monolith/session"
+    "monolith/app/session"
 )
 
 // User represents a user in the database
@@ -896,7 +896,7 @@ func IsLoggedIn(r *http.Request) bool {
 
 // createSessionFile sets up cookie session helpers for login state.
 func createSessionFile() error {
-	path := filepath.Join("session", "session.go")
+	path := filepath.Join("app", "session", "session.go")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil
@@ -905,7 +905,7 @@ func createSessionFile() error {
 	buf.WriteString("package session\n\n")
 	buf.WriteString("import (\n")
 	buf.WriteString("\t\"net/http\"\n")
-	buf.WriteString("\t\"monolith/config\"\n")
+	buf.WriteString("\t\"monolith/app/config\"\n")
 	buf.WriteString("\t\"github.com/gorilla/sessions\"\n")
 	buf.WriteString(")\n\n")
 	buf.WriteString("const SESSION_NAME_KEY = \"session\"\n")
@@ -936,7 +936,7 @@ func createSessionFile() error {
 
 // createSessionTestFile sets up tests for session helpers.
 func createSessionTestFile() error {
-	path := filepath.Join("models", "user_test.go")
+	path := filepath.Join("app", "models", "user_test.go")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil
@@ -944,8 +944,8 @@ func createSessionTestFile() error {
 	var buf bytes.Buffer
 	buf.WriteString("package models\n\n")
 	buf.WriteString("import (\n")
-	buf.WriteString("\t\"monolith/config\"\n")
-	buf.WriteString("\t\"monolith/session\"\n")
+	buf.WriteString("\t\"monolith/app/config\"\n")
+	buf.WriteString("\t\"monolith/app/session\"\n")
 	buf.WriteString("\t\"net/http/httptest\"\n")
 	buf.WriteString("\t\"testing\"\n")
 	buf.WriteString(")\n\n")
@@ -986,7 +986,7 @@ func createSessionTestFile() error {
 
 // createAuthMiddlewareFile creates RequireLogin middleware.
 func createAuthMiddlewareFile() error {
-	path := filepath.Join("middleware", "auth.go")
+	path := filepath.Join("app", "middleware", "auth.go")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil
@@ -994,7 +994,7 @@ func createAuthMiddlewareFile() error {
 	var buf bytes.Buffer
 	buf.WriteString("package middleware\n\n")
 	buf.WriteString("import (\n")
-	buf.WriteString("\t\"monolith/models\"\n")
+	buf.WriteString("\t\"monolith/app/models\"\n")
 	buf.WriteString("\t\"net/http\"\n")
 	buf.WriteString(")\n\n")
 	buf.WriteString("// RequireLogin ensures the user is logged in before accessing a route\n")
@@ -1023,7 +1023,7 @@ func createAuthMiddlewareFile() error {
 
 // createAuthMiddlewareTestFile generates tests for the RequireLogin middleware.
 func createAuthMiddlewareTestFile() error {
-	path := filepath.Join("middleware", "auth_test.go")
+	path := filepath.Join("app", "middleware", "auth_test.go")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil
@@ -1031,12 +1031,12 @@ func createAuthMiddlewareTestFile() error {
 	var buf bytes.Buffer
 	buf.WriteString("package middleware\n\n")
 	buf.WriteString("import (\n")
-	buf.WriteString("\t\"monolith/config\"\n")
-	buf.WriteString("\t\"monolith/session\"\n")
+	buf.WriteString("\t\"monolith/app/config\"\n")
+	buf.WriteString("\t\"monolith/app/session\"\n")
 	buf.WriteString("\t\"net/http\"\n")
 	buf.WriteString("\t\"net/http/httptest\"\n")
 	buf.WriteString("\t\"testing\"\n")
-	buf.WriteString("\t\"monolith/models\"\n")
+	buf.WriteString("\t\"monolith/app/models\"\n")
 	buf.WriteString(")\n\n")
 	buf.WriteString("func TestRequireLogin(t *testing.T) {\n")
 	buf.WriteString("\tconfig.InitConfig()\n")
@@ -1084,7 +1084,7 @@ func createAuthMiddlewareTestFile() error {
 
 // createAuthControllerFile creates controller handling signup and login.
 func createAuthControllerFile() error {
-	path := filepath.Join("controllers", "auth_controller.go")
+	path := filepath.Join("app", "controllers", "auth_controller.go")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil
@@ -1093,10 +1093,10 @@ func createAuthControllerFile() error {
 	buf.WriteString("package controllers\n\n")
 	buf.WriteString("import (\n")
 	buf.WriteString("\t\"net/http\"\n\n")
-	buf.WriteString("\t\"monolith/csrf\"\n")
+	buf.WriteString("\t\"monolith/app/csrf\"\n")
 	buf.WriteString("\t\"monolith/db\"\n")
-	buf.WriteString("\t\"monolith/models\"\n")
-	buf.WriteString("\t\"monolith/views\"\n")
+	buf.WriteString("\t\"monolith/app/models\"\n")
+	buf.WriteString("\t\"monolith/app/views\"\n")
 	buf.WriteString(")\n\n")
 	buf.WriteString("type AuthController struct{}\n\n")
 	buf.WriteString("var AuthCtrl = &AuthController{}\n\n")
@@ -1165,7 +1165,7 @@ func createAuthControllerFile() error {
 
 // createLoginTemplate generates a basic login template.
 func createLoginTemplate() error {
-	dir := filepath.Join("views", "auth")
+	dir := filepath.Join("app", "views", "auth")
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
@@ -1217,7 +1217,7 @@ func createLoginTemplate() error {
 }
 
 func createSignupTemplate() error {
-	dir := filepath.Join("views", "auth")
+	dir := filepath.Join("app", "views", "auth")
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
@@ -1270,7 +1270,7 @@ func createSignupTemplate() error {
 
 // updateRoutesForAuth injects the authentication routes if missing.
 func updateRoutesForAuth() error {
-	path := filepath.Join("routes", "routes.go")
+	path := filepath.Join("app", "routes", "routes.go")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -1324,7 +1324,7 @@ func updateRoutesForAuth() error {
 }
 
 func createJobFile(name string) error {
-	file := filepath.Join("jobs", toSnakeCase(name)+"_job.go")
+	file := filepath.Join("app", "jobs", toSnakeCase(name)+"_job.go")
 	if _, err := os.Stat(file); err == nil {
 		fmt.Println("exists", file)
 		return nil
@@ -1359,7 +1359,7 @@ func createJobFile(name string) error {
 }
 
 func updateJobTypeEnum(name string) error {
-	path := filepath.Join("models", "job.go")
+	path := filepath.Join("app", "models", "job.go")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -1408,7 +1408,7 @@ func updateJobTypeEnum(name string) error {
 }
 
 func registerJobInQueue(name string) error {
-	path := filepath.Join("jobs", "job_queue.go")
+	path := filepath.Join("app", "jobs", "job_queue.go")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -1443,7 +1443,7 @@ func registerJobInQueue(name string) error {
 }
 
 func createJobTestFile(name string) error {
-	file := filepath.Join("jobs", toSnakeCase(name)+"_job_test.go")
+	file := filepath.Join("app", "jobs", toSnakeCase(name)+"_job_test.go")
 	if _, err := os.Stat(file); err == nil {
 		fmt.Println("exists", file)
 		return nil
@@ -1508,7 +1508,7 @@ func toSnakeCase(s string) string {
 // ensureControllersImport makes sure the routes file imports the controllers package.
 func ensureControllersImport(lines []string) []string {
 	for _, l := range lines {
-		if strings.Contains(l, "\"monolith/controllers\"") {
+		if strings.Contains(l, "\"monolith/app/controllers\"") {
 			return lines
 		}
 	}
@@ -1528,7 +1528,7 @@ func ensureControllersImport(lines []string) []string {
 
 	if start != -1 && end != -1 {
 		indent := leadingWhitespace(lines[start+1])
-		newLine := indent + "\"monolith/controllers\""
+		newLine := indent + "\"monolith/app/controllers\""
 		lines = append(lines[:end], append([]string{newLine}, lines[end:]...)...)
 		return lines
 	}
@@ -1540,7 +1540,7 @@ func ensureControllersImport(lines []string) []string {
 			block := []string{
 				"import (",
 				"    " + pkg,
-				"    \"monolith/controllers\"",
+				"    \"monolith/app/controllers\"",
 				")",
 			}
 			lines = append(lines[:i], append(block, lines[i+1:]...)...)
@@ -1551,7 +1551,7 @@ func ensureControllersImport(lines []string) []string {
 	// no import section found; append one after package line
 	for i, l := range lines {
 		if strings.HasPrefix(l, "package ") {
-			block := []string{"import (", "    \"monolith/controllers\"", ")", ""}
+			block := []string{"import (", "    \"monolith/app/controllers\"", ")", ""}
 			lines = append(lines[:i+1], append(block, lines[i+1:]...)...)
 			break
 		}
@@ -1562,7 +1562,7 @@ func ensureControllersImport(lines []string) []string {
 // ensureMiddlewareImport makes sure the routes file imports the middleware package.
 func ensureMiddlewareImport(lines []string) []string {
 	for _, l := range lines {
-		if strings.Contains(l, "\"monolith/middleware\"") {
+		if strings.Contains(l, "\"monolith/app/middleware\"") {
 			return lines
 		}
 	}
@@ -1582,7 +1582,7 @@ func ensureMiddlewareImport(lines []string) []string {
 
 	if start != -1 && end != -1 {
 		indent := leadingWhitespace(lines[start+1])
-		newLine := indent + "\"monolith/middleware\""
+		newLine := indent + "\"monolith/app/middleware\""
 		lines = append(lines[:end], append([]string{newLine}, lines[end:]...)...)
 		return lines
 	}
@@ -1594,7 +1594,7 @@ func ensureMiddlewareImport(lines []string) []string {
 			block := []string{
 				"import (",
 				"    " + pkg,
-				"    \"monolith/middleware\"",
+				"    \"monolith/app/middleware\"",
 				")",
 			}
 			lines = append(lines[:i], append(block, lines[i+1:]...)...)
@@ -1604,7 +1604,7 @@ func ensureMiddlewareImport(lines []string) []string {
 
 	for i, l := range lines {
 		if strings.HasPrefix(l, "package ") {
-			block := []string{"import (", "    \"monolith/middleware\"", ")", ""}
+			block := []string{"import (", "    \"monolith/app/middleware\"", ")", ""}
 			lines = append(lines[:i+1], append(block, lines[i+1:]...)...)
 			break
 		}
@@ -1666,7 +1666,7 @@ func ensurePprofImport(lines []string) []string {
 }
 
 func createSessionEmailHelper() error {
-	path := filepath.Join("session", "email.go")
+	path := filepath.Join("app", "session", "email.go")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil
@@ -1694,7 +1694,7 @@ func createSessionEmailHelper() error {
 }
 
 func createAdminControllerFile() error {
-	path := filepath.Join("controllers", "admin_controller.go")
+	path := filepath.Join("app", "controllers", "admin_controller.go")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil
@@ -1703,9 +1703,9 @@ func createAdminControllerFile() error {
 	buf.WriteString("package controllers\n\n")
 	buf.WriteString("import (\n")
 	buf.WriteString("\t\"net/http\"\n")
-	buf.WriteString("\t\"monolith/csrf\"\n")
+	buf.WriteString("\t\"monolith/app/csrf\"\n")
 	buf.WriteString("\t\"monolith/db\"\n")
-	buf.WriteString("\t\"monolith/views\"\n")
+	buf.WriteString("\t\"monolith/app/views\"\n")
 	buf.WriteString(")\n\n")
 	buf.WriteString("type AdminController struct{}\n\n")
 	buf.WriteString("var AdminCtrl = &AdminController{}\n\n")
@@ -1788,7 +1788,7 @@ func createAdminControllerFile() error {
 }
 
 func createAdminTemplate() error {
-	dir := filepath.Join("views", "admin")
+	dir := filepath.Join("app", "views", "admin")
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
@@ -1904,7 +1904,7 @@ func createAdminTemplate() error {
 }
 
 func createAdminMiddlewareFile() error {
-	path := filepath.Join("middleware", "admin.go")
+	path := filepath.Join("app", "middleware", "admin.go")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil
@@ -1914,8 +1914,8 @@ func createAdminMiddlewareFile() error {
 	buf.WriteString("import (\n")
 	buf.WriteString("\t\"net/http\"\n")
 	buf.WriteString("\t\"monolith/db\"\n")
-	buf.WriteString("\t\"monolith/models\"\n")
-	buf.WriteString("\t\"monolith/session\"\n")
+	buf.WriteString("\t\"monolith/app/models\"\n")
+	buf.WriteString("\t\"monolith/app/session\"\n")
 	buf.WriteString(")\n\n")
 	buf.WriteString("// RequireAdmin ensures the user is logged in and an admin before accessing a route\n")
 	buf.WriteString("func RequireAdmin(next http.HandlerFunc) http.HandlerFunc {\n")
@@ -1948,7 +1948,7 @@ func createAdminMiddlewareFile() error {
 }
 
 func createAdminMiddlewareTestFile() error {
-	path := filepath.Join("middleware", "admin_test.go")
+	path := filepath.Join("app", "middleware", "admin_test.go")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil
@@ -1972,7 +1972,7 @@ func createAdminMiddlewareTestFile() error {
 }
 
 func updateRoutesForAdmin() error {
-	path := filepath.Join("routes", "routes.go")
+	path := filepath.Join("app", "routes", "routes.go")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err

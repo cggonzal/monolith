@@ -2,8 +2,8 @@ package routes
 
 import (
 	"embed"
-	"monolith/controllers"
-	"monolith/middleware"
+	"monolith/app/controllers"
+	"monolith/app/middleware"
 	"monolith/ws"
 	"net/http"
 )

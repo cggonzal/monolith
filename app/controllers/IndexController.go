@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"monolith/config"
-	"monolith/views"
+	"monolith/app/config"
+	"monolith/app/views"
 	"net/http"
 )
 

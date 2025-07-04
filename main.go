@@ -6,20 +6,20 @@ import (
 	"log/slog"
 	"os"
 
-	"monolith/config"
+	"monolith/app/config"
+	"monolith/app/jobs"
+	"monolith/app/session"
+	"monolith/app/views"
 	"monolith/db"
 	"monolith/generator"
-	"monolith/jobs"
 	"monolith/server_management"
-	"monolith/session"
-	"monolith/views"
 	"monolith/ws"
 )
 
 //go:embed static/*
 var staticFiles embed.FS
 
-//go:embed views/**
+//go:embed app/views/**
 var templateFiles embed.FS
 
 func main() {

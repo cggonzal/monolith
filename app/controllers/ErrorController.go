@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"monolith/views"
+	"monolith/app/views"
 	"net/http"
 )
 
