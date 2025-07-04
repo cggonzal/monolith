@@ -21,20 +21,101 @@
       <header id="feature">
         <div class="wrapper">
           <h1>Getting Started</h1>
-          <p>Learn how to launch a basic blog with Monolith.</p>
+          <p>A full tutorial for building a simple blog with Monolith.</p>
+
+          <nav id="column-side" aria-label="Chapter" class="guide-index">
+            <a id="chapter-nav-skip-link" href="#article-body" class="skip-link">Skip to article body</a>
+            <h2 class="chapter">
+              <picture aria-hidden="true">
+                <img src="images/icon_book-close-bookmark-1.svg" alt="Chapter Icon" />
+              </picture>
+              Chapters
+            </h2>
+            <ol class="chapters">
+              <li><a href="#introduction">Introduction</a></li>
+              <li><a href="#monolith-philosophy">Monolith Philosophy</a></li>
+              <li><a href="#creating-a-new-monolith-app">Creating a New Monolith App</a>
+                <ul>
+                  <li><a href="#prerequisites">Prerequisites</a></li>
+                  <li><a href="#creating-your-first-monolith-app">Creating Your First Monolith App</a></li>
+                  <li><a href="#directory-structure">Directory Structure</a></li>
+                  <li><a href="#model-view-controller-basics">Model-View-Controller Basics</a></li>
+                </ul>
+              </li>
+              <li><a href="#hello-monolith">Hello, Monolith!</a></li>
+              <li><a href="#creating-a-database-model">Creating a Database Model</a>
+                <ul>
+                  <li><a href="#database-migrations">Database Migrations</a></li>
+                  <li><a href="#running-migrations">Running Migrations</a></li>
+                </ul>
+              </li>
+              <li><a href="#routes">Routes</a></li>
+              <li><a href="#controllers-and-actions">Controllers &amp; Actions</a></li>
+              <li><a href="#views-and-templates">Views &amp; Templates</a></li>
+              <li><a href="#adding-authentication">Adding Authentication</a></li>
+              <li><a href="#deploying-to-production">Deploying to Production</a></li>
+              <li><a href="#whats-next">What's Next?</a></li>
+            </ol>
+          </nav>
+
         </div>
       </header>
-      <div id="article-body" class="wrapper">
-        <h2>Installation</h2>
-        <p>Clone the repository and start the development server:</p>
-        <pre><code>$ git clone &lt;repo&gt; &amp;&amp; cd monolith
-$ make # or 'make run' if <code>air</code> is not installed</code></pre>
-        <p>Visit <code>http://localhost:9000</code> in your browser. The first run creates <code>app.db</code> and migrates the schema.</p>
-        <h2>Creating a blog</h2>
-        <p>Use the resource generator to scaffold posts:</p>
-        <pre><code>$ make generator resource post title:string body:text</code></pre>
-        <p>This generates a <code>Post</code> model, a controller with CRUD actions, templates and routes under <code>/posts</code>.</p>
-        <p>Run the server and you have a simple blog where you can create, edit and delete posts.</p>
+      <div class="wrapper">
+        <div id="column-main">
+          <section id="article-body">
+            <h2 id="introduction"><a class="anchorlink" href="#introduction" data-turbo="false"><span>1.</span> Introduction</a></h2>
+            <p>Welcome to Monolith! This guide walks you through the complete process of creating and deploying a simple blog application. Basic knowledge of Go is recommended but not required.</p>
+            <h2 id="monolith-philosophy"><a class="anchorlink" href="#monolith-philosophy" data-turbo="false"><span>2.</span> Monolith Philosophy</a></h2>
+            <p>Monolith favors convention over configuration and keeps dependencies to a minimum. Applications are structured around the MVC pattern, using GORM for persistence and the Go standard library whenever possible.</p>
+            <h2 id="creating-a-new-monolith-app"><a class="anchorlink" href="#creating-a-new-monolith-app" data-turbo="false"><span>3.</span> Creating a New Monolith App</a></h2>
+            <h3 id="prerequisites"><a class="anchorlink" href="#prerequisites" data-turbo="false"><span>3.1.</span> Prerequisites</a></h3>
+            <p>You'll need Go 1.21 or newer, <code>make</code>, and <code>git</code>. Optional tools like <a href="https://github.com/cosmtrek/air">air</a> enable hot reloading.</p>
+            <h3 id="creating-your-first-monolith-app"><a class="anchorlink" href="#creating-your-first-monolith-app" data-turbo="false"><span>3.2.</span> Creating Your First Monolith App</a></h3>
+            <p>Clone the repository and start the development server:</p>
+            <pre><code class="highlight console">$ git clone &lt;repo&gt; &amp;&amp; cd monolith
+$ make       # or 'make run' if air is not installed</code></pre>
+            <p>Open <code>http://localhost:9000</code> in your browser. The first run creates <code>app.db</code> and migrates the schema automatically.</p>
+            <h3 id="directory-structure"><a class="anchorlink" href="#directory-structure" data-turbo="false"><span>3.3.</span> Directory Structure</a></h3>
+            <p>A fresh project contains directories similar to these:</p>
+            <div class="table-wrapper"><table>
+              <thead><tr><th>Path</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td>config/</td><td>Application configuration and initialization.</td></tr>
+                <tr><td>controllers/</td><td>HTTP controllers handling requests.</td></tr>
+                <tr><td>models/</td><td>GORM models representing data tables.</td></tr>
+                <tr><td>views/</td><td>HTML templates for rendering responses.</td></tr>
+                <tr><td>routes/</td><td>Route definitions connecting URLs to controllers.</td></tr>
+                <tr><td>session/</td><td>Cookie sessions and authentication helpers.</td></tr>
+                <tr><td>static/</td><td>Static assets served directly.</td></tr>
+              </tbody></table></div>
+            <h3 id="model-view-controller-basics"><a class="anchorlink" href="#model-view-controller-basics" data-turbo="false"><span>3.4.</span> Model-View-Controller Basics</a></h3>
+            <p>Monolith separates responsibilities: models manage data, controllers orchestrate requests, and views render templates. The generator helps you scaffold each piece quickly.</p>
+            <h2 id="hello-monolith"><a class="anchorlink" href="#hello-monolith" data-turbo="false"><span>4.</span> Hello, Monolith!</a></h2>
+            <p>Running <code>make</code> will compile the project and launch the development server. Any code changes trigger an automatic restart when using <code>air</code>.</p>
+            <h2 id="creating-a-database-model"><a class="anchorlink" href="#creating-a-database-model" data-turbo="false"><span>5.</span> Creating a Database Model</a></h2>
+            <p>Let's scaffold a <code>Post</code> resource for our blog:</p>
+            <pre><code class="highlight console">$ make generator resource post title:string body:text</code></pre>
+            <p>The generator creates a model, controller, views and routes under <code>/posts</code>.</p>
+            <h3 id="database-migrations"><a class="anchorlink" href="#database-migrations" data-turbo="false"><span>5.1.</span> Database Migrations</a></h3>
+            <p>Monolith performs auto-migration on startup. Generated models are registered in <code>db/db.go</code> so the database schema stays in sync.</p>
+            <h3 id="running-migrations"><a class="anchorlink" href="#running-migrations" data-turbo="false"><span>5.2.</span> Running Migrations</a></h3>
+            <p>No separate command is required. Start the server and new migrations run automatically.</p>
+            <h2 id="routes"><a class="anchorlink" href="#routes" data-turbo="false"><span>6.</span> Routes</a></h2>
+            <p>Route definitions live in <code>routes/routes.go</code>. The generator inserts RESTful routes for resources automatically. You can manually add custom routes using helper functions like <code>routes.Get</code>, <code>routes.Post</code>, and so on.</p>
+            <h2 id="controllers-and-actions"><a class="anchorlink" href="#controllers-and-actions" data-turbo="false"><span>7.</span> Controllers &amp; Actions</a></h2>
+            <p>Controllers handle HTTP requests and render templates or JSON. Generated controllers implement the standard CRUD actions: <code>Index</code>, <code>Show</code>, <code>New</code>, <code>Create</code>, <code>Edit</code>, <code>Update</code>, and <code>Destroy</code>.</p>
+            <h2 id="views-and-templates"><a class="anchorlink" href="#views-and-templates" data-turbo="false"><span>8.</span> Views &amp; Templates</a></h2>
+            <p>Templates live under <code>views/</code> and use Go's <code>html/template</code> syntax. Layouts provide a common wrapper for pages. Static assets like CSS and JavaScript go in <code>static/</code>.</p>
+            <h2 id="adding-authentication"><a class="anchorlink" href="#adding-authentication" data-turbo="false"><span>9.</span> Adding Authentication</a></h2>
+            <p>Generate a user model and session helpers with:</p>
+            <pre><code class="highlight console">$ make generator authentication</code></pre>
+            <p>This command creates signup and login pages and wires session management through encrypted cookies.</p>
+            <h2 id="deploying-to-production"><a class="anchorlink" href="#deploying-to-production" data-turbo="false"><span>10.</span> Deploying to Production</a></h2>
+            <p>Build a static binary with <code>make build</code> and run it behind a reverse proxy like Nginx. For zero-downtime restarts, see the <a href="server_management.html">Server Management guide</a>.</p>
+            <h2 id="whats-next"><a class="anchorlink" href="#whats-next" data-turbo="false"><span>11.</span> What's Next?</a></h2>
+            <p>Your blog is now ready for content! Explore the other guides for deeper information about each subsystem. Happy hacking!</p>
+          </section>
+        </div>
       </div>
     </article>
   </main>
