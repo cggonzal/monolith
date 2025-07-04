@@ -680,10 +680,14 @@ func updateRoutesFile(name string, actions []string) error {
 // createTemplateFiles generates HTML views for GET actions.
 func createTemplateFiles(name string, actions []string) error {
 	snake := toSnakeCase(name)
+	dir := filepath.Join("views", snake)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
 	for _, act := range actions {
 		switch act {
 		case "index", "show", "new", "edit":
-			file := filepath.Join("views", fmt.Sprintf("%s_%s.html.tmpl", snake, act))
+			file := filepath.Join(dir, fmt.Sprintf("%s_%s.html.tmpl", snake, act))
 			if _, err := os.Stat(file); err == nil {
 				fmt.Println("exists", file)
 				continue
@@ -1161,7 +1165,11 @@ func createAuthControllerFile() error {
 
 // createLoginTemplate generates a basic login template.
 func createLoginTemplate() error {
-	path := filepath.Join("views", "auth_login.html.tmpl")
+	dir := filepath.Join("views", "auth")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+	path := filepath.Join(dir, "auth_login.html.tmpl")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil
@@ -1209,7 +1217,11 @@ func createLoginTemplate() error {
 }
 
 func createSignupTemplate() error {
-	path := filepath.Join("views", "auth_signup.html.tmpl")
+	dir := filepath.Join("views", "auth")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+	path := filepath.Join(dir, "auth_signup.html.tmpl")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil
@@ -1776,7 +1788,11 @@ func createAdminControllerFile() error {
 }
 
 func createAdminTemplate() error {
-	path := filepath.Join("views", "admin_dashboard.html.tmpl")
+	dir := filepath.Join("views", "admin")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+	path := filepath.Join(dir, "admin_dashboard.html.tmpl")
 	if _, err := os.Stat(path); err == nil {
 		fmt.Println("exists", path)
 		return nil

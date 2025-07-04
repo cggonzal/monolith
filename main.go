@@ -19,7 +19,7 @@ import (
 //go:embed static/*
 var staticFiles embed.FS
 
-//go:embed views/*.html.tmpl
+//go:embed views/**
 var templateFiles embed.FS
 
 func main() {
