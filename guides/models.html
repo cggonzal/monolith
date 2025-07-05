@@ -25,7 +25,92 @@
         </div>
       </header>
       <div id="article-body" class="wrapper">
-        <p>Structs in <code>app/models/</code> map to database tables using GORM. Each model embeds timestamps so you automatically get <code>CreatedAt</code> and <code>UpdatedAt</code>. Typical models include <code>User</code>, <code>Job</code> and <code>Message</code>.</p>
+        <h2 id="overview">Overview</h2>
+        <p>Models live in <code>app/models/</code> and represent the persistent data tables for your application. Each struct typically embeds <code>gorm.Model</code>, giving you <code>ID</code>, <code>CreatedAt</code>, <code>UpdatedAt</code> and <code>DeletedAt</code> fields. A boolean <code>IsActive</code> flag is also included to provide simple soft deletion. GORM takes care of converting your structs to SQL schemas when <code>db.InitDB()</code> runs.</p>
+
+        <h2 id="using-generators">Using Generators</h2>
+        <p>The <code>generator</code> tool creates boilerplate code for new models and ensures they are automatically migrated. Run it through <code>make</code>:</p>
+        <pre><code class="highlight console">$ make generator model Post title:string body:text</code></pre>
+        <p>This command generates <code>app/models/post.go</code>, a placeholder test file and updates <code>db/db.go</code> so the <code>posts</code> table is created on startup. It also scaffolds CRUD helper functions such as <code>CreatePost</code>, <code>GetPostByID</code> and <code>DeletePost</code>.</p>
+        <p>You can create a full REST resource in one step:</p>
+        <pre><code class="highlight console">$ make generator resource post title:string body:text</code></pre>
+        <p>Resource generation adds a controller, templates, routes and the model itself. After running the command, start the server and visit <code>/posts</code> to see the scaffold.</p>
+
+        <h2 id="crud-helpers">CRUD Helpers</h2>
+        <p>Generated models expose simple functions for common operations. For example the <code>Post</code> model created above includes:</p>
+        <pre><code class="highlight go">func CreatePost(db *gorm.DB, p *Post) error {
+    return db.Create(p).Error
+}
+
+func GetPostByID(db *gorm.DB, id uint) (*Post, error) {
+    var p Post
+    if err := db.First(&p, id).Error; err != nil {
+        return nil, err
+    }
+    return &p, nil
+}
+
+func GetAllPosts(db *gorm.DB) ([]Post, error) {
+    var ps []Post
+    if err := db.Find(&ps).Error; err != nil {
+        return nil, err
+    }
+    return ps, nil
+}</code></pre>
+        <p>Feel free to extend these helpers or call GORM directly. The database handle is obtained through <code>db.GetDB()</code>.</p>
+
+        <h2 id="hooks-and-validations">Hooks &amp; Validations</h2>
+        <p>Each generated file contains blank <code>BeforeSave</code> and <code>AfterSave</code> methods. Implement these to enforce validations or trigger side effects. A simple validation might look like:</p>
+        <pre><code class="highlight go">func (p *Post) BeforeSave(tx *gorm.DB) error {
+    if strings.TrimSpace(p.Title) == "" {
+        return errors.New("title is required")
+    }
+    return nil
+}</code></pre>
+        <p>GORM calls these hooks automatically when you create or update records.</p>
+
+        <h2 id="relationships">Relationships</h2>
+        <p>Relations are declared using normal struct fields. For instance, if each post belongs to a user you could add:</p>
+        <pre><code class="highlight go">type Post struct {
+    gorm.Model
+    IsActive bool `gorm:"default:true"`
+    Title    string
+    Body     string
+    UserID   uint
+    User     User
+}</code></pre>
+        <p>GORM understands these associations and will populate related records when you use the <code>Preload</code> method.</p>
+
+        <h2 id="table-customization">Table Customization</h2>
+        <p>By default GORM uses pluralized snake-case table names. To override this you can define a <code>TableName()</code> method on the model:</p>
+        <pre><code class="highlight go">func (Post) TableName() string {
+    return "blog_posts"
+}</code></pre>
+        <p>This is useful when integrating with an existing schema.</p>
+
+        <h2 id="best-practices">Best Practices</h2>
+        <ul>
+          <li>Keep IDs as <code>uint</code> to play nicely with GORM's primary key handling.</li>
+          <li>Use pointers for optional relationships to avoid zero-value confusion.</li>
+          <li>Prefer <code>context.Context</code> aware database operations in higher-level services when running complex business logic.</li>
+          <li>Leverage transactions (<code>db.Transaction</code>) when saving multiple related records.</li>
+          <li>Soft delete with the provided <code>IsActive</code> flag or GORM's built-in <code>DeletedAt</code> if you require queryable history.</li>
+        </ul>
+
+        <h2 id="example-usage">Example Usage</h2>
+        <p>Fetching all posts and rendering them in a controller might look like:</p>
+        <pre><code class="highlight go">posts, err := models.GetAllPosts(db.GetDB())
+if err != nil {
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+}
+views.Render(w, "posts/index.html.tmpl", map[string]any{"posts": posts})</code></pre>
+        <p>Because models are regular Go structs you can unit test them without a database by stubbing the GORM methods you call.</p>
+
+        <h2 id="migration">Automatic Migration</h2>
+        <p>The <code>db</code> package collects all models and migrates them when the application starts. New models generated via the CLI are automatically added to the <code>AutoMigrate</code> list in <code>db/db.go</code>. Simply restart the server and the schema will update.</p>
+
+        <p>This overview should help you design robust domain models. Combine them with controllers and views to build the rest of your application.</p>
       </div>
     </article>
   </main>
