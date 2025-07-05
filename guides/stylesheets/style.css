@@ -1162,9 +1162,105 @@ body.guide pre code.highlight.go {
   color: #F8F8F2; /* Default text color - light cream */
 }
 
+/* Go syntax highlighting with Monokai theme */
+body.guide pre code.highlight.go .keyword {
+  color: #F92672; /* Pink - keywords like func, var, const, etc. */
+}
+
+body.guide pre code.highlight.go .type {
+  color: #A6E22E; /* Green - types like string, int, etc. */
+}
+
+body.guide pre code.highlight.go .function {
+  color: #A6E22E; /* Green - function names */
+}
+
+body.guide pre code.highlight.go .string {
+  color: #E6DB74; /* Yellow - string literals */
+}
+
+body.guide pre code.highlight.go .number {
+  color: #AE81FF; /* Purple - numbers */
+}
+
+body.guide pre code.highlight.go .comment {
+  color: #75715E; /* Gray - comments */
+  font-style: italic;
+}
+
+body.guide pre code.highlight.go .operator {
+  color: #F92672; /* Pink - operators */
+}
+
+body.guide pre code.highlight.go .punctuation {
+  color: #F8F8F2; /* Light cream - punctuation */
+}
+
+body.guide pre code.highlight.go .builtin {
+  color: #66D9EF; /* Blue - built-in functions */
+}
+
+body.guide pre code.highlight.go .constant {
+  color: #AE81FF; /* Purple - constants */
+}
+
 /* Monokai theme colors for JavaScript code */
 body.guide pre code.highlight.javascript {
   color: #F8F8F2; /* Default text color - light cream */
+}
+
+/* JavaScript syntax highlighting with Monokai theme */
+body.guide pre code.highlight.javascript .keyword {
+  color: #F92672; /* Pink - keywords like var, let, const, function, etc. */
+}
+
+body.guide pre code.highlight.javascript .string {
+  color: #E6DB74; /* Yellow - string literals */
+}
+
+body.guide pre code.highlight.javascript .number {
+  color: #AE81FF; /* Purple - numbers */
+}
+
+body.guide pre code.highlight.javascript .comment {
+  color: #75715E; /* Gray - comments */
+  font-style: italic;
+}
+
+body.guide pre code.highlight.javascript .function {
+  color: #A6E22E; /* Green - function names */
+}
+
+body.guide pre code.highlight.javascript .operator {
+  color: #F92672; /* Pink - operators */
+}
+
+body.guide pre code.highlight.javascript .punctuation {
+  color: #F8F8F2; /* Light cream - punctuation */
+}
+
+body.guide pre code.highlight.javascript .builtin {
+  color: #66D9EF; /* Blue - built-in functions and objects */
+}
+
+body.guide pre code.highlight.javascript .constant {
+  color: #AE81FF; /* Purple - constants */
+}
+
+body.guide pre code.highlight.javascript .property {
+  color: #A6E22E; /* Green - object properties */
+}
+
+body.guide pre code.highlight.javascript .variable {
+  color: #F8F8F2; /* Light cream - variables */
+}
+
+body.guide pre code.highlight.javascript .class {
+  color: #A6E22E; /* Green - class names */
+}
+
+body.guide pre code.highlight.javascript .regex {
+  color: #E6DB74; /* Yellow - regular expressions */
 }
 body.guide p code,
 body.guide ul code {
@@ -1873,9 +1969,105 @@ html[dir=rtl]:lang(iw) body.guide header#page_header nav#feature_nav .header-log
     color: #F8F8F2; /* Default text color - light cream */
   }
   
+  /* Go syntax highlighting with Monokai theme in dark mode */
+  body.guide pre code.highlight.go .keyword {
+    color: #F92672; /* Pink - keywords like func, var, const, etc. */
+  }
+  
+  body.guide pre code.highlight.go .type {
+    color: #A6E22E; /* Green - types like string, int, etc. */
+  }
+  
+  body.guide pre code.highlight.go .function {
+    color: #A6E22E; /* Green - function names */
+  }
+  
+  body.guide pre code.highlight.go .string {
+    color: #E6DB74; /* Yellow - string literals */
+  }
+  
+  body.guide pre code.highlight.go .number {
+    color: #AE81FF; /* Purple - numbers */
+  }
+  
+  body.guide pre code.highlight.go .comment {
+    color: #75715E; /* Gray - comments */
+    font-style: italic;
+  }
+  
+  body.guide pre code.highlight.go .operator {
+    color: #F92672; /* Pink - operators */
+  }
+  
+  body.guide pre code.highlight.go .punctuation {
+    color: #F8F8F2; /* Light cream - punctuation */
+  }
+  
+  body.guide pre code.highlight.go .builtin {
+    color: #66D9EF; /* Blue - built-in functions */
+  }
+  
+  body.guide pre code.highlight.go .constant {
+    color: #AE81FF; /* Purple - constants */
+  }
+  
   /* Monokai theme colors for JavaScript code in dark mode */
   body.guide pre code.highlight.javascript {
     color: #F8F8F2; /* Default text color - light cream */
+  }
+  
+  /* JavaScript syntax highlighting with Monokai theme in dark mode */
+  body.guide pre code.highlight.javascript .keyword {
+    color: #F92672; /* Pink - keywords like var, let, const, function, etc. */
+  }
+  
+  body.guide pre code.highlight.javascript .string {
+    color: #E6DB74; /* Yellow - string literals */
+  }
+  
+  body.guide pre code.highlight.javascript .number {
+    color: #AE81FF; /* Purple - numbers */
+  }
+  
+  body.guide pre code.highlight.javascript .comment {
+    color: #75715E; /* Gray - comments */
+    font-style: italic;
+  }
+  
+  body.guide pre code.highlight.javascript .function {
+    color: #A6E22E; /* Green - function names */
+  }
+  
+  body.guide pre code.highlight.javascript .operator {
+    color: #F92672; /* Pink - operators */
+  }
+  
+  body.guide pre code.highlight.javascript .punctuation {
+    color: #F8F8F2; /* Light cream - punctuation */
+  }
+  
+  body.guide pre code.highlight.javascript .builtin {
+    color: #66D9EF; /* Blue - built-in functions and objects */
+  }
+  
+  body.guide pre code.highlight.javascript .constant {
+    color: #AE81FF; /* Purple - constants */
+  }
+  
+  body.guide pre code.highlight.javascript .property {
+    color: #A6E22E; /* Green - object properties */
+  }
+  
+  body.guide pre code.highlight.javascript .variable {
+    color: #F8F8F2; /* Light cream - variables */
+  }
+  
+  body.guide pre code.highlight.javascript .class {
+    color: #A6E22E; /* Green - class names */
+  }
+  
+  body.guide pre code.highlight.javascript .regex {
+    color: #E6DB74; /* Yellow - regular expressions */
   }
   body.guide #mobile-navigation-bar {
     background-color: #292929;
