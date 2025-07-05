@@ -24,9 +24,24 @@
           <p>Embedded files served under <code>/static</code>.</p>
         </div>
       </header>
-      <div id="article-body" class="wrapper">
-        <p>The <code>static/</code> directory contains public files that are embedded into the binary. They are served from <code>/static/</code>, making deployments self-contained.</p>
-      </div>
+        <div id="article-body" class="wrapper">
+          <p>The <code>static/</code> directory holds images, stylesheets, JavaScript and any other files you want to serve directly. All files under this directory are embedded into the final binary using Go&rsquo;s <code>embed</code> package.</p>
+
+          <p>Embedding assets keeps deployments simple. The router mounts a file server at <code>/static/</code> so the assets are available without having to copy them alongside the executable:</p>
+
+          <pre><code class="highlight go">staticFileServer := http.FileServer(http.FS(staticFiles))
+mux.Handle("GET /static/", staticFileServer)</code></pre>
+
+          <p>You can reference assets from your templates as you normally would:</p>
+
+          <pre><code class="highlight html">&lt;link rel="stylesheet" href="/static/css/site.css"&gt;
+&lt;script src="/static/js/app.js"&gt;&lt;/script&gt;
+&lt;img src="/static/img/logo.png" alt="Logo"&gt;</code></pre>
+
+          <p>Organize your files into subdirectories such as <code>css/</code>, <code>js/</code> and <code>img/</code>. During development the files are served from disk. In production they come from the embedded filesystem, so the entire application ships as a single self-contained binary.</p>
+
+          <p>Whenever you change assets in <code>static/</code>, rebuild the project to embed the latest versions. Feel free to add fonts, favicon files or any other public assets required by your application.</p>
+        </div>
     </article>
   </main>
 </body>
