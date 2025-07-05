@@ -24,9 +24,19 @@
           <p>Templates rendered to HTML.</p>
         </div>
       </header>
-      <div id="article-body" class="wrapper">
-        <p>Templates in the <code>app/views/</code> directory are parsed once during startup. Controllers execute these templates with data to generate HTML responses. Layouts help keep common markup in one place.</p>
-      </div>
+        <div id="article-body" class="wrapper">
+          <p>Views are HTML templates stored under <code>app/views/</code>. At start up <code>views.InitTemplates</code> parses every file ending in <code>.html.tmpl</code> and caches the compiled templates. Because templates are embedded into the final binary you will need to restart the server when a template changes.</p>
+
+          <p>The default <code>base.html.tmpl</code> layout defines a series of <code>{{"{{block}}"}}</code> sections such as <code>title</code>, <code>body</code>, <code>scripts</code> and more. Individual templates extend this layout by defining those blocks. For example the homepage template overrides <code>title</code> and <code>body</code> while keeping the rest of the layout intact.</p>
+
+          <p>Controllers render templates by calling <code>views.Render(w, "template_name.html.tmpl", data)</code>. The <code>data</code> argument can be any Go value that the template expects. The helper handles looking up the compiled template and executing it.</p>
+
+          <p>The generators create boilerplate views for you. Running <code>make generator controller dashboard index</code> produces <code>app/views/dashboard/dashboard_index.html.tmpl</code> along with a matching controller and route. The <code>resource</code> generator goes further and scaffolds all CRUD templates (<code>index</code>, <code>show</code>, <code>new</code>, <code>edit</code>) for a given model.</p>
+
+          <p>Template logic should stay light. Use controllers and models to prepare data and prefer small helper functions over large inline conditionals. Reusable snippets can live in their own templates and be included with <code>{{"{{template}}"}}</code>. Static files like CSS and JavaScript belong in the <code>static/</code> directory and are referenced from your templates.</p>
+
+          <p>Following these conventions keeps views easy to understand and encourages a clean separation between presentation and business logic. Keep layouts minimal, use partials for repeated markup, and rely on the generators to create consistent file names and directory structures.</p>
+        </div>
     </article>
   </main>
 </body>
