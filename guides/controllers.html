@@ -25,7 +25,33 @@
         </div>
       </header>
       <div id="article-body" class="wrapper">
-        <p>Handlers in <code>app/controllers/</code> receive incoming requests. Each controller is a Go type with methods for its actions. Routes defined in <code>app/routes/routes.go</code> connect URLs to these methods. Controllers fetch data from models and pass it to templates in the <code>app/views</code> directory for rendering.</p>
+        <h2 id="introduction">What Is a Controller?</h2>
+        <p>Controllers live in <code>app/controllers/</code> and are plain Go structs whose methods handle HTTP requests. Each method follows the familiar <code>func(w http.ResponseWriter, r *http.Request)</code> signature. Controllers orchestrate the flow between models and templates &mdash; they load data, apply any business rules and then render a view.</p>
+
+        <h2 id="generating-controllers">Generating Controllers</h2>
+        <p>Use the built&nbsp;in generator to scaffold a controller and optional actions. The command below creates a <code>posts</code> controller with two actions:</p>
+<pre><code class="highlight console">$ make generator controller posts index show</code></pre>
+        <p>This creates <code>app/controllers/posts_controller.go</code>, matching templates under <code>app/views/posts/</code> and updates <code>app/routes/routes.go</code> with routes like <code>/posts</code> and <code>/posts/{id}</code>.</p>
+
+        <h2 id="resources">Resource Generator</h2>
+        <p>For a complete CRUD setup you can run:</p>
+<pre><code class="highlight console">$ make generator resource post title:string body:text</code></pre>
+        <p>The resource generator produces the model, controller, views and RESTful routes in one step. The resulting controller implements the standard <code>Index</code>, <code>Show</code>, <code>New</code>, <code>Create</code>, <code>Edit</code>, <code>Update</code> and <code>Destroy</code> actions.</p>
+
+        <h2 id="routes">Routes and Actions</h2>
+        <p>Routes are defined in <code>app/routes/routes.go</code> using <code>http.ServeMux</code>. When you generate a controller, new paths are inserted automatically. A typical entry looks like:</p>
+<pre><code class="highlight go">mux.HandleFunc("GET /posts", controllers.PostsCtrl.Index)
+mux.HandleFunc("GET /posts/{id}", controllers.PostsCtrl.Show)</code></pre>
+        <p>You can add your own handlers or wrap them with middleware for authentication and CSRF protection. Routes determine how URLs map to controller methods, so editing <code>routes.go</code> changes which actions respond to which paths.</p>
+
+        <h2 id="rendering-views">Rendering Views</h2>
+        <p>Inside an action you generally load records from the database and then call <code>views.Render</code> to execute an HTML template:</p>
+<pre><code class="highlight go">posts, _ := models.GetAllPosts(db.GetDB())
+views.Render(w, "posts/index.html.tmpl", map[string]any{"posts": posts})</code></pre>
+        <p>Templates reside in <code>app/views</code> and layouts provide common markup. JSON APIs can simply write to <code>w</code> or use <code>encoding/json</code>.</p>
+
+        <h2 id="best-practices">Best Practices</h2>
+        <p>Keep controllers thin by delegating heavy logic to models or service packages. Generators ensure a consistent structure and update your routes automatically. When you rename or remove actions remember to adjust <code>routes.go</code> accordingly.</p>
       </div>
     </article>
   </main>
