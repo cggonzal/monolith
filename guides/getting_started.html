@@ -110,8 +110,8 @@ $ make       # or 'make run' if air is not installed</code></pre>
             <pre><code class="highlight console">$ make generator controller dashboard index</code></pre>
             <p>The generator adds <code>app/controllers/DashboardController.go</code>, <code>app/views/dashboard/index.html.tmpl</code> and updates <code>app/routes/routes.go</code>.</p>
             <p>Edit the controller to load posts and pass them to the view:</p>
-            <pre><code class="highlight go">posts, _ := models.GetAllPosts(db.GetDB())
-views.Render(w, "dashboard/index.html.tmpl", map[string]any{"posts": posts})</code></pre>
+            <pre><code class="highlight go"><span class="variable">posts</span>, <span class="variable">_</span> <span class="operator">:=</span> <span class="function">models</span>.<span class="function">GetAllPosts</span>(<span class="function">db</span>.<span class="function">GetDB</span>())
+<span class="function">views</span>.<span class="function">Render</span>(<span class="variable">w</span>, <span class="string">"dashboard/index.html.tmpl"</span>, <span class="function">map</span>[<span class="type">string</span>]<span class="type">any</span>{<span class="string">"posts"</span>: <span class="variable">posts</span>})</code></pre>
             <p>Visit <code>/dashboard</code> to see the list of posts.</p>
             <h2 id="routes"><a class="anchorlink" href="#routes" data-turbo="false"><span>7.</span> Routes</a></h2>
             <p>Route definitions live in <code>app/routes/routes.go</code>. The generator inserts RESTful routes for resources automatically. You can manually add custom routes using helper functions like <code>routes.Get</code>, <code>routes.Post</code>, and so on.</p>
@@ -123,22 +123,22 @@ views.Render(w, "dashboard/index.html.tmpl", map[string]any{"posts": posts})</co
             <p>Long-running work executes outside the request cycle using the built-in queue. Generate a job:</p>
             <pre><code class="highlight console">$ make generator job Report</code></pre>
             <p>This creates <code>app/jobs/report_job.go</code> and registers <code>JobTypeReport</code>. Enqueue it from a controller:</p>
-            <pre><code class="highlight go">payload := []byte(`{"message":"stats"}`)
-jobs.GetJobQueue().AddJob(models.JobTypeReport, payload)</code></pre>
+            <pre><code class="highlight go"><span class="variable">payload</span> <span class="operator">:=</span> <span class="function">[]byte</span>(<span class="string">`{"message":"stats"}`</span>)
+<span class="function">jobs</span>.<span class="function">GetJobQueue</span>().<span class="function">AddJob</span>(<span class="function">models</span>.<span class="constant">JobTypeReport</span>, <span class="variable">payload</span>)</code></pre>
             <h3 id="sending-email">Sending Email</h3>
             <p>The <code>email</code> package wraps job enqueuing for mail delivery:</p>
-            <pre><code class="highlight go">email.SendEmail("Hello", "Welcome!", "no-reply@example.com", []string{"user@example.com"})</code></pre>
+            <pre><code class="highlight go"><span class="function">email</span>.<span class="function">SendEmail</span>(<span class="string">"Hello"</span>, <span class="string">"Welcome!"</span>, <span class="string">"no-reply@example.com"</span>, <span class="function">[]string</span>{<span class="string">"user@example.com"</span>})</code></pre>
             <h2 id="real-time-websockets"><a class="anchorlink" href="#real-time-websockets" data-turbo="false"><span>11.</span> Real-Time WebSockets</a></h2>
             <p>Connect to <code>/ws</code> and send JSON commands to publish or subscribe to channels:</p>
-            <pre><code class="highlight javascript">{"command":"subscribe","identifier":"ChatChannel"}
-{"command":"message","identifier":"ChatChannel","data":"Hello"}</code></pre>
+            <pre><code class="highlight javascript">{<span class="string">"command"</span>:<span class="string">"subscribe"</span>,<span class="string">"identifier"</span>:<span class="string">"ChatChannel"</span>}
+{<span class="string">"command"</span>:<span class="string">"message"</span>,<span class="string">"identifier"</span>:<span class="string">"ChatChannel"</span>,<span class="string">"data"</span>:<span class="string">"Hello"</span>}</code></pre>
             <p>Messages are persisted and broadcast to all subscribers.</p>
             <h2 id="adding-authentication"><a class="anchorlink" href="#adding-authentication" data-turbo="false"><span>12.</span> Adding Authentication</a></h2>
             <p>Generate a user model and session helpers with:</p>
             <pre><code class="highlight console">$ make generator authentication</code></pre>
             <p>This command creates signup and login pages and wires session management through encrypted cookies.</p>
             <p>Protect routes by wrapping handlers with <code>session.RequireUser</code>:</p>
-            <pre><code class="highlight go">routes.Get("/dashboard", session.RequireUser(DashboardCtrl.Index))</code></pre>
+            <pre><code class="highlight go"><span class="function">routes</span>.<span class="function">Get</span>(<span class="string">"/dashboard"</span>, <span class="function">session</span>.<span class="function">RequireUser</span>(<span class="function">DashboardCtrl</span>.<span class="function">Index</span>))</code></pre>
             <h2 id="a-requests-response-through-monolith"><a class="anchorlink" href="#a-requests-response-through-monolith" data-turbo="false"><span>13.</span> A Request's Response Through Monolith</a></h2>
             <p>Requests match routes in <code>app/routes/routes.go</code>. The chosen controller retrieves data from models and finally calls <code>views.Render</code> which writes HTML to the response.</p>
             <h2 id="deploying-to-production"><a class="anchorlink" href="#deploying-to-production" data-turbo="false"><span>14.</span> Deploying to Production</a></h2>
