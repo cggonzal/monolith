@@ -25,7 +25,24 @@
         </div>
       </header>
       <div id="article-body" class="wrapper">
-        <p>The <code>app/jobs/</code> package implements a lightweight in-process queue backed by the <code>jobs</code> table. Workers run jobs in FIFO order and retry with backoff on failure. Use <code>jobs.Enqueue</code> to add work or <code>jobs.AddRecurringJob</code> for scheduled tasks.</p>
+          <p>The <code>jobs</code> package provides a simple in-process queue for background work. Jobs are stored in the <code>jobs</code> table and processed by worker goroutines started from <code>main.go</code>. Each job uses the <code>JobType</code> and <code>JobStatus</code> enums defined in <code>app/models/job.go</code>.</p>
+
+          <p>Job functions live in <code>app/jobs/*_job.go</code> and are registered in <code>job_queue.go</code>. The queue keeps a registry mapping <code>JobType</code> values to these functions. When a worker fetches a pending job it looks up the handler and passes the JSON payload to it.</p>
+
+          <p>Create new jobs with the generator:</p>
+          <pre><code class="highlight console">$ make generator job Report</code></pre>
+          <p>This command creates <code>app/jobs/report_job.go</code> and <code>app/jobs/report_job_test.go</code>, adds <code>JobTypeReport</code> to <code>app/models/job.go</code> and registers the handler in <code>app/jobs/job_queue.go</code>.</p>
+
+          <p>Edit the generated <code>ReportJob</code> function to implement your logic. The payload argument is a byte slice containing JSON. The generator scaffolds a struct for you to unmarshal into.</p>
+
+          <p>Enqueue a job from anywhere in your application:</p>
+          <pre><code class="highlight go">payload := []byte(`{"message":"stats"}`)
+jobs.GetJobQueue().AddJob(models.JobTypeReport, payload)</code></pre>
+
+          <p>Schedule recurring jobs with a cron expression:</p>
+          <pre><code class="highlight go">jobs.GetJobQueue().AddRecurringJob(models.JobTypeReport, payload, "0 * * * *")</code></pre>
+
+          <p>Workers retry failed jobs with exponential backoff and the queue runs as many workers as configured by <code>config.JOB_QUEUE_NUM_WORKERS</code>. See <code>app/jobs/job_queue.go</code> for implementation details.</p>
       </div>
     </article>
   </main>
