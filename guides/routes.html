@@ -25,7 +25,41 @@
         </div>
       </header>
       <div id="article-body" class="wrapper">
-        <p>Routing is configured in <code>app/routes/routes.go</code> using Go's standard <code>ServeMux</code>. Each path maps to a controller action and middleware wraps the mux to provide logging, sessions and CSRF protection.</p>
+        <p>Routes connect incoming HTTP requests to controller actions. In Monolith the <code>app/routes/routes.go</code> file builds a standard <code>ServeMux</code> and wraps it with middleware for logging, sessions and CSRF protection.</p>
+
+        <h2>Basic Route Setup</h2>
+        <p>The exported <code>InitServerHandler</code> function creates the mux, registers each path and returns the resulting <code>http.Handler</code>:</p>
+<pre><code class="highlight go">mux.HandleFunc("GET /", controllers.IndexCtrl.ShowIndex)
+handler := middleware.CSRFMiddleware(middleware.LoggingMiddleware(mux))</code></pre>
+        <p>Handlers can be wrapped in additional middleware or closures when needed.</p>
+
+        <h2>Using Generators</h2>
+        <p>Generators automatically insert routes for new controllers and resources. For example, running:</p>
+<pre><code class="highlight console">$ make generator controller widgets index show</code></pre>
+        <p>produces entries similar to:</p>
+<pre><code class="highlight go">// routes for WidgetsController
+mux.HandleFunc("GET /widgets", controllers.WidgetsCtrl.Index)
+mux.HandleFunc("GET /widgets/{id}", controllers.WidgetsCtrl.Show)
+</code></pre>
+
+        <p>The <code>resource</code> generator adds the full REST suite in one command:</p>
+<pre><code class="highlight console">$ make generator resource widget name:string price:int</code></pre>
+<pre><code class="highlight go">mux.HandleFunc("GET /widgets", controllers.WidgetsCtrl.Index)
+mux.HandleFunc("GET /widgets/{id}", controllers.WidgetsCtrl.Show)
+mux.HandleFunc("GET /widgets/new", controllers.WidgetsCtrl.New)
+mux.HandleFunc("POST /widgets", controllers.WidgetsCtrl.Create)
+mux.HandleFunc("GET /widgets/{id}/edit", controllers.WidgetsCtrl.Edit)
+mux.HandleFunc("PUT /widgets/{id}", controllers.WidgetsCtrl.Update)
+mux.HandleFunc("PATCH /widgets/{id}", controllers.WidgetsCtrl.Update)
+mux.HandleFunc("DELETE /widgets/{id}", controllers.WidgetsCtrl.Destroy)
+</code></pre>
+
+        <h2>Custom Routes</h2>
+        <p>Because routing is plain Go code you can freely edit <code>routes.go</code> to add custom paths or middleware.</p>
+<pre><code class="highlight go">mux.HandleFunc("GET /dashboard", session.RequireUser(controllers.DashboardCtrl.Index))</code></pre>
+
+        <h2>WebSocket and Static Routes</h2>
+        <p>The file also mounts <code>/ws</code> for WebSocket clients and serves files embedded in the <code>static/</code> directory under <code>/static/</code>. These routes are established when <code>InitServerHandler</code> is called at startup.</p>
       </div>
     </article>
   </main>
