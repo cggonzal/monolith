@@ -21,11 +21,41 @@
       <header id="feature">
         <div class="wrapper">
           <h1>Database</h1>
-          <p>Connection setup and migrations.</p>
+          <p>Connection setup, models and migrations.</p>
         </div>
       </header>
       <div id="article-body" class="wrapper">
-        <p>The <code>db/</code> package initializes a GORM connection to <code>app.db</code> using SQLite. Switching to PostgreSQL is as simple as changing the driver. Calling <code>db.InitDB()</code> performs automatic migrations for all registered models.</p>
+        <p>Monolith persists data using <a href="https://gorm.io">GORM</a>. The
+          <code>db/</code> package bootstraps the connection. By default the
+          application stores data in <code>app.db</code> using the SQLite driver
+          with recommended pragmas for concurrency.</p>
+        <p>Call <code>db.InitDB()</code> on startup to open the database and run
+          auto&#8209;migration for every registered model. New tables appear the
+          first time the server runs.</p>
+        <pre><code class="highlight go">db.InitDB()
+user, _ := models.CreateUser(db.GetDB(), "foo@example.com", "secret")</code></pre>
+        <p>Switching to PostgreSQL is a one line change—import
+          <code>gorm.io/driver/postgres</code> and open a Postgres DSN with
+          <code>gorm.Open</code>. The rest of the code remains identical.</p>
+        <h2>Using generators</h2>
+        <p>Generators keep models and the schema in sync. Create a model with:</p>
+        <pre><code class="highlight console">$ make generator model Widget name:string price:int</code></pre>
+        <p>This command writes <code>app/models/widget.go</code>, updates
+          <code>db/db.go</code> so the <code>Widget</code> model migrates
+          automatically and generates tests. Restart the server and the
+          <code>widgets</code> table will be created.</p>
+        <p>To scaffold a full REST resource in one step run:</p>
+        <pre><code class="highlight console">$ make generator resource widget name:string price:int</code></pre>
+        <p>It creates the model plus a controller, routes and templates. When the
+          server starts the new table is migrated and you can immediately access
+          the CRUD interface at <code>/widgets</code>.</p>
+        <p>Controllers and jobs obtain the database handle with
+          <code>db.GetDB()</code> and call helper functions such as
+          <code>models.CreateWidget</code> or <code>models.GetAllWidgets</code> to
+          query the database.</p>
+        <p>GORM&#39;s auto&#8209;migration runs each time <code>InitDB</code> executes,
+          so no separate migration files are needed. Removing <code>app.db</code>
+          resets the database during development.</p>
       </div>
     </article>
   </main>
