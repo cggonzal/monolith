@@ -749,12 +749,13 @@ dl dd .interstitial p:last-child {
 }
 .interstitial.code,
 dl dd .interstitial.code {
-  border: none !important;
+  border: 1px solid #343434 !important;
   background-color: #292929;
   min-height: auto;
-  padding-left: 1em !important;
+  padding: 1em !important;
   direction: ltr !important;
   text-align: left !important;
+  border-radius: 8px;
 }
 .interstitial.code pre,
 dl dd .interstitial.code pre {
@@ -1130,11 +1131,46 @@ body.guide code {
   margin: 1em 0;
   overflow: auto;
 }
+
+/* Terminal-like styling for code blocks */
+body.guide pre {
+  background-color: #292929;
+  color: #F5F3F1;
+  border-radius: 8px;
+  padding: 1em;
+  border: 1px solid #343434;
+  margin: 1.5em 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+}
+
+body.guide pre code {
+  background-color: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  margin: 0;
+}
+
+/* Specific styling for different code types */
+body.guide pre code.highlight.console {
+  color: #FFFFFF;
+}
+
+body.guide pre code.highlight.go {
+  color: #00ADD8;
+}
+
+body.guide pre code.highlight.javascript {
+  color: #F7DF1E;
+}
 body.guide p code,
 body.guide ul code {
   background: #F5F3F1;
   border-radius: 4px;
-  padding: 1px 3px;
+  padding: 2px 6px;
+  font-size: 0.9em;
+  border: 1px solid #E5E5E5;
 }
 body.guide p img {
   max-width: 100%;
@@ -1803,13 +1839,19 @@ html[dir=rtl]:lang(iw) body.guide header#page_header nav#feature_nav .header-log
   }
 }
 @media (prefers-color-scheme: dark) {
-  body.guide pre, body.guide code {
+  body.guide pre {
+    background-color: #181818;
+    color: #E5E5E5;
+    border-color: #343434;
+  }
+  body.guide code {
     background-color: #292929;
     color: #fff;
   }
   body.guide p code, body.guide ul code, body.guide li code {
     background-color: #2E2E2E;
     color: #E5E5E5;
+    border-color: #3A3939;
   }
   body.guide td code {
     background-color: transparent;
@@ -1817,6 +1859,19 @@ html[dir=rtl]:lang(iw) body.guide header#page_header nav#feature_nav .header-log
   body.guide h2 code, body.guide h3 code, body.guide h4 code, body.guide h5 code {
     background-color: transparent;
     color: #fff;
+  }
+  
+  /* Dark mode specific styling for different code types */
+  body.guide pre code.highlight.console {
+    color: #FFFFFF;
+  }
+  
+  body.guide pre code.highlight.go {
+    color: #00ADD8;
+  }
+  
+  body.guide pre code.highlight.javascript {
+    color: #F7DF1E;
   }
   body.guide #mobile-navigation-bar {
     background-color: #292929;
@@ -1907,9 +1962,9 @@ html[dir=rtl]:lang(iw) body.guide header#page_header nav#feature_nav .header-log
     color: rgb(235.5909090909, 60.9090909091, 64.7909090909);
   }
   body.guide .interstitial.code {
-    background-color: #292929;
+    background-color: #181818;
     border: 1px solid #343434 !important;
-    color: #F5F3F1;
+    color: #E5E5E5;
   }
   body.guide .interstitial.note, body.guide .interstitial.work-in-progress, body.guide .interstitial.todo {
     border-color: rgba(255, 214, 0, 0.5);
