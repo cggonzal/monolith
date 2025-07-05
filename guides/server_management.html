@@ -25,7 +25,28 @@
         </div>
       </header>
       <div id="article-body" class="wrapper">
-        <p>The <code>server_management/</code> directory provides scripts for deploying the application. <code>server_setup.sh</code> bootstraps a server and <code>deploy.sh</code> uploads new releases. Systemd socket activation allows zero-downtime restarts.</p>
+        <p>The <code>server_management/</code> directory contains everything needed to run a production instance of Monolith. It uses systemd socket activation together with the <a href="https://caddyserver.com/">Caddy</a> web server so the application can be restarted without dropping connections.</p>
+
+        <h2 id="server-setup"><a class="anchorlink" href="#server-setup" data-turbo="false">Server Setup</a></h2>
+        <p>Run <code>server_setup.sh</code> once on a fresh Ubuntu host. It installs all dependencies and prepares systemd units for zero&ndash;downtime deploys:</p>
+        <pre><code class="highlight console">$ server_management/server_setup.sh ubuntu@203.0.113.5 example.com</code></pre>
+        <p>The script performs several tasks:</p>
+        <ul>
+          <li>Installs base packages along with Caddy from the official repository.</li>
+          <li>Creates <code>/opt/monolith/releases</code> and sets ownership for the deploy user.</li>
+          <li>Defines <code>monolith.socket</code> and <code>monolith.service</code> to enable socket activation.</li>
+          <li>Writes a minimal Caddyfile that proxies requests to the Go binary on port <code>9000</code>.</li>
+          <li>Enables and starts the socket unit and restarts Caddy so it picks up the new configuration.</li>
+        </ul>
+
+        <h2 id="deploy-script"><a class="anchorlink" href="#deploy-script" data-turbo="false">Deploy Script</a></h2>
+        <p>After the server has been bootstrapped, deploy new releases with <code>deploy.sh</code>:</p>
+        <pre><code class="highlight console">$ server_management/deploy.sh ubuntu@203.0.113.5</code></pre>
+        <p>It builds a static binary on your machine, uploads it to a timestamped directory under <code>/opt/monolith/releases/</code> and atomically updates the <code>current</code> symlink. The script then restarts <code>monolith.service</code> which causes systemd to hand over the listening socket to the new process.</p>
+        <p>Old releases can be pruned automatically. Set <code>KEEP</code> to control how many past releases to keep and toggle pruning with <code>PRUNE</code>:</p>
+        <pre><code class="highlight console">$ KEEP=10 PRUNE=true server_management/deploy.sh ubuntu@203.0.113.5</code></pre>
+
+        <p>The Go program itself runs via <code>server_management.RunServer</code> which integrates with systemd by acquiring the inherited socket and sending a readiness notification. Together these scripts provide a simple yet robust deployment workflow.</p>
       </div>
     </article>
   </main>
