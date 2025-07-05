@@ -25,7 +25,68 @@
         </div>
       </header>
       <div id="article-body" class="wrapper">
-        <p>The <code>ws/</code> package implements a hub that manages clients and broadcasts messages. Each client subscribes to channels and receives messages in real time. Messages are persisted in the database for history.</p>
+        <section id="overview">
+          <h2>Overview</h2>
+          <p>The <code>ws/</code> package provides a lightweight publish&ndash;subscribe layer on top of <a href="https://github.com/gorilla/websocket">gorilla/websocket</a>. A central <em>Hub</em> keeps track of subscribed clients and fans out messages to every listener. All events are stored in the database so new clients can replay history if needed.</p>
+        </section>
+
+        <section id="initialization">
+          <h2>Initialization</h2>
+          <p>The hub is created during application startup by calling <code>ws.InitPubSub()</code> in <code>main.go</code>. This spins up a goroutine that handles subscriptions and broadcasts. The HTTP handler <code>ws.ServeWs</code> upgrades requests on <code>/ws</code> to WebSocket connections and registers each client with the hub.</p>
+<pre><code class="highlight go">// main.go
+ws.InitPubSub()
+http.HandleFunc("/ws", ws.ServeWs)</code></pre>
+        </section>
+
+        <section id="client-usage">
+          <h2>Client Usage</h2>
+          <p>Clients communicate with the server by sending JSON commands. The most common are <code>subscribe</code> and <code>message</code>. Here is a minimal browser example:</p>
+<pre><code class="highlight javascript">const sock = new WebSocket("ws://localhost:9000/ws");
+
+sock.onopen = () => {
+  sock.send(JSON.stringify({command: "subscribe", identifier: "ChatChannel"}));
+  sock.send(JSON.stringify({command: "message", identifier: "ChatChannel", data: "Hello from JS!"}));
+};
+
+sock.onmessage = (ev) => console.log("received", ev.data);
+</code></pre>
+        </section>
+
+        <section id="server-broadcast">
+          <h2>Broadcasting from Go</h2>
+          <p>Any part of the application can publish a message. The hub guarantees fan&ndash;out to all subscribers:</p>
+<pre><code class="highlight go">// send a message to every subscriber of "notifications"
+ws.HUB.Broadcast("notifications", []byte("Build finished"))
+</code></pre>
+          <p><code>Broadcast</code> is safe to call from any goroutine and persists the message asynchronously.</p>
+        </section>
+
+        <section id="pubsub-model">
+          <h2>Pub/Sub Model</h2>
+          <p>Each WebSocket client maintains a list of channel subscriptions. Commands sent by the client drive the state:</p>
+          <ul>
+            <li><strong>subscribe</strong> &ndash; register interest in a channel.</li>
+            <li><strong>unsubscribe</strong> &ndash; remove interest in a channel.</li>
+            <li><strong>message</strong> &ndash; broadcast data to all subscribers.</li>
+          </ul>
+          <p>The hub keeps an in&ndash;memory map of channel names to clients for efficient delivery.</p>
+        </section>
+
+        <section id="persistence">
+          <h2>Message Persistence</h2>
+          <p>Whenever a message is broadcast, it is also inserted into the <code>messages</code> table via GORM. The <code>Message</code> model stores the channel, content and timestamp. This design allows chat history or event logs to be retrieved later.</p>
+        </section>
+
+        <section id="custom-channels">
+          <h2>Custom Channels</h2>
+          <p>Channels are arbitrary strings and can represent chat rooms, user streams or application events. New channels do not require any server code changes&mdash;clients simply start subscribing and publishing under the desired name.</p>
+        </section>
+
+        <section id="next-steps">
+          <h2>Next Steps</h2>
+          <p>Explore the <code>ws/</code> directory for the full implementation and consult <code>ws/ws_test.go</code> for usage examples. Combining the pub/sub layer with background jobs or HTTP controllers enables powerful real&ndash;time features.</p>
+        </section>
+
       </div>
     </article>
   </main>
