@@ -32,8 +32,8 @@
         <p>Call <code>db.InitDB()</code> on startup to open the database and run
           auto&#8209;migration for every registered model. New tables appear the
           first time the server runs.</p>
-        <pre><code class="highlight go">db.InitDB()
-user, _ := models.CreateUser(db.GetDB(), "foo@example.com", "secret")</code></pre>
+        <pre><code class="highlight go"><span class="function">db</span>.<span class="function">InitDB</span>()
+<span class="variable">user</span>, <span class="variable">_</span> <span class="operator">:=</span> <span class="function">models</span>.<span class="function">CreateUser</span>(<span class="function">db</span>.<span class="function">GetDB</span>(), <span class="string">"foo@example.com"</span>, <span class="string">"secret"</span>)</code></pre>
         <p>Switching to PostgreSQL is a one line change—import
           <code>gorm.io/driver/postgres</code> and open a Postgres DSN with
           <code>gorm.Open</code>. The rest of the code remains identical.</p>

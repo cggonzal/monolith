@@ -29,34 +29,34 @@
 
         <h2>Basic Route Setup</h2>
         <p>The exported <code>InitServerHandler</code> function creates the mux, registers each path and returns the resulting <code>http.Handler</code>:</p>
-<pre><code class="highlight go">mux.HandleFunc("GET /", controllers.IndexCtrl.ShowIndex)
-handler := middleware.CSRFMiddleware(middleware.LoggingMiddleware(mux))</code></pre>
+<pre><code class="highlight go"><span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /"</span>, <span class="function">controllers</span>.<span class="variable">IndexCtrl</span>.<span class="function">ShowIndex</span>)
+<span class="variable">handler</span> <span class="operator">:=</span> <span class="function">middleware</span>.<span class="function">CSRFMiddleware</span>(<span class="function">middleware</span>.<span class="function">LoggingMiddleware</span>(<span class="variable">mux</span>))</code></pre>
         <p>Handlers can be wrapped in additional middleware or closures when needed.</p>
 
         <h2>Using Generators</h2>
         <p>Generators automatically insert routes for new controllers and resources. For example, running:</p>
 <pre><code class="highlight console">$ make generator controller widgets index show</code></pre>
         <p>produces entries similar to:</p>
-<pre><code class="highlight go">// routes for WidgetsController
-mux.HandleFunc("GET /widgets", controllers.WidgetsCtrl.Index)
-mux.HandleFunc("GET /widgets/{id}", controllers.WidgetsCtrl.Show)
+<pre><code class="highlight go"><span class="comment">// routes for WidgetsController</span>
+<span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /widgets"</span>, <span class="function">controllers</span>.<span class="variable">WidgetsCtrl</span>.<span class="function">Index</span>)
+<span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /widgets/{id}"</span>, <span class="function">controllers</span>.<span class="variable">WidgetsCtrl</span>.<span class="function">Show</span>)
 </code></pre>
 
         <p>The <code>resource</code> generator adds the full REST suite in one command:</p>
 <pre><code class="highlight console">$ make generator resource widget name:string price:int</code></pre>
-<pre><code class="highlight go">mux.HandleFunc("GET /widgets", controllers.WidgetsCtrl.Index)
-mux.HandleFunc("GET /widgets/{id}", controllers.WidgetsCtrl.Show)
-mux.HandleFunc("GET /widgets/new", controllers.WidgetsCtrl.New)
-mux.HandleFunc("POST /widgets", controllers.WidgetsCtrl.Create)
-mux.HandleFunc("GET /widgets/{id}/edit", controllers.WidgetsCtrl.Edit)
-mux.HandleFunc("PUT /widgets/{id}", controllers.WidgetsCtrl.Update)
-mux.HandleFunc("PATCH /widgets/{id}", controllers.WidgetsCtrl.Update)
-mux.HandleFunc("DELETE /widgets/{id}", controllers.WidgetsCtrl.Destroy)
+<pre><code class="highlight go"><span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /widgets"</span>, <span class="function">controllers</span>.<span class="variable">WidgetsCtrl</span>.<span class="function">Index</span>)
+<span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /widgets/{id}"</span>, <span class="function">controllers</span>.<span class="variable">WidgetsCtrl</span>.<span class="function">Show</span>)
+<span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /widgets/new"</span>, <span class="function">controllers</span>.<span class="variable">WidgetsCtrl</span>.<span class="function">New</span>)
+<span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"POST /widgets"</span>, <span class="function">controllers</span>.<span class="variable">WidgetsCtrl</span>.<span class="function">Create</span>)
+<span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /widgets/{id}/edit"</span>, <span class="function">controllers</span>.<span class="variable">WidgetsCtrl</span>.<span class="function">Edit</span>)
+<span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"PUT /widgets/{id}"</span>, <span class="function">controllers</span>.<span class="variable">WidgetsCtrl</span>.<span class="function">Update</span>)
+<span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"PATCH /widgets/{id}"</span>, <span class="function">controllers</span>.<span class="variable">WidgetsCtrl</span>.<span class="function">Update</span>)
+<span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"DELETE /widgets/{id}"</span>, <span class="function">controllers</span>.<span class="variable">WidgetsCtrl</span>.<span class="function">Destroy</span>)
 </code></pre>
 
         <h2>Custom Routes</h2>
         <p>Because routing is plain Go code you can freely edit <code>routes.go</code> to add custom paths or middleware.</p>
-<pre><code class="highlight go">mux.HandleFunc("GET /dashboard", session.RequireUser(controllers.DashboardCtrl.Index))</code></pre>
+<pre><code class="highlight go"><span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /dashboard"</span>, <span class="function">session</span>.<span class="function">RequireUser</span>(<span class="function">controllers</span>.<span class="variable">DashboardCtrl</span>.<span class="function">Index</span>))</code></pre>
 
         <h2>WebSocket and Static Routes</h2>
         <p>The file also mounts <code>/ws</code> for WebSocket clients and serves files embedded in the <code>static/</code> directory under <code>/static/</code>. These routes are established when <code>InitServerHandler</code> is called at startup.</p>

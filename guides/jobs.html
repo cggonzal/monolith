@@ -36,11 +36,11 @@
           <p>Edit the generated <code>ReportJob</code> function to implement your logic. The payload argument is a byte slice containing JSON. The generator scaffolds a struct for you to unmarshal into.</p>
 
           <p>Enqueue a job from anywhere in your application:</p>
-          <pre><code class="highlight go">payload := []byte(`{"message":"stats"}`)
-jobs.GetJobQueue().AddJob(models.JobTypeReport, payload)</code></pre>
+          <pre><code class="highlight go"><span class="variable">payload</span> <span class="operator">:=</span> <span class="function">[]byte</span>(<span class="string">`{"message":"stats"}`</span>)
+<span class="function">jobs</span>.<span class="function">GetJobQueue</span>().<span class="function">AddJob</span>(<span class="function">models</span>.<span class="constant">JobTypeReport</span>, <span class="variable">payload</span>)</code></pre>
 
           <p>Schedule recurring jobs with a cron expression:</p>
-          <pre><code class="highlight go">jobs.GetJobQueue().AddRecurringJob(models.JobTypeReport, payload, "0 * * * *")</code></pre>
+          <pre><code class="highlight go"><span class="function">jobs</span>.<span class="function">GetJobQueue</span>().<span class="function">AddRecurringJob</span>(<span class="function">models</span>.<span class="constant">JobTypeReport</span>, <span class="variable">payload</span>, <span class="string">"0 * * * *"</span>)</code></pre>
 
           <p>Workers retry failed jobs with exponential backoff and the queue runs as many workers as configured by <code>config.JOB_QUEUE_NUM_WORKERS</code>. See <code>app/jobs/job_queue.go</code> for implementation details.</p>
       </div>

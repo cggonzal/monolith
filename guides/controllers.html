@@ -40,14 +40,14 @@
 
         <h2 id="routes">Routes and Actions</h2>
         <p>Routes are defined in <code>app/routes/routes.go</code> using <code>http.ServeMux</code>. When you generate a controller, new paths are inserted automatically. A typical entry looks like:</p>
-<pre><code class="highlight go">mux.HandleFunc("GET /posts", controllers.PostsCtrl.Index)
-mux.HandleFunc("GET /posts/{id}", controllers.PostsCtrl.Show)</code></pre>
+<pre><code class="highlight go"><span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /posts"</span>, <span class="function">controllers</span>.<span class="variable">PostsCtrl</span>.<span class="function">Index</span>)
+<span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /posts/{id}"</span>, <span class="function">controllers</span>.<span class="variable">PostsCtrl</span>.<span class="function">Show</span>)</code></pre>
         <p>You can add your own handlers or wrap them with middleware for authentication and CSRF protection. Routes determine how URLs map to controller methods, so editing <code>routes.go</code> changes which actions respond to which paths.</p>
 
         <h2 id="rendering-views">Rendering Views</h2>
         <p>Inside an action you generally load records from the database and then call <code>views.Render</code> to execute an HTML template:</p>
-<pre><code class="highlight go">posts, _ := models.GetAllPosts(db.GetDB())
-views.Render(w, "posts/index.html.tmpl", map[string]any{"posts": posts})</code></pre>
+<pre><code class="highlight go"><span class="variable">posts</span>, <span class="variable">_</span> <span class="operator">:=</span> <span class="function">models</span>.<span class="function">GetAllPosts</span>(<span class="function">db</span>.<span class="function">GetDB</span>())
+<span class="function">views</span>.<span class="function">Render</span>(<span class="variable">w</span>, <span class="string">"posts/index.html.tmpl"</span>, <span class="function">map</span>[<span class="type">string</span>]<span class="type">any</span>{<span class="string">"posts"</span>: <span class="variable">posts</span>})</code></pre>
         <p>Templates reside in <code>app/views</code> and layouts provide common markup. JSON APIs can simply write to <code>w</code> or use <code>encoding/json</code>.</p>
 
         <h2 id="best-practices">Best Practices</h2>

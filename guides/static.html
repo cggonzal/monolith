@@ -29,8 +29,8 @@
 
           <p>Embedding assets keeps deployments simple. The router mounts a file server at <code>/static/</code> so the assets are available without having to copy them alongside the executable:</p>
 
-          <pre><code class="highlight go">staticFileServer := http.FileServer(http.FS(staticFiles))
-mux.Handle("GET /static/", staticFileServer)</code></pre>
+          <pre><code class="highlight go"><span class="variable">staticFileServer</span> <span class="operator">:=</span> <span class="function">http</span>.<span class="function">FileServer</span>(<span class="function">http</span>.<span class="function">FS</span>(<span class="variable">staticFiles</span>))
+<span class="variable">mux</span>.<span class="function">Handle</span>(<span class="string">"GET /static/"</span>, <span class="variable">staticFileServer</span>)</code></pre>
 
           <p>You can reference assets from your templates as you normally would:</p>
 

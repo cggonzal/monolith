@@ -33,29 +33,29 @@
           <li><strong>CSRFMiddleware</strong> – protects against cross-site request forgery by verifying tokens on mutating requests and responding with <code>403 Forbidden</code> when validation fails.</li>
         </ul>
         <p>These are composed in <code>routes.InitServerHandler</code> so that every request is logged and checked for a valid CSRF token:</p>
-        <pre><code class="highlight go">logged := middleware.LoggingMiddleware(mux)
-csrfProtected := middleware.CSRFMiddleware(logged)
-return csrfProtected</code></pre>
+        <pre><code class="highlight go"><span class="variable">logged</span> <span class="operator">:=</span> <span class="function">middleware</span>.<span class="function">LoggingMiddleware</span>(<span class="variable">mux</span>)
+<span class="variable">csrfProtected</span> <span class="operator">:=</span> <span class="function">middleware</span>.<span class="function">CSRFMiddleware</span>(<span class="variable">logged</span>)
+<span class="keyword">return</span> <span class="variable">csrfProtected</span></code></pre>
         <h2 id="adding-middleware">Adding New Middleware</h2>
         <p>Create a new file under <code>app/middleware/</code> containing a function that takes and returns an <code>http.Handler</code>. The example below enforces authentication:</p>
-        <pre><code class="highlight go">func RequireLogin(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        if !models.IsLoggedIn(r) {
-            http.Redirect(w, r, "/login", http.StatusSeeOther)
-            return
+        <pre><code class="highlight go"><span class="keyword">func</span> <span class="function">RequireLogin</span>(<span class="variable">next</span> <span class="type">http</span>.<span class="type">Handler</span>) <span class="type">http</span>.<span class="type">Handler</span> {
+    <span class="keyword">return</span> <span class="function">http</span>.<span class="function">HandlerFunc</span>(<span class="keyword">func</span>(<span class="variable">w</span> <span class="type">http</span>.<span class="type">ResponseWriter</span>, <span class="variable">r</span> <span class="operator">*</span><span class="type">http</span>.<span class="type">Request</span>) {
+        <span class="keyword">if</span> <span class="operator">!</span><span class="function">models</span>.<span class="function">IsLoggedIn</span>(<span class="variable">r</span>) {
+            <span class="function">http</span>.<span class="function">Redirect</span>(<span class="variable">w</span>, <span class="variable">r</span>, <span class="string">"/login"</span>, <span class="function">http</span>.<span class="constant">StatusSeeOther</span>)
+            <span class="keyword">return</span>
         }
-        next.ServeHTTP(w, r)
+        <span class="variable">next</span>.<span class="function">ServeHTTP</span>(<span class="variable">w</span>, <span class="variable">r</span>)
     })
 }</code></pre>
         <p>Write tests in <code>app/middleware/requirelogin_test.go</code> to confirm the middleware's behaviour. Once implemented, update <code>app/routes/routes.go</code> to insert the middleware into the chain. Order matters—handlers closer to the mux run later:</p>
-        <pre><code class="highlight go">mux := http.NewServeMux()
-registerRoutes(mux, staticFiles)
-logged := middleware.LoggingMiddleware(mux)
-authenticated := middleware.RequireLogin(logged)
-csrfProtected := middleware.CSRFMiddleware(authenticated)
-return csrfProtected</code></pre>
+        <pre><code class="highlight go"><span class="variable">mux</span> <span class="operator">:=</span> <span class="function">http</span>.<span class="function">NewServeMux</span>()
+<span class="function">registerRoutes</span>(<span class="variable">mux</span>, <span class="variable">staticFiles</span>)
+<span class="variable">logged</span> <span class="operator">:=</span> <span class="function">middleware</span>.<span class="function">LoggingMiddleware</span>(<span class="variable">mux</span>)
+<span class="variable">authenticated</span> <span class="operator">:=</span> <span class="function">middleware</span>.<span class="function">RequireLogin</span>(<span class="variable">logged</span>)
+<span class="variable">csrfProtected</span> <span class="operator">:=</span> <span class="function">middleware</span>.<span class="function">CSRFMiddleware</span>(<span class="variable">authenticated</span>)
+<span class="keyword">return</span> <span class="variable">csrfProtected</span></code></pre>
         <p>You can also wrap individual routes instead of the entire mux:</p>
-        <pre><code class="highlight go">mux.Handle("GET /admin", middleware.RequireLogin(AdminCtrl.Index))</code></pre>
+        <pre><code class="highlight go"><span class="variable">mux</span>.<span class="function">Handle</span>(<span class="string">"GET /admin"</span>, <span class="function">middleware</span>.<span class="function">RequireLogin</span>(<span class="variable">AdminCtrl</span>.<span class="function">Index</span>))</code></pre>
         <h2 id="middleware-and-routes">Middleware and Routes</h2>
         <p>Routes are matched by the underlying <code>ServeMux</code> after all middleware has executed. Each middleware can inspect or modify the request and response, and because they are chained sequentially, the order in which you compose them in <code>InitServerHandler</code> dictates their effect on every route.</p>
         <p>Adding new middleware therefore involves three steps: create the middleware function and tests, import the middleware package in <code>routes.go</code>, and wrap either the mux or individual handlers. This approach allows you to reuse functionality like authentication, custom headers or logging across your entire application.</p>
