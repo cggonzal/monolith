@@ -1157,12 +1157,14 @@ body.guide pre code.highlight.console {
   color: #FFFFFF;
 }
 
+/* Monokai theme colors for Go code */
 body.guide pre code.highlight.go {
-  color: #00ADD8;
+  color: #F8F8F2; /* Default text color - light cream */
 }
 
+/* Monokai theme colors for JavaScript code */
 body.guide pre code.highlight.javascript {
-  color: #F7DF1E;
+  color: #F8F8F2; /* Default text color - light cream */
 }
 body.guide p code,
 body.guide ul code {
@@ -1866,12 +1868,14 @@ html[dir=rtl]:lang(iw) body.guide header#page_header nav#feature_nav .header-log
     color: #FFFFFF;
   }
   
+  /* Monokai theme colors for Go code in dark mode */
   body.guide pre code.highlight.go {
-    color: #00ADD8;
+    color: #F8F8F2; /* Default text color - light cream */
   }
   
+  /* Monokai theme colors for JavaScript code in dark mode */
   body.guide pre code.highlight.javascript {
-    color: #F7DF1E;
+    color: #F8F8F2; /* Default text color - light cream */
   }
   body.guide #mobile-navigation-bar {
     background-color: #292929;
