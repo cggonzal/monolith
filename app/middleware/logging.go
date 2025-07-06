@@ -3,6 +3,7 @@ package middleware
 import (
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"time"
 )
@@ -18,10 +19,15 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(rw, r)
 
 		// Use the globally configured slog logger
+		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			ip = r.RemoteAddr
+		}
+
 		slog.Info("HTTP Request",
 			"method", r.Method,
 			"path", r.URL.Path,
-			"remoteAddr", r.RemoteAddr,
+			"ip", ip,
 			"userAgent", r.UserAgent(),
 			"status", fmt.Sprintf("%d %s", rw.status, http.StatusText(rw.status)),
 			"duration", time.Since(start).Milliseconds(),

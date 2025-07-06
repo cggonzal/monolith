@@ -8,6 +8,7 @@ package config
 import (
 	"log/slog"
 	"os"
+	"strconv"
 )
 
 var JOB_QUEUE_NUM_WORKERS = 4
@@ -27,6 +28,8 @@ var SECRET_KEY = os.Getenv("SECRET_KEY")
 
 var MONOLITH_VERSION = "0.1.0"
 
+var RATE_LIMIT_REQUESTS_PER_MINUTE = 60
+
 func InitConfig() {
 	// log warnings if secret key and other environment variables are not set
 	if SECRET_KEY == "" {
@@ -42,5 +45,15 @@ func InitConfig() {
 	}
 	if MAILGUN_API_KEY == "" {
 		slog.Warn("MAILGUN_API_KEY is not set, email functionality will not function properly.")
+	}
+
+	if rl := os.Getenv("RATE_LIMIT_REQUESTS_PER_MINUTE"); rl != "" {
+		if v, err := strconv.Atoi(rl); err == nil {
+			RATE_LIMIT_REQUESTS_PER_MINUTE = v
+		} else {
+			slog.Warn("invalid RATE_LIMIT_REQUESTS_PER_MINUTE, using default", "error", err)
+		}
+	} else {
+		slog.Info("RATE_LIMIT_REQUESTS_PER_MINUTE is not set, using default value", "value", RATE_LIMIT_REQUESTS_PER_MINUTE)
 	}
 }
