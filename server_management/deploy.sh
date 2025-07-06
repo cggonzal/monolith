@@ -32,6 +32,10 @@ ssh "$REMOTE" "sudo mkdir -p $RELEASE_DIR && sudo chown \$(whoami): $RELEASE_DIR
 echo "▶ Copying binary..."
 scp "$BIN" "$REMOTE:$RELEASE_DIR/"
 
+echo "▶ Uploading Caddyfile..."
+scp "$(dirname "$0")/Caddyfile" "$REMOTE:/tmp/Caddyfile"
+ssh "$REMOTE" "sudo mv /tmp/Caddyfile /etc/caddy/Caddyfile"
+
 echo "▶ Updating symlink & restarting service..."
 ssh "$REMOTE" bash -s -- "$APP_DIR" "$APP_NAME" "$RELEASE_DIR" "$KEEP" "$PRUNE" <<'EOSH'
 set -xeuo pipefail
@@ -42,7 +46,7 @@ sudo ln -sfn "$RELEASE_DIR" "$APP_DIR/current"
 
 # 2) Zero‑downtime restart
 sudo systemctl restart "$APP_NAME.service"
-sudo systemctl reload caddy    # only if Caddyfile changed
+sudo systemctl reload caddy    # reload updated Caddyfile
 
 # 3) Optional pruning
 if [[ "$PRUNE" == "true" ]]; then

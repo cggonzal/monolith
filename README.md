@@ -619,14 +619,14 @@ make build
 ## Server Setup
 Assuming you have a newly created ubuntu server that you have ssh access into, just run:
 ```bash
-make server-setup root@{{ip address of server}} {{domain name}}
+make server-setup root@{{ip address of server}}
 ```
 
-where `ip address of server` is the host name IP address of your server and `domain name` is the domain that will be served by your server.
+Edit `server_management/Caddyfile` with your domain and any desired tweaks before running the setup.
 
 For example,
 ```bash
-make server-setup root@203.0.113.5 example.com
+make server-setup root@203.0.113.5
 ```
 
 ---

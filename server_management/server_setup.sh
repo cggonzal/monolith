@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # This script is meant to be run from the root of the monolith project.
 # Boot‑straps a fresh Ubuntu server for zero‑downtime Go deploys. Assumes that the ssh command can find your ssh key by default.
-# This script sets up a server with Caddy, systemd socket activation, and a basic Caddyfile.
-# Usage: ./server_setup.sh user@host example.com
+# This script sets up a server with Caddy and systemd socket activation.
+# It uploads the Caddyfile from server_management/Caddyfile in this repo.
+# Usage: ./server_setup.sh user@host
 
 set -xeuo pipefail
 
 REMOTE="$1"                 # e.g. ubuntu@203.0.113.5
 APP_NAME="monolith"         # systemd unit prefix and directory name
-DOMAIN="$2"                 # domain served by Caddy
 APP_DIR="/opt/$APP_NAME"    # where releases/ and current -> releaseX live
 BIN_PORT="9000"             # must match systemd socket + Caddy reverse_proxy
 
@@ -66,19 +66,15 @@ KillMode=mixed
 WantedBy=multi-user.target
 UNIT
 
-# ----- 5. Caddyfile --------------------------------------------------------
-sudo tee /etc/caddy/Caddyfile >/dev/null <<CFG
-$DOMAIN {
-	encode zstd gzip
-	reverse_proxy 127.0.0.1:$BIN_PORT
-}
-CFG
-
-# ----- 6. Enable & start everything ---------------------------------------
+# ----- 5. Enable services -------------------------------------------------
 sudo systemctl daemon-reload
 sudo systemctl enable --now $APP_NAME.socket
-sudo systemctl restart caddy       # picks up Caddyfile
-echo "✅ Server bootstrap complete."
+echo "✅ Base server setup complete."
 EOF
+
+echo "▶ Uploading Caddyfile..."
+scp "$(dirname "$0")/Caddyfile" "$REMOTE:/tmp/Caddyfile"
+ssh "$REMOTE" "sudo mv /tmp/Caddyfile /etc/caddy/Caddyfile"
+ssh "$REMOTE" "sudo systemctl restart caddy"
 
 echo "You can now deploy your app using the deploy.sh script."
