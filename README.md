@@ -15,7 +15,8 @@ If you are new, start with **Quick‑start** then come back to read the architec
 
 1. [Introduction](#introduction)
 2. [Quickstart](#quickstart)
-3. [Practical Walk‑throughs](#practical-walkthroughs)
+3. [Request Flow](#request-flow)
+4. [Practical Walk‑throughs](#practical-walkthroughs)
    1. [Authentication flow](#authentication-flow-example)
    2. [WebSocket chat](#websocket-chat-example)
    3. [Background job](#background-job-example)
@@ -24,7 +25,7 @@ If you are new, start with **Quick‑start** then come back to read the architec
    6. [Generating a resource](#generating-a-resource)
    7. [Generating authentication](#generating-authentication)
    8. [Generating an admin dashboard](#generating-an-admin-dashboard)
-4. [Core Concepts](#core-concepts)
+5. [Core Concepts](#core-concepts)
    1. [Configuration](#configuration)
    2. [Database Layer](#database-layer)
    3. [Domain Models](#domain-models)
@@ -37,14 +38,14 @@ If you are new, start with **Quick‑start** then come back to read the architec
    10. [Job Queue](#job-queue)
    11. [Server Management & Zero‑downtime Deploys](#server-management--zero-downtime-deploys)
    12. [Debugging & Profiling](#debugging--profiling)
-5. [Project Layout](#project-layout)
-6. [Extending the Monolith](#extending-the-monolith)
-7. [Generators](#generators)
-8. [Testing](#testing)
-9. [Development](#development)
-10. [Server Setup](#server-setup)
-11. [Deployment](#deployment)
-12. [Appendix](#appendix)
+6. [Project Layout](#project-layout)
+7. [Extending the Monolith](#extending-the-monolith)
+8. [Generators](#generators)
+9. [Testing](#testing)
+10. [Development](#development)
+11. [Server Setup](#server-setup)
+12. [Deployment](#deployment)
+13. [Appendix](#appendix)
 
 ---
 
@@ -91,6 +92,24 @@ make run
 Set the `SECRET_KEY` environment variable to a random string before running the server.
 
 The first launch creates **app.db** and auto‑migrates the schema.
+
+---
+
+## Request Flow
+
+```mermaid
+flowchart TD
+    A[Client Request] --> B[Caddy proxy]
+    B --> C[App :9000]
+    C --> D[Router]
+    D --> E[Controller]
+    E -- if needed --> F[(DB)]
+    F --> E
+    E --> G[Render View]
+    G --> B
+    B --> H[Encode / gzip]
+    H --> I[Client Response]
+```
 
 ---
 
