@@ -1144,6 +1144,14 @@ body.guide pre {
   overflow-x: auto;
 }
 
+/* Mermaid diagrams should have a light background */
+body.guide pre.mermaid,
+body.guide .mermaid {
+  background-color: #ffffff;
+  color: #000000;
+  border: 1px solid #ddd;
+}
+
 body.guide pre code {
   background-color: transparent;
   color: inherit;
