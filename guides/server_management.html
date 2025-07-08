@@ -47,6 +47,33 @@
         <pre><code class="highlight console">$ KEEP=10 PRUNE=true server_management/deploy.sh ubuntu@203.0.113.5</code></pre>
 
         <p>The Go program itself runs via <code>server_management.RunServer</code> which integrates with systemd by acquiring the inherited socket and sending a readiness notification. Together these scripts provide a simple yet robust deployment workflow.</p>
+
+        <h2 id="zero-downtime-deploy"><a class="anchorlink" href="#zero-downtime-deploy" data-turbo="false">How Zero Downtime Works</a></h2>
+        <p>Monolith relies on systemd&rsquo;s socket activation to keep the listening socket open across restarts. The <code>monolith.socket</code> unit listens on <code>127.0.0.1:9000</code> and queues incoming connections while the <code>monolith.service</code> unit is restarted. When <code>deploy.sh</code> issues <code>systemctl restart monolith.service</code>, systemd starts a new process and passes the already open socket via <code>LISTEN_FDS</code>.</p>
+        <p>The running process receives a <code>SIGTERM</code>. Inside <code>RunServer</code> the signal is caught with <code>signal.Notify</code> and the HTTP server gracefully shuts down using <code>server.Shutdown</code>. Because the socket remains open, requests either continue to be served by the old process or wait in systemd&rsquo;s accept queue until the new process signals readiness using the <code>NOTIFY_SOCKET</code> mechanism.</p>
+        <p>The service file sets <code>Type=notify</code>, <code>Restart=always</code>, <code>KillMode=mixed</code> and <code>TimeoutStopSec=30</code>. These options give the application up to 30&nbsp;seconds to drain connections before systemd forcefully terminates it. Meanwhile Caddy proxies traffic to the socket without interruption.</p>
+        <pre class="mermaid">
+graph LR
+    Clients[(Clients)] --> Caddy
+    Caddy --> Socket((monolith.socket))
+    Socket --> App["monolith.service \n running binary"]
+    App -- "READY=1" --> Systemd
+    Systemd -. signals .-> App
+        </pre>
+        <p>During a restart, systemd launches a new instance before stopping the old one. The sequence looks like this:</p>
+        <pre class="mermaid">
+sequenceDiagram
+    participant D as deploy.sh
+    participant S as systemd
+    participant O as Old Proc
+    participant N as New Proc
+    D->>S: systemctl restart monolith.service
+    S->>N: start with socket
+    S-->>O: SIGTERM
+    N-->>S: READY=1
+    O-->>S: exit after shutdown
+        </pre>
+        <p>Because the socket is never closed, clients experience no connection failures while the new binary is rolled out.</p>
       </div>
     </article>
   </main>
