@@ -208,7 +208,17 @@ This creates the model and the full set of REST pieces:
 * `db/db.go` updated with the new model
 * `app/controllers/widgets_controller.go` and test file
 * templates under `app/views/widgets/` for `index`, `show`, `new` and `edit`
-* routes injected into `app/routes/routes.go`
+* routes injected into `app/routes/routes.go`:
+  ```go
+  mux.HandleFunc("GET /widgets", controllers.WidgetsCtrl.Index)
+  mux.HandleFunc("GET /widgets/new", controllers.WidgetsCtrl.New)
+  mux.HandleFunc("POST /widgets", controllers.WidgetsCtrl.Create)
+  mux.HandleFunc("GET /widgets/{id}", controllers.WidgetsCtrl.Show)
+  mux.HandleFunc("GET /widgets/{id}/edit", controllers.WidgetsCtrl.Edit)
+  mux.HandleFunc("PUT /widgets/{id}", controllers.WidgetsCtrl.Update)
+  mux.HandleFunc("PATCH /widgets/{id}", controllers.WidgetsCtrl.Update)
+  mux.HandleFunc("DELETE /widgets/{id}", controllers.WidgetsCtrl.Destroy)
+  ```
 
 The generated controller functions contain placeholders, for example the index
 action:
@@ -236,6 +246,14 @@ make generator authentication
 ```
 
 Scaffolds a `User` model with session helpers, login & signup templates, and authentication middleware.
+The generator also injects the following routes:
+```go
+mux.HandleFunc("GET /login", controllers.AuthCtrl.ShowLoginForm)
+mux.HandleFunc("POST /login", controllers.AuthCtrl.Login)
+mux.HandleFunc("GET /signup", controllers.AuthCtrl.ShowSignupForm)
+mux.HandleFunc("POST /signup", controllers.AuthCtrl.Signup)
+mux.HandleFunc("GET /logout", controllers.AuthCtrl.Logout)
+```
 
 ### Generating an admin dashboard
 
@@ -245,6 +263,17 @@ make generator admin
 
 Creates an `/admin` dashboard with profiling helpers. If a User model does not
 exist it will be generated automatically.
+The generator also wires up routes for the dashboard and pprof:
+```go
+mux.HandleFunc("GET /admin", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))
+mux.HandleFunc("POST /admin", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))
+// pprof routes
+mux.HandleFunc("GET /debug/pprof/", middleware.RequireAdmin(pprof.Index))
+mux.HandleFunc("GET /debug/pprof/cmdline", middleware.RequireAdmin(pprof.Cmdline))
+mux.HandleFunc("GET /debug/pprof/profile", middleware.RequireAdmin(pprof.Profile))
+mux.HandleFunc("GET /debug/pprof/symbol", middleware.RequireAdmin(pprof.Symbol))
+mux.HandleFunc("GET /debug/pprof/trace", middleware.RequireAdmin(pprof.Trace))
+```
 
 ### Generating a model
 
@@ -279,7 +308,11 @@ This will generate:
 * `app/controllers/widgets_controller_test.go`
 * templates `app/views/widgets/widgets_index.html.tmpl` and
   `app/views/widgets/widgets_show.html.tmpl`
-* route entries in `app/routes/routes.go`
+* route entries in `app/routes/routes.go`:
+  ```go
+  mux.HandleFunc("GET /widgets", controllers.WidgetsCtrl.Index)
+  mux.HandleFunc("GET /widgets/{id}", controllers.WidgetsCtrl.Show)
+  ```
 
 The controller skeleton looks like:
 
@@ -660,6 +693,11 @@ make generator controller widgets index show
 
 This generates `app/controllers/widgets_controller.go`, inserts matching routes into
 `app/routes/routes.go` and creates templates like `app/views/widgets/widgets_index.html.tmpl`.
+Example routes when generating `index` and `show` actions:
+```go
+mux.HandleFunc("GET /widgets", controllers.WidgetsCtrl.Index)
+mux.HandleFunc("GET /widgets/{id}", controllers.WidgetsCtrl.Show)
+```
 
 ### Resource
 
@@ -672,6 +710,17 @@ make generator resource widget name:string price:int
 
 This creates the model, a `widgets` controller with all CRUD actions, placeholder
 tests and templates, and RESTful routes under `/widgets`.
+The following routes are injected:
+```go
+mux.HandleFunc("GET /widgets", controllers.WidgetsCtrl.Index)
+mux.HandleFunc("GET /widgets/new", controllers.WidgetsCtrl.New)
+mux.HandleFunc("POST /widgets", controllers.WidgetsCtrl.Create)
+mux.HandleFunc("GET /widgets/{id}", controllers.WidgetsCtrl.Show)
+mux.HandleFunc("GET /widgets/{id}/edit", controllers.WidgetsCtrl.Edit)
+mux.HandleFunc("PUT /widgets/{id}", controllers.WidgetsCtrl.Update)
+mux.HandleFunc("PATCH /widgets/{id}", controllers.WidgetsCtrl.Update)
+mux.HandleFunc("DELETE /widgets/{id}", controllers.WidgetsCtrl.Destroy)
+```
 
 ### Authentication
 
@@ -681,6 +730,14 @@ make generator authentication
 
 Generates a basic user model, session management and routes for user signup,
 login and logout.
+Routes added:
+```go
+mux.HandleFunc("GET /login", controllers.AuthCtrl.ShowLoginForm)
+mux.HandleFunc("POST /login", controllers.AuthCtrl.Login)
+mux.HandleFunc("GET /signup", controllers.AuthCtrl.ShowSignupForm)
+mux.HandleFunc("POST /signup", controllers.AuthCtrl.Signup)
+mux.HandleFunc("GET /logout", controllers.AuthCtrl.Logout)
+```
 
 ### Job
 
@@ -699,7 +756,16 @@ make generator admin
 
 Scaffolds an `/admin` dashboard for profiling and wraps it in admin-only
 middleware. If no `User` model exists it will be generated along with the
-authentication pieces.
+authentication pieces. It registers the following routes:
+```go
+mux.HandleFunc("GET /admin", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))
+mux.HandleFunc("POST /admin", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))
+mux.HandleFunc("GET /debug/pprof/", middleware.RequireAdmin(pprof.Index))
+mux.HandleFunc("GET /debug/pprof/cmdline", middleware.RequireAdmin(pprof.Cmdline))
+mux.HandleFunc("GET /debug/pprof/profile", middleware.RequireAdmin(pprof.Profile))
+mux.HandleFunc("GET /debug/pprof/symbol", middleware.RequireAdmin(pprof.Symbol))
+mux.HandleFunc("GET /debug/pprof/trace", middleware.RequireAdmin(pprof.Trace))
+```
 
 ---
 
