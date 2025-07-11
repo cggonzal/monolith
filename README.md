@@ -174,8 +174,27 @@ go tool pprof heap.out
 make generator job Email
 ```
 
-Edit `app/jobs/email_job.go` and implement the `EmailJob` function. The generator
-also registers the new type in `app/jobs/job_queue.go`.
+The command above creates:
+
+* `app/jobs/email_job.go`
+* `app/jobs/email_job_test.go`
+* `app/models/job.go` (adds `JobTypeEmail`)
+* `app/jobs/job_queue.go` (registers the job)
+
+Inside `app/jobs/email_job.go` you will find a stubbed function to implement:
+
+```go
+func EmailJob(payload []byte) error {
+    var p EmailPayload
+    if err := json.Unmarshal(payload, &p); err != nil {
+        return err
+    }
+
+    // TODO: implement job
+
+    return nil
+}
+```
 
 ### Generating a resource
 
@@ -183,8 +202,42 @@ also registers the new type in `app/jobs/job_queue.go`.
 make generator resource widget name:string price:int
 ```
 
-This creates `app/models/widget.go` plus a fully‑wired `widgets` controller with
-CRUD actions, templates and RESTful routes under `/widgets`.
+This creates the model and the full set of REST pieces:
+
+* `app/models/widget.go` and `app/models/widget_test.go`
+* `db/db.go` updated with the new model
+* `app/controllers/widgets_controller.go` and test file
+* templates under `app/views/widgets/` for `index`, `show`, `new` and `edit`
+* routes injected into `app/routes/routes.go`:
+  ```go
+  mux.HandleFunc("GET /widgets", controllers.WidgetsCtrl.Index)
+  mux.HandleFunc("GET /widgets/new", controllers.WidgetsCtrl.New)
+  mux.HandleFunc("POST /widgets", controllers.WidgetsCtrl.Create)
+  mux.HandleFunc("GET /widgets/{id}", controllers.WidgetsCtrl.Show)
+  mux.HandleFunc("GET /widgets/{id}/edit", controllers.WidgetsCtrl.Edit)
+  mux.HandleFunc("PUT /widgets/{id}", controllers.WidgetsCtrl.Update)
+  mux.HandleFunc("PATCH /widgets/{id}", controllers.WidgetsCtrl.Update)
+  mux.HandleFunc("DELETE /widgets/{id}", controllers.WidgetsCtrl.Destroy)
+  ```
+
+The generated controller functions contain placeholders, for example the index
+action:
+
+```go
+func (c *WidgetsController) Index(w http.ResponseWriter, r *http.Request) {
+    records, _ := models.GetAllWidgets(db.GetDB())
+    views.Render(w, "widgets_index.html.tmpl", records)
+}
+```
+
+Each template is a basic skeleton ready to be filled in:
+
+```html
+{{define "title"}}<title></title>{{end}}
+
+{{define "body"}}
+{{end}}
+```
 
 ### Generating authentication
 
@@ -193,6 +246,14 @@ make generator authentication
 ```
 
 Scaffolds a `User` model with session helpers, login & signup templates, and authentication middleware.
+The generator also injects the following routes:
+```go
+mux.HandleFunc("GET /login", controllers.AuthCtrl.ShowLoginForm)
+mux.HandleFunc("POST /login", controllers.AuthCtrl.Login)
+mux.HandleFunc("GET /signup", controllers.AuthCtrl.ShowSignupForm)
+mux.HandleFunc("POST /signup", controllers.AuthCtrl.Signup)
+mux.HandleFunc("GET /logout", controllers.AuthCtrl.Logout)
+```
 
 ### Generating an admin dashboard
 
@@ -202,6 +263,17 @@ make generator admin
 
 Creates an `/admin` dashboard with profiling helpers. If a User model does not
 exist it will be generated automatically.
+The generator also wires up routes for the dashboard and pprof:
+```go
+mux.HandleFunc("GET /admin", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))
+mux.HandleFunc("POST /admin", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))
+// pprof routes
+mux.HandleFunc("GET /debug/pprof/", middleware.RequireAdmin(pprof.Index))
+mux.HandleFunc("GET /debug/pprof/cmdline", middleware.RequireAdmin(pprof.Cmdline))
+mux.HandleFunc("GET /debug/pprof/profile", middleware.RequireAdmin(pprof.Profile))
+mux.HandleFunc("GET /debug/pprof/symbol", middleware.RequireAdmin(pprof.Symbol))
+mux.HandleFunc("GET /debug/pprof/trace", middleware.RequireAdmin(pprof.Trace))
+```
 
 ### Generating a model
 
@@ -209,8 +281,20 @@ exist it will be generated automatically.
 make generator model Widget name:string price:int
 ```
 
-Creates `app/models/widget.go` with a `Widget` struct and registers the model so
-it migrates automatically on startup.
+Files created:
+
+* `app/models/widget.go`
+* `app/models/widget_test.go`
+* `db/db.go` updated to migrate the model
+
+The generated model file defines blank GORM hooks to customise later:
+
+```go
+// BeforeSave is called by GORM before persisting a Widget.
+func (m *Widget) BeforeSave(tx *gorm.DB) error {
+    return nil
+}
+```
 
 ### Generating a controller and view
 
@@ -218,8 +302,32 @@ it migrates automatically on startup.
 make generator controller widgets index show
 ```
 
-Generates `app/controllers/widgets_controller.go` along with matching templates
-and routes for the specified actions.
+This will generate:
+
+* `app/controllers/widgets_controller.go`
+* `app/controllers/widgets_controller_test.go`
+* templates `app/views/widgets/widgets_index.html.tmpl` and
+  `app/views/widgets/widgets_show.html.tmpl`
+* route entries in `app/routes/routes.go`:
+  ```go
+  mux.HandleFunc("GET /widgets", controllers.WidgetsCtrl.Index)
+  mux.HandleFunc("GET /widgets/{id}", controllers.WidgetsCtrl.Show)
+  ```
+
+The controller skeleton looks like:
+
+```go
+func (c *WidgetsController) Index(w http.ResponseWriter, r *http.Request) {
+    views.Render(w, "widgets_index.html.tmpl", nil)
+}
+```
+
+And the templates start with an empty body block ready for content:
+
+```html
+{{define "body"}}
+{{end}}
+```
 
 ---
 
@@ -585,6 +693,11 @@ make generator controller widgets index show
 
 This generates `app/controllers/widgets_controller.go`, inserts matching routes into
 `app/routes/routes.go` and creates templates like `app/views/widgets/widgets_index.html.tmpl`.
+Example routes when generating `index` and `show` actions:
+```go
+mux.HandleFunc("GET /widgets", controllers.WidgetsCtrl.Index)
+mux.HandleFunc("GET /widgets/{id}", controllers.WidgetsCtrl.Show)
+```
 
 ### Resource
 
@@ -597,6 +710,17 @@ make generator resource widget name:string price:int
 
 This creates the model, a `widgets` controller with all CRUD actions, placeholder
 tests and templates, and RESTful routes under `/widgets`.
+The following routes are injected:
+```go
+mux.HandleFunc("GET /widgets", controllers.WidgetsCtrl.Index)
+mux.HandleFunc("GET /widgets/new", controllers.WidgetsCtrl.New)
+mux.HandleFunc("POST /widgets", controllers.WidgetsCtrl.Create)
+mux.HandleFunc("GET /widgets/{id}", controllers.WidgetsCtrl.Show)
+mux.HandleFunc("GET /widgets/{id}/edit", controllers.WidgetsCtrl.Edit)
+mux.HandleFunc("PUT /widgets/{id}", controllers.WidgetsCtrl.Update)
+mux.HandleFunc("PATCH /widgets/{id}", controllers.WidgetsCtrl.Update)
+mux.HandleFunc("DELETE /widgets/{id}", controllers.WidgetsCtrl.Destroy)
+```
 
 ### Authentication
 
@@ -606,6 +730,14 @@ make generator authentication
 
 Generates a basic user model, session management and routes for user signup,
 login and logout.
+Routes added:
+```go
+mux.HandleFunc("GET /login", controllers.AuthCtrl.ShowLoginForm)
+mux.HandleFunc("POST /login", controllers.AuthCtrl.Login)
+mux.HandleFunc("GET /signup", controllers.AuthCtrl.ShowSignupForm)
+mux.HandleFunc("POST /signup", controllers.AuthCtrl.Signup)
+mux.HandleFunc("GET /logout", controllers.AuthCtrl.Logout)
+```
 
 ### Job
 
@@ -624,7 +756,16 @@ make generator admin
 
 Scaffolds an `/admin` dashboard for profiling and wraps it in admin-only
 middleware. If no `User` model exists it will be generated along with the
-authentication pieces.
+authentication pieces. It registers the following routes:
+```go
+mux.HandleFunc("GET /admin", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))
+mux.HandleFunc("POST /admin", middleware.RequireAdmin(controllers.AdminCtrl.Dashboard))
+mux.HandleFunc("GET /debug/pprof/", middleware.RequireAdmin(pprof.Index))
+mux.HandleFunc("GET /debug/pprof/cmdline", middleware.RequireAdmin(pprof.Cmdline))
+mux.HandleFunc("GET /debug/pprof/profile", middleware.RequireAdmin(pprof.Profile))
+mux.HandleFunc("GET /debug/pprof/symbol", middleware.RequireAdmin(pprof.Symbol))
+mux.HandleFunc("GET /debug/pprof/trace", middleware.RequireAdmin(pprof.Trace))
+```
 
 ---
 
