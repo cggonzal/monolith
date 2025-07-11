@@ -1,94 +1,86 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>WebSockets — Monolith Guides</title>
-  <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>WebSockets — Monolith Guides</title>
+<link href="stylesheets/style.css" rel="stylesheet" type="text/css"/>
 </head>
 <body class="guide">
-  <header id="page-header">
-    <div class="wrapper clearfix">
-      <nav id="feature-nav">
-        <div class="header-logo">
-          <a href="index.html">Monolith Guides</a>
-        </div>
-      </nav>
-    </div>
-  </header>
-  <main id="main">
-    <article>
-      <header id="feature">
-        <div class="wrapper">
-          <h1>WebSockets</h1>
-          <p>Publish/subscribe messaging hub.</p>
-        </div>
-      </header>
-      <div id="article-body" class="wrapper">
-        <section id="overview">
-          <h2>Overview</h2>
-          <p>The <code>ws/</code> package provides a lightweight publish&ndash;subscribe layer on top of <a href="https://github.com/gorilla/websocket">gorilla/websocket</a>. A central <em>Hub</em> keeps track of subscribed clients and fans out messages to every listener. All events are stored in the database so new clients can replay history if needed.</p>
-        </section>
-
-        <section id="initialization">
-          <h2>Initialization</h2>
-          <p>The hub is created during application startup by calling <code>ws.InitPubSub()</code> in <code>main.go</code>. This spins up a goroutine that handles subscriptions and broadcasts. The HTTP handler <code>ws.ServeWs</code> upgrades requests on <code>/ws</code> to WebSocket connections and registers each client with the hub.</p>
+<header id="page-header">
+<div class="wrapper clearfix">
+<nav id="feature-nav">
+<div class="header-logo">
+<a href="index.html">Monolith Guides</a>
+</div>
+</nav>
+</div>
+</header>
+<main id="main">
+<article>
+<header id="feature">
+<div class="wrapper">
+<h1>WebSockets</h1>
+<p>Publish/subscribe messaging hub.</p>
+<nav aria-label="Chapter" class="guide-index" id="column-side"><a class="skip-link" href="#article-body" id="chapter-nav-skip-link">Skip to article body</a><h2 class="chapter"><picture aria-hidden="true"><img alt="Chapter Icon" src="images/icon_book-close-bookmark-1.svg"/></picture> Chapters</h2><ol class="chapters"><li><a href="#overview">Overview</a></li><li><a href="#initialization">Initialization</a></li><li><a href="#client-usage">Client Usage</a></li><li><a href="#broadcasting-from-go">Broadcasting from Go</a></li><li><a href="#pub-sub-model">Pub/Sub Model</a></li><li><a href="#message-persistence">Message Persistence</a></li><li><a href="#custom-channels">Custom Channels</a></li><li><a href="#next-steps">Next Steps</a></li></ol></nav></div>
+</header>
+<div class="wrapper" id="article-body">
+<section id="overview">
+<h2 id="overview"><a class="anchorlink" data-turbo="false" href="#overview"><span>1.</span> Overview</a></h2>
+<p>The <code>ws/</code> package provides a lightweight publish–subscribe layer on top of <a href="https://github.com/gorilla/websocket">gorilla/websocket</a>. A central <em>Hub</em> keeps track of subscribed clients and fans out messages to every listener. All events are stored in the database so new clients can replay history if needed.</p>
+</section>
+<section id="initialization">
+<h2 id="initialization"><a class="anchorlink" data-turbo="false" href="#initialization"><span>2.</span> Initialization</a></h2>
+<p>The hub is created during application startup by calling <code>ws.InitPubSub()</code> in <code>main.go</code>. This spins up a goroutine that handles subscriptions and broadcasts. The HTTP handler <code>ws.ServeWs</code> upgrades requests on <code>/ws</code> to WebSocket connections and registers each client with the hub.</p>
 <pre><code class="highlight go"><span class="comment">// main.go</span>
 <span class="function">ws</span>.<span class="function">InitPubSub</span>()
 <span class="function">http</span>.<span class="function">HandleFunc</span>(<span class="string">"/ws"</span>, <span class="function">ws</span>.<span class="function">ServeWs</span>)</code></pre>
-        </section>
-
-        <section id="client-usage">
-          <h2>Client Usage</h2>
-          <p>Clients communicate with the server by sending JSON commands. The most common are <code>subscribe</code> and <code>message</code>. Here is a minimal browser example:</p>
+</section>
+<section id="client-usage">
+<h2 id="client-usage"><a class="anchorlink" data-turbo="false" href="#client-usage"><span>3.</span> Client Usage</a></h2>
+<p>Clients communicate with the server by sending JSON commands. The most common are <code>subscribe</code> and <code>message</code>. Here is a minimal browser example:</p>
 <pre><code class="highlight javascript"><span class="keyword">const</span> <span class="variable">sock</span> = <span class="keyword">new</span> <span class="function">WebSocket</span>(<span class="string">"ws://localhost:9000/ws"</span>);
 
-<span class="variable">sock</span>.<span class="property">onopen</span> = () <span class="operator">=></span> {
+<span class="variable">sock</span>.<span class="property">onopen</span> = () <span class="operator">=&gt;</span> {
   <span class="variable">sock</span>.<span class="function">send</span>(<span class="function">JSON</span>.<span class="function">stringify</span>({<span class="property">command</span>: <span class="string">"subscribe"</span>, <span class="property">identifier</span>: <span class="string">"ChatChannel"</span>}));
   <span class="variable">sock</span>.<span class="function">send</span>(<span class="function">JSON</span>.<span class="function">stringify</span>({<span class="property">command</span>: <span class="string">"message"</span>, <span class="property">identifier</span>: <span class="string">"ChatChannel"</span>, <span class="property">data</span>: <span class="string">"Hello from JS!"</span>}));
 };
 
-<span class="variable">sock</span>.<span class="property">onmessage</span> = (<span class="variable">ev</span>) <span class="operator">=></span> <span class="function">console</span>.<span class="function">log</span>(<span class="string">"received"</span>, <span class="variable">ev</span>.<span class="property">data</span>);
+<span class="variable">sock</span>.<span class="property">onmessage</span> = (<span class="variable">ev</span>) <span class="operator">=&gt;</span> <span class="function">console</span>.<span class="function">log</span>(<span class="string">"received"</span>, <span class="variable">ev</span>.<span class="property">data</span>);
 </code></pre>
-        </section>
-
-        <section id="server-broadcast">
-          <h2>Broadcasting from Go</h2>
-          <p>Any part of the application can publish a message. The hub guarantees fan&ndash;out to all subscribers:</p>
+</section>
+<section id="server-broadcast">
+<h2 id="broadcasting-from-go"><a class="anchorlink" data-turbo="false" href="#broadcasting-from-go"><span>4.</span> Broadcasting from Go</a></h2>
+<p>Any part of the application can publish a message. The hub guarantees fan–out to all subscribers:</p>
 <pre><code class="highlight go"><span class="comment">// send a message to every subscriber of "notifications"</span>
 <span class="function">ws</span>.<span class="variable">HUB</span>.<span class="function">Broadcast</span>(<span class="string">"notifications"</span>, <span class="function">[]byte</span>(<span class="string">"Build finished"</span>))
 </code></pre>
-          <p><code>Broadcast</code> is safe to call from any goroutine and persists the message asynchronously.</p>
-        </section>
-
-        <section id="pubsub-model">
-          <h2>Pub/Sub Model</h2>
-          <p>Each WebSocket client maintains a list of channel subscriptions. Commands sent by the client drive the state:</p>
-          <ul>
-            <li><strong>subscribe</strong> &ndash; register interest in a channel.</li>
-            <li><strong>unsubscribe</strong> &ndash; remove interest in a channel.</li>
-            <li><strong>message</strong> &ndash; broadcast data to all subscribers.</li>
-          </ul>
-          <p>The hub keeps an in&ndash;memory map of channel names to clients for efficient delivery.</p>
-        </section>
-
-        <section id="persistence">
-          <h2>Message Persistence</h2>
-          <p>Whenever a message is broadcast, it is also inserted into the <code>messages</code> table via GORM. The <code>Message</code> model stores the channel, content and timestamp. This design allows chat history or event logs to be retrieved later.</p>
-        </section>
-
-        <section id="custom-channels">
-          <h2>Custom Channels</h2>
-          <p>Channels are arbitrary strings and can represent chat rooms, user streams or application events. New channels do not require any server code changes&mdash;clients simply start subscribing and publishing under the desired name.</p>
-        </section>
-
-        <section id="next-steps">
-          <h2>Next Steps</h2>
-          <p>Explore the <code>ws/</code> directory for the full implementation and consult <code>ws/ws_test.go</code> for usage examples. Combining the pub/sub layer with background jobs or HTTP controllers enables powerful real&ndash;time features.</p>
-        </section>
-
-      </div>
-    </article>
-  </main>
+<p><code>Broadcast</code> is safe to call from any goroutine and persists the message asynchronously.</p>
+</section>
+<section id="pubsub-model">
+<h2 id="pub-sub-model"><a class="anchorlink" data-turbo="false" href="#pub-sub-model"><span>5.</span> Pub/Sub Model</a></h2>
+<p>Each WebSocket client maintains a list of channel subscriptions. Commands sent by the client drive the state:</p>
+<ul>
+<li><strong>subscribe</strong> – register interest in a channel.</li>
+<li><strong>unsubscribe</strong> – remove interest in a channel.</li>
+<li><strong>message</strong> – broadcast data to all subscribers.</li>
+</ul>
+<p>The hub keeps an in–memory map of channel names to clients for efficient delivery.</p>
+</section>
+<section id="persistence">
+<h2 id="message-persistence"><a class="anchorlink" data-turbo="false" href="#message-persistence"><span>6.</span> Message Persistence</a></h2>
+<p>Whenever a message is broadcast, it is also inserted into the <code>messages</code> table via GORM. The <code>Message</code> model stores the channel, content and timestamp. This design allows chat history or event logs to be retrieved later.</p>
+</section>
+<section id="custom-channels">
+<h2 id="custom-channels"><a class="anchorlink" data-turbo="false" href="#custom-channels"><span>7.</span> Custom Channels</a></h2>
+<p>Channels are arbitrary strings and can represent chat rooms, user streams or application events. New channels do not require any server code changes—clients simply start subscribing and publishing under the desired name.</p>
+</section>
+<section id="next-steps">
+<h2 id="next-steps"><a class="anchorlink" data-turbo="false" href="#next-steps"><span>8.</span> Next Steps</a></h2>
+<p>Explore the <code>ws/</code> directory for the full implementation and consult <code>ws/ws_test.go</code> for usage examples. Combining the pub/sub layer with background jobs or HTTP controllers enables powerful real–time features.</p>
+</section>
+</div>
+</article>
+</main>
 </body>
 </html>

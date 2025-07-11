@@ -1,83 +1,79 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Server Management — Monolith Guides</title>
-  <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.4.0/mermaid.min.js"></script>
-  <script>mermaid.initialize({startOnLoad: true});</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Server Management — Monolith Guides</title>
+<link href="stylesheets/style.css" rel="stylesheet" type="text/css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.4.0/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad: true});</script>
 </head>
 <body class="guide">
-  <header id="page-header">
-    <div class="wrapper clearfix">
-      <nav id="feature-nav">
-        <div class="header-logo">
-          <a href="index.html">Monolith Guides</a>
-        </div>
-      </nav>
-    </div>
-  </header>
-  <main id="main">
-    <article>
-      <header id="feature">
-        <div class="wrapper">
-          <h1>Server Management</h1>
-          <p>Deployment scripts and systemd helpers.</p>
-        </div>
-      </header>
-      <div id="article-body" class="wrapper">
-        <p>The <code>server_management/</code> directory contains everything needed to run a production instance of Monolith. It uses systemd socket activation together with the <a href="https://caddyserver.com/">Caddy</a> web server so the application can be restarted without dropping connections.</p>
-
-        <h2 id="server-setup"><a class="anchorlink" href="#server-setup" data-turbo="false">Server Setup</a></h2>
-        <p>Run <code>server_setup.sh</code> once on a fresh Ubuntu host. It installs all dependencies and prepares systemd units for zero&ndash;downtime deploys:</p>
-        <pre><code class="highlight console">$ server_management/server_setup.sh ubuntu@203.0.113.5 example.com</code></pre>
-        <p>The script performs several tasks:</p>
-        <ul>
-          <li>Installs base packages along with Caddy from the official repository.</li>
-          <li>Creates <code>/opt/monolith/releases</code> and sets ownership for the deploy user.</li>
-          <li>Defines <code>monolith.socket</code> and <code>monolith.service</code> to enable socket activation.</li>
-          <li>Writes a minimal Caddyfile that proxies requests to the Go binary on port <code>9000</code>.</li>
-          <li>Enables and starts the socket unit and restarts Caddy so it picks up the new configuration.</li>
-        </ul>
-
-        <h2 id="deploy-script"><a class="anchorlink" href="#deploy-script" data-turbo="false">Deploy Script</a></h2>
-        <p>After the server has been bootstrapped, deploy new releases with <code>deploy.sh</code>:</p>
-        <pre><code class="highlight console">$ server_management/deploy.sh ubuntu@203.0.113.5</code></pre>
-        <p>It builds a static binary on your machine, uploads it to a timestamped directory under <code>/opt/monolith/releases/</code> and atomically updates the <code>current</code> symlink. The script then restarts <code>monolith.service</code> which causes systemd to hand over the listening socket to the new process.</p>
-        <p>Old releases can be pruned automatically. Set <code>KEEP</code> to control how many past releases to keep and toggle pruning with <code>PRUNE</code>:</p>
-        <pre><code class="highlight console">$ KEEP=10 PRUNE=true server_management/deploy.sh ubuntu@203.0.113.5</code></pre>
-
-        <p>The Go program itself runs via <code>server_management.RunServer</code> which integrates with systemd by acquiring the inherited socket and sending a readiness notification. Together these scripts provide a simple yet robust deployment workflow.</p>
-
-        <h2 id="zero-downtime-deploy"><a class="anchorlink" href="#zero-downtime-deploy" data-turbo="false">How Zero Downtime Works</a></h2>
-        <p>Monolith relies on systemd&rsquo;s socket activation to keep the listening socket open across restarts. The <code>monolith.socket</code> unit listens on <code>127.0.0.1:9000</code> and queues incoming connections while the <code>monolith.service</code> unit is restarted. When <code>deploy.sh</code> issues <code>systemctl restart monolith.service</code>, systemd starts a new process and passes the already open socket via <code>LISTEN_FDS</code>.</p>
-        <p>The running process receives a <code>SIGTERM</code>. Inside <code>RunServer</code> the signal is caught with <code>signal.Notify</code> and the HTTP server gracefully shuts down using <code>server.Shutdown</code>. Because the socket remains open, requests either continue to be served by the old process or wait in systemd&rsquo;s accept queue until the new process signals readiness using the <code>NOTIFY_SOCKET</code> mechanism.</p>
-        <p>The service file sets <code>Type=notify</code>, <code>Restart=always</code>, <code>KillMode=mixed</code> and <code>TimeoutStopSec=30</code>. These options give the application up to 30&nbsp;seconds to drain connections before systemd forcefully terminates it. Meanwhile Caddy proxies traffic to the socket without interruption.</p>
-        <pre class="mermaid">
+<header id="page-header">
+<div class="wrapper clearfix">
+<nav id="feature-nav">
+<div class="header-logo">
+<a href="index.html">Monolith Guides</a>
+</div>
+</nav>
+</div>
+</header>
+<main id="main">
+<article>
+<header id="feature">
+<div class="wrapper">
+<h1>Server Management</h1>
+<p>Deployment scripts and systemd helpers.</p>
+<nav aria-label="Chapter" class="guide-index" id="column-side"><a class="skip-link" href="#article-body" id="chapter-nav-skip-link">Skip to article body</a><h2 class="chapter"><picture aria-hidden="true"><img alt="Chapter Icon" src="images/icon_book-close-bookmark-1.svg"/></picture> Chapters</h2><ol class="chapters"><li><a href="#server-setup">Server Setup</a></li><li><a href="#deploy-script">Deploy Script</a></li><li><a href="#zero-downtime-deploy">How Zero Downtime Works</a></li></ol></nav></div>
+</header>
+<div class="wrapper" id="article-body">
+<p>The <code>server_management/</code> directory contains everything needed to run a production instance of Monolith. It uses systemd socket activation together with the <a href="https://caddyserver.com/">Caddy</a> web server so the application can be restarted without dropping connections.</p>
+<h2 id="server-setup"><a class="anchorlink" data-turbo="false" href="#server-setup"><span>1.</span> Server Setup</a></h2>
+<p>Run <code>server_setup.sh</code> once on a fresh Ubuntu host. It installs all dependencies and prepares systemd units for zero–downtime deploys:</p>
+<pre><code class="highlight console">$ server_management/server_setup.sh ubuntu@203.0.113.5 example.com</code></pre>
+<p>The script performs several tasks:</p>
+<ul>
+<li>Installs base packages along with Caddy from the official repository.</li>
+<li>Creates <code>/opt/monolith/releases</code> and sets ownership for the deploy user.</li>
+<li>Defines <code>monolith.socket</code> and <code>monolith.service</code> to enable socket activation.</li>
+<li>Writes a minimal Caddyfile that proxies requests to the Go binary on port <code>9000</code>.</li>
+<li>Enables and starts the socket unit and restarts Caddy so it picks up the new configuration.</li>
+</ul>
+<h2 id="deploy-script"><a class="anchorlink" data-turbo="false" href="#deploy-script"><span>2.</span> Deploy Script</a></h2>
+<p>After the server has been bootstrapped, deploy new releases with <code>deploy.sh</code>:</p>
+<pre><code class="highlight console">$ server_management/deploy.sh ubuntu@203.0.113.5</code></pre>
+<p>It builds a static binary on your machine, uploads it to a timestamped directory under <code>/opt/monolith/releases/</code> and atomically updates the <code>current</code> symlink. The script then restarts <code>monolith.service</code> which causes systemd to hand over the listening socket to the new process.</p>
+<p>Old releases can be pruned automatically. Set <code>KEEP</code> to control how many past releases to keep and toggle pruning with <code>PRUNE</code>:</p>
+<pre><code class="highlight console">$ KEEP=10 PRUNE=true server_management/deploy.sh ubuntu@203.0.113.5</code></pre>
+<p>The Go program itself runs via <code>server_management.RunServer</code> which integrates with systemd by acquiring the inherited socket and sending a readiness notification. Together these scripts provide a simple yet robust deployment workflow.</p>
+<h2 id="zero-downtime-deploy"><a class="anchorlink" data-turbo="false" href="#zero-downtime-deploy"><span>3.</span> How Zero Downtime Works</a></h2>
+<p>Monolith relies on systemd’s socket activation to keep the listening socket open across restarts. The <code>monolith.socket</code> unit listens on <code>127.0.0.1:9000</code> and queues incoming connections while the <code>monolith.service</code> unit is restarted. When <code>deploy.sh</code> issues <code>systemctl restart monolith.service</code>, systemd starts a new process and passes the already open socket via <code>LISTEN_FDS</code>.</p>
+<p>The running process receives a <code>SIGTERM</code>. Inside <code>RunServer</code> the signal is caught with <code>signal.Notify</code> and the HTTP server gracefully shuts down using <code>server.Shutdown</code>. Because the socket remains open, requests either continue to be served by the old process or wait in systemd’s accept queue until the new process signals readiness using the <code>NOTIFY_SOCKET</code> mechanism.</p>
+<p>The service file sets <code>Type=notify</code>, <code>Restart=always</code>, <code>KillMode=mixed</code> and <code>TimeoutStopSec=30</code>. These options give the application up to 30 seconds to drain connections before systemd forcefully terminates it. Meanwhile Caddy proxies traffic to the socket without interruption.</p>
+<pre class="mermaid">
 graph LR
-    Clients[(Clients)] --> Caddy
-    Caddy --> Socket((monolith.socket))
-    Socket --> App["monolith.service \n running binary"]
-    App -- "READY=1" --> Systemd
-    Systemd -. signals .-> App
+    Clients[(Clients)] --&gt; Caddy
+    Caddy --&gt; Socket((monolith.socket))
+    Socket --&gt; App["monolith.service \n running binary"]
+    App -- "READY=1" --&gt; Systemd
+    Systemd -. signals .-&gt; App
         </pre>
-        <p>During a restart, systemd launches a new instance before stopping the old one. The sequence looks like this:</p>
-        <pre class="mermaid">
+<p>During a restart, systemd launches a new instance before stopping the old one. The sequence looks like this:</p>
+<pre class="mermaid">
 sequenceDiagram
     participant D as deploy.sh
     participant S as systemd
     participant O as Old Proc
     participant N as New Proc
-    D->>S: systemctl restart monolith.service
-    S->>N: start with socket
-    S-->>O: SIGTERM
-    N-->>S: READY=1
-    O-->>S: exit after shutdown
+    D-&gt;&gt;S: systemctl restart monolith.service
+    S-&gt;&gt;N: start with socket
+    S--&gt;&gt;O: SIGTERM
+    N--&gt;&gt;S: READY=1
+    O--&gt;&gt;S: exit after shutdown
         </pre>
-        <p>Because the socket is never closed, clients experience no connection failures while the new binary is rolled out.</p>
-      </div>
-    </article>
-  </main>
+<p>Because the socket is never closed, clients experience no connection failures while the new binary is rolled out.</p>
+</div>
+</article>
+</main>
 </body>
 </html>

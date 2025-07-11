@@ -1,48 +1,45 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Routing — Monolith Guides</title>
-  <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Routing — Monolith Guides</title>
+<link href="stylesheets/style.css" rel="stylesheet" type="text/css"/>
 </head>
 <body class="guide">
-  <header id="page-header">
-    <div class="wrapper clearfix">
-      <nav id="feature-nav">
-        <div class="header-logo">
-          <a href="index.html">Monolith Guides</a>
-        </div>
-      </nav>
-    </div>
-  </header>
-  <main id="main">
-    <article>
-      <header id="feature">
-        <div class="wrapper">
-          <h1>Routing</h1>
-          <p>Define URL mappings for the application.</p>
-        </div>
-      </header>
-      <div id="article-body" class="wrapper">
-        <p>Routes connect incoming HTTP requests to controller actions. In Monolith the <code>app/routes/routes.go</code> file builds a standard <code>ServeMux</code> and wraps it with middleware for logging, sessions and CSRF protection.</p>
-
-        <h2>Basic Route Setup</h2>
-        <p>The exported <code>InitServerHandler</code> function creates the mux, registers each path and returns the resulting <code>http.Handler</code>:</p>
+<header id="page-header">
+<div class="wrapper clearfix">
+<nav id="feature-nav">
+<div class="header-logo">
+<a href="index.html">Monolith Guides</a>
+</div>
+</nav>
+</div>
+</header>
+<main id="main">
+<article>
+<header id="feature">
+<div class="wrapper">
+<h1>Routing</h1>
+<p>Define URL mappings for the application.</p>
+<nav aria-label="Chapter" class="guide-index" id="column-side"><a class="skip-link" href="#article-body" id="chapter-nav-skip-link">Skip to article body</a><h2 class="chapter"><picture aria-hidden="true"><img alt="Chapter Icon" src="images/icon_book-close-bookmark-1.svg"/></picture> Chapters</h2><ol class="chapters"><li><a href="#basic-route-setup">Basic Route Setup</a></li><li><a href="#using-generators">Using Generators</a></li><li><a href="#custom-routes">Custom Routes</a></li><li><a href="#websocket-and-static-routes">WebSocket and Static Routes</a></li></ol></nav></div>
+</header>
+<div class="wrapper" id="article-body">
+<p>Routes connect incoming HTTP requests to controller actions. In Monolith the <code>app/routes/routes.go</code> file builds a standard <code>ServeMux</code> and wraps it with middleware for logging, sessions and CSRF protection.</p>
+<h2 id="basic-route-setup"><a class="anchorlink" data-turbo="false" href="#basic-route-setup"><span>1.</span> Basic Route Setup</a></h2>
+<p>The exported <code>InitServerHandler</code> function creates the mux, registers each path and returns the resulting <code>http.Handler</code>:</p>
 <pre><code class="highlight go"><span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /"</span>, <span class="function">controllers</span>.<span class="variable">IndexCtrl</span>.<span class="function">ShowIndex</span>)
 <span class="variable">handler</span> <span class="operator">:=</span> <span class="function">middleware</span>.<span class="function">CSRFMiddleware</span>(<span class="function">middleware</span>.<span class="function">LoggingMiddleware</span>(<span class="variable">mux</span>))</code></pre>
-        <p>Handlers can be wrapped in additional middleware or closures when needed.</p>
-
-        <h2>Using Generators</h2>
-        <p>Generators automatically insert routes for new controllers and resources. For example, running:</p>
+<p>Handlers can be wrapped in additional middleware or closures when needed.</p>
+<h2 id="using-generators"><a class="anchorlink" data-turbo="false" href="#using-generators"><span>2.</span> Using Generators</a></h2>
+<p>Generators automatically insert routes for new controllers and resources. For example, running:</p>
 <pre><code class="highlight console">$ make generator controller widgets index show</code></pre>
-        <p>produces entries similar to:</p>
+<p>produces entries similar to:</p>
 <pre><code class="highlight go"><span class="comment">// routes for WidgetsController</span>
 <span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /widgets"</span>, <span class="function">controllers</span>.<span class="variable">WidgetsCtrl</span>.<span class="function">Index</span>)
 <span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /widgets/{id}"</span>, <span class="function">controllers</span>.<span class="variable">WidgetsCtrl</span>.<span class="function">Show</span>)
 </code></pre>
-
-        <p>The <code>resource</code> generator adds the full REST suite in one command:</p>
+<p>The <code>resource</code> generator adds the full REST suite in one command:</p>
 <pre><code class="highlight console">$ make generator resource widget name:string price:int</code></pre>
 <pre><code class="highlight go"><span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /widgets"</span>, <span class="function">controllers</span>.<span class="variable">WidgetsCtrl</span>.<span class="function">Index</span>)
 <span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /widgets/{id}"</span>, <span class="function">controllers</span>.<span class="variable">WidgetsCtrl</span>.<span class="function">Show</span>)
@@ -53,15 +50,13 @@
 <span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"PATCH /widgets/{id}"</span>, <span class="function">controllers</span>.<span class="variable">WidgetsCtrl</span>.<span class="function">Update</span>)
 <span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"DELETE /widgets/{id}"</span>, <span class="function">controllers</span>.<span class="variable">WidgetsCtrl</span>.<span class="function">Destroy</span>)
 </code></pre>
-
-        <h2>Custom Routes</h2>
-        <p>Because routing is plain Go code you can freely edit <code>routes.go</code> to add custom paths or middleware.</p>
+<h2 id="custom-routes"><a class="anchorlink" data-turbo="false" href="#custom-routes"><span>3.</span> Custom Routes</a></h2>
+<p>Because routing is plain Go code you can freely edit <code>routes.go</code> to add custom paths or middleware.</p>
 <pre><code class="highlight go"><span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /dashboard"</span>, <span class="function">session</span>.<span class="function">RequireUser</span>(<span class="function">controllers</span>.<span class="variable">DashboardCtrl</span>.<span class="function">Index</span>))</code></pre>
-
-        <h2>WebSocket and Static Routes</h2>
-        <p>The file also mounts <code>/ws</code> for WebSocket clients and serves files embedded in the <code>static/</code> directory under <code>/static/</code>. These routes are established when <code>InitServerHandler</code> is called at startup.</p>
-      </div>
-    </article>
-  </main>
+<h2 id="websocket-and-static-routes"><a class="anchorlink" data-turbo="false" href="#websocket-and-static-routes"><span>4.</span> WebSocket and Static Routes</a></h2>
+<p>The file also mounts <code>/ws</code> for WebSocket clients and serves files embedded in the <code>static/</code> directory under <code>/static/</code>. These routes are established when <code>InitServerHandler</code> is called at startup.</p>
+</div>
+</article>
+</main>
 </body>
 </html>

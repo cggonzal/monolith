@@ -1,44 +1,42 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Configuration — Monolith Guides</title>
-  <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Configuration — Monolith Guides</title>
+<link href="stylesheets/style.css" rel="stylesheet" type="text/css"/>
 </head>
 <body class="guide">
-  <header id="page-header">
-    <div class="wrapper clearfix">
-      <nav id="feature-nav">
-        <div class="header-logo">
-          <a href="index.html">Monolith Guides</a>
-        </div>
-      </nav>
-    </div>
-  </header>
-  <main id="main">
-    <article>
-      <header id="feature">
-        <div class="wrapper">
-          <h1>Configuration</h1>
-          <p>Application constants and environment variables.</p>
-        </div>
-      </header>
-      <div id="article-body" class="wrapper">
-        <p>The <code>app/config/</code> package is the central place for all configuration used throughout a Monolith application. It contains compile&#8209;time constants as well as values loaded from environment variables. The file <code>config.go</code> exposes these settings as package variables so that other packages can import them directly.</p>
-
-        <h2 id="structure">Structure</h2>
-        <p>Compile&#8209;time constants rarely change and are defined at the top of <code>config.go</code>. Environment specific values such as the TCP port or Mailgun credentials are read with <code>os.Getenv</code> so they can be supplied at runtime.</p>
-        <pre><code class="highlight go"><span class="keyword">var</span> <span class="variable">JOB_QUEUE_NUM_WORKERS</span> = <span class="number">4</span>
+<header id="page-header">
+<div class="wrapper clearfix">
+<nav id="feature-nav">
+<div class="header-logo">
+<a href="index.html">Monolith Guides</a>
+</div>
+</nav>
+</div>
+</header>
+<main id="main">
+<article>
+<header id="feature">
+<div class="wrapper">
+<h1>Configuration</h1>
+<p>Application constants and environment variables.</p>
+<nav aria-label="Chapter" class="guide-index" id="column-side"><a class="skip-link" href="#article-body" id="chapter-nav-skip-link">Skip to article body</a><h2 class="chapter"><picture aria-hidden="true"><img alt="Chapter Icon" src="images/icon_book-close-bookmark-1.svg"/></picture> Chapters</h2><ol class="chapters"><li><a href="#structure">Structure</a></li><li><a href="#initialisation">Initialisation</a></li><li><a href="#generators">Using Generators</a></li><li><a href="#environment-variables">Environment Variables</a></li><li><a href="#impact">Impact on the App</a></li></ol></nav></div>
+</header>
+<div class="wrapper" id="article-body">
+<p>The <code>app/config/</code> package is the central place for all configuration used throughout a Monolith application. It contains compile‑time constants as well as values loaded from environment variables. The file <code>config.go</code> exposes these settings as package variables so that other packages can import them directly.</p>
+<h2 id="structure"><a class="anchorlink" data-turbo="false" href="#structure"><span>1.</span> Structure</a></h2>
+<p>Compile‑time constants rarely change and are defined at the top of <code>config.go</code>. Environment specific values such as the TCP port or Mailgun credentials are read with <code>os.Getenv</code> so they can be supplied at runtime.</p>
+<pre><code class="highlight go"><span class="keyword">var</span> <span class="variable">JOB_QUEUE_NUM_WORKERS</span> = <span class="number">4</span>
 <span class="keyword">var</span> <span class="variable">PORT</span>            = <span class="function">os</span>.<span class="function">Getenv</span>(<span class="string">"PORT"</span>)
 <span class="keyword">var</span> <span class="variable">MAILGUN_DOMAIN</span>  = <span class="function">os</span>.<span class="function">Getenv</span>(<span class="string">"MAILGUN_DOMAIN"</span>)
 <span class="keyword">var</span> <span class="variable">MAILGUN_API_KEY</span> = <span class="function">os</span>.<span class="function">Getenv</span>(<span class="string">"MAILGUN_API_KEY"</span>)
 <span class="keyword">var</span> <span class="variable">SECRET_KEY</span>      = <span class="function">os</span>.<span class="function">Getenv</span>(<span class="string">"SECRET_KEY"</span>)
 </code></pre>
-
-        <h2 id="initialisation">Initialisation</h2>
-        <p>Call <code>config.InitConfig()</code> early in <code>main.go</code> to apply defaults and log warnings when required variables are missing. This function sets sensible fallbacks so the app can run in development without additional setup.</p>
-        <pre><code class="highlight go"><span class="keyword">func</span> <span class="function">InitConfig</span>() {
+<h2 id="initialisation"><a class="anchorlink" data-turbo="false" href="#initialisation"><span>2.</span> Initialisation</a></h2>
+<p>Call <code>config.InitConfig()</code> early in <code>main.go</code> to apply defaults and log warnings when required variables are missing. This function sets sensible fallbacks so the app can run in development without additional setup.</p>
+<pre><code class="highlight go"><span class="keyword">func</span> <span class="function">InitConfig</span>() {
     <span class="keyword">if</span> <span class="variable">SECRET_KEY</span> <span class="operator">==</span> <span class="string">""</span> {
         <span class="function">slog</span>.<span class="function">Warn</span>(<span class="string">"SECRET_KEY is not set, using default value. This is insecure for production use."</span>)
         <span class="variable">SECRET_KEY</span> = <span class="string">"default_secret_key"</span>
@@ -49,31 +47,28 @@
     }
 }
 </code></pre>
-
-        <h2 id="generators">Using Generators</h2>
-        <p>The command line generators automatically wire new code to the configuration package. For example, running:</p>
-        <pre><code class="highlight console">$ make generator authentication</code></pre>
-        <p>creates session helpers that rely on <code>config.SECRET_KEY</code>:</p>
-        <pre><code class="highlight go"><span class="variable">store</span> = <span class="function">sessions</span>.<span class="function">NewCookieStore</span>(<span class="function">[]byte</span>(<span class="function">config</span>.<span class="variable">SECRET_KEY</span>))</code></pre>
-        <p>Similarly, <code>make generator job Email</code> scaffolds a job that can use <code>MAILGUN_DOMAIN</code> and <code>MAILGUN_API_KEY</code> to send email.</p>
-
-        <h2 id="environment-variables">Environment Variables</h2>
-        <p>These variables influence the behaviour of the running application. Set them in the shell or your process manager before starting the server.</p>
-        <div class="table-wrapper"><table>
-          <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
-          <tbody>
-            <tr><td>PORT</td><td>9000</td><td>HTTP listener port</td></tr>
-            <tr><td>DATABASE_URL</td><td>–</td><td>Postgres DSN when not using SQLite</td></tr>
-            <tr><td>MAILGUN_DOMAIN</td><td>–</td><td>Domain used for sending email</td></tr>
-            <tr><td>MAILGUN_API_KEY</td><td>–</td><td>Mailgun API key</td></tr>
-            <tr><td>SECRET_KEY</td><td>–</td><td>Key used to sign session cookies</td></tr>
-          </tbody>
-        </table></div>
-
-        <h2 id="impact">Impact on the App</h2>
-        <p>Configuration values affect many subsystems: the job queue uses <code>JOB_QUEUE_NUM_WORKERS</code> to determine worker concurrency, the web server binds to <code>PORT</code>, and email delivery requires the Mailgun variables. Changing any of these values requires restarting the binary so they are picked up on boot.</p>
-      </div>
-    </article>
-  </main>
+<h2 id="generators"><a class="anchorlink" data-turbo="false" href="#generators"><span>3.</span> Using Generators</a></h2>
+<p>The command line generators automatically wire new code to the configuration package. For example, running:</p>
+<pre><code class="highlight console">$ make generator authentication</code></pre>
+<p>creates session helpers that rely on <code>config.SECRET_KEY</code>:</p>
+<pre><code class="highlight go"><span class="variable">store</span> = <span class="function">sessions</span>.<span class="function">NewCookieStore</span>(<span class="function">[]byte</span>(<span class="function">config</span>.<span class="variable">SECRET_KEY</span>))</code></pre>
+<p>Similarly, <code>make generator job Email</code> scaffolds a job that can use <code>MAILGUN_DOMAIN</code> and <code>MAILGUN_API_KEY</code> to send email.</p>
+<h2 id="environment-variables"><a class="anchorlink" data-turbo="false" href="#environment-variables"><span>4.</span> Environment Variables</a></h2>
+<p>These variables influence the behaviour of the running application. Set them in the shell or your process manager before starting the server.</p>
+<div class="table-wrapper"><table>
+<thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>PORT</td><td>9000</td><td>HTTP listener port</td></tr>
+<tr><td>DATABASE_URL</td><td>–</td><td>Postgres DSN when not using SQLite</td></tr>
+<tr><td>MAILGUN_DOMAIN</td><td>–</td><td>Domain used for sending email</td></tr>
+<tr><td>MAILGUN_API_KEY</td><td>–</td><td>Mailgun API key</td></tr>
+<tr><td>SECRET_KEY</td><td>–</td><td>Key used to sign session cookies</td></tr>
+</tbody>
+</table></div>
+<h2 id="impact"><a class="anchorlink" data-turbo="false" href="#impact"><span>5.</span> Impact on the App</a></h2>
+<p>Configuration values affect many subsystems: the job queue uses <code>JOB_QUEUE_NUM_WORKERS</code> to determine worker concurrency, the web server binds to <code>PORT</code>, and email delivery requires the Mailgun variables. Changing any of these values requires restarting the binary so they are picked up on boot.</p>
+</div>
+</article>
+</main>
 </body>
 </html>
