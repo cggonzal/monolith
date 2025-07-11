@@ -92,6 +92,15 @@ $ make       # or 'make run' if air is not installed</code></pre>
                 <tr><td>app/routes/</td><td>Route definitions connecting URLs to controllers.</td></tr>
                 <tr><td>app/session/</td><td>Cookie sessions and authentication helpers.</td></tr>
                 <tr><td>static/</td><td>Static assets served directly.</td></tr>
+                <tr><td>app/jobs/</td><td>Background job handlers executed by the queue.</td></tr>
+                <tr><td>app/services/</td><td>Reusable business logic used by controllers and jobs.</td></tr>
+                <tr><td>app/middleware/</td><td>HTTP middleware for cross-cutting concerns.</td></tr>
+                <tr><td>app/csrf/</td><td>CSRF token generation and validation helpers.</td></tr>
+                <tr><td>db/</td><td>Database connection setup and model registration.</td></tr>
+                <tr><td>generator/</td><td>Scaffolding commands for new resources.</td></tr>
+                <tr><td>guides/</td><td>HTML documentation like this guide.</td></tr>
+                <tr><td>server_management/</td><td>Deployment scripts and Caddy config.</td></tr>
+                <tr><td>ws/</td><td>Real-time WebSocket server.</td></tr>
               </tbody></table></div>
             <h3 id="model-view-controller-basics"><a class="anchorlink" href="#model-view-controller-basics" data-turbo="false"><span>3.4.</span> Model-View-Controller Basics</a></h3>
             <p>Monolith separates responsibilities: models manage data, controllers orchestrate requests, and views render templates. The generator helps you scaffold each piece quickly.</p>
@@ -109,9 +118,22 @@ $ make       # or 'make run' if air is not installed</code></pre>
             <p>Create a dashboard controller with:</p>
             <pre><code class="highlight console">$ make generator controller dashboard index</code></pre>
             <p>The generator adds <code>app/controllers/DashboardController.go</code>, <code>app/views/dashboard/index.html.tmpl</code> and updates <code>app/routes/routes.go</code>.</p>
-            <p>Edit the controller to load posts and pass them to the view:</p>
-            <pre><code class="highlight go"><span class="variable">posts</span>, <span class="variable">_</span> <span class="operator">:=</span> <span class="function">models</span>.<span class="function">GetAllPosts</span>(<span class="function">db</span>.<span class="function">GetDB</span>())
-<span class="function">views</span>.<span class="function">Render</span>(<span class="variable">w</span>, <span class="string">"dashboard/index.html.tmpl"</span>, <span class="function">map</span>[<span class="type">string</span>]<span class="type">any</span>{<span class="string">"posts"</span>: <span class="variable">posts</span>})</code></pre>
+            <p>Edit the controller to load posts and render them:</p>
+            <pre><code class="highlight go"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">dc</span><span class="w"> </span><span class="o">*</span><span class="nx">DashboardController</span><span class="p">)</span><span class="w"> </span><span class="nx">Index</span><span class="p">(</span><span class="nx">w</span><span class="w"> </span><span class="nx">http</span><span class="p">.</span><span class="nx">ResponseWriter</span><span class="p">,</span><span class="w"> </span><span class="nx">r</span><span class="w"> </span><span class="o">*</span><span class="nx">http</span><span class="p">.</span><span class="nx">Request</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">posts</span><span class="p">,</span><span class="w"> </span><span class="nx">_</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">models</span><span class="p">.</span><span class="nx">GetAllPosts</span><span class="p">(</span><span class="nx">db</span><span class="p">.</span><span class="nx">GetDB</span><span class="p">())</span>
+<span class="w">    </span><span class="nx">views</span><span class="p">.</span><span class="nx">Render</span><span class="p">(</span><span class="nx">w</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;dashboard/index.html.tmpl&quot;</span><span class="p">,</span><span class="w"> </span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kt">any</span><span class="p">{</span><span class="s">&quot;posts&quot;</span><span class="p">:</span><span class="w"> </span><span class="nx">posts</span><span class="p">})</span>
+<span class="p">}</span></code></pre>
+            <p>Next, open <code>app/views/dashboard/index.html.tmpl</code> and output the posts:</p>
+            <pre><code class="highlight html">{{define "body"}}
+&lt;h1&gt;Posts&lt;/h1&gt;
+&lt;ul&gt;
+  {{range .posts}}
+    &lt;li&gt;{{.Title}}&lt;/li&gt;
+  {{else}}
+    &lt;li&gt;No posts yet&lt;/li&gt;
+  {{end}}
+&lt;/ul&gt;
+{{end}}</code></pre>
             <p>Visit <code>/dashboard</code> to see the list of posts.</p>
             <h2 id="routes"><a class="anchorlink" href="#routes" data-turbo="false"><span>7.</span> Routes</a></h2>
             <p>Route definitions live in <code>app/routes/routes.go</code>. The generator inserts RESTful routes for resources automatically. You can manually add custom routes using helper functions like <code>routes.Get</code>, <code>routes.Post</code>, and so on.</p>
@@ -125,6 +147,19 @@ $ make       # or 'make run' if air is not installed</code></pre>
             <p>This creates <code>app/jobs/report_job.go</code> and registers <code>JobTypeReport</code>. Enqueue it from a controller:</p>
             <pre><code class="highlight go"><span class="variable">payload</span> <span class="operator">:=</span> <span class="function">[]byte</span>(<span class="string">`{"message":"stats"}`</span>)
 <span class="function">jobs</span>.<span class="function">GetJobQueue</span>().<span class="function">AddJob</span>(<span class="function">models</span>.<span class="constant">JobTypeReport</span>, <span class="variable">payload</span>)</code></pre>
+            <p>Fill in <code>app/jobs/report_job.go</code> like so:</p>
+            <pre><code class="highlight go"><span class="kd">type</span><span class="w"> </span><span class="nx">ReportPayload</span><span class="w"> </span><span class="kd">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">FirstArgument</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="s">`json:&quot;first_argument&quot;`</span>
+<span class="p">}</span>
+
+<span class="kd">func</span><span class="w"> </span><span class="nx">ReportJob</span><span class="p">(</span><span class="nx">payload</span><span class="w"> </span><span class="p">[]</span><span class="kt">byte</span><span class="p">)</span><span class="w"> </span><span class="kt">error</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="nx">p</span><span class="w"> </span><span class="nx">ReportPayload</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">json</span><span class="p">.</span><span class="nx">Unmarshal</span><span class="p">(</span><span class="nx">payload</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="nx">p</span><span class="p">);</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">err</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nx">log</span><span class="p">.</span><span class="nx">Printf</span><span class="p">(</span><span class="s">&quot;Report payload: %s&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">p</span><span class="p">.</span><span class="nx">FirstArgument</span><span class="p">)</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="kc">nil</span>
+<span class="p">}</span></code></pre>
             <h3 id="sending-email">Sending Email</h3>
             <p>The <code>email</code> package wraps job enqueuing for mail delivery:</p>
             <pre><code class="highlight go"><span class="function">email</span>.<span class="function">SendEmail</span>(<span class="string">"Hello"</span>, <span class="string">"Welcome!"</span>, <span class="string">"no-reply@example.com"</span>, <span class="function">[]string</span>{<span class="string">"user@example.com"</span>})</code></pre>
@@ -137,15 +172,14 @@ $ make       # or 'make run' if air is not installed</code></pre>
             <p>Generate a user model and session helpers with:</p>
             <pre><code class="highlight console">$ make generator authentication</code></pre>
             <p>This command creates signup and login pages and wires session management through encrypted cookies.</p>
-            <p>Protect routes by wrapping handlers with <code>session.RequireUser</code>:</p>
-            <pre><code class="highlight go"><span class="function">routes</span>.<span class="function">Get</span>(<span class="string">"/dashboard"</span>, <span class="function">session</span>.<span class="function">RequireUser</span>(<span class="function">DashboardCtrl</span>.<span class="function">Index</span>))</code></pre>
+            <p>Protect routes by wrapping handlers with <code>middleware.RequireLogin</code>:</p>
+            <pre><code class="highlight go">routes.Get("/dashboard", middleware.RequireLogin(DashboardCtrl.Index))</code></pre>
             <h2 id="a-requests-response-through-monolith"><a class="anchorlink" href="#a-requests-response-through-monolith" data-turbo="false"><span>13.</span> A Request's Response Through Monolith</a></h2>
             <p>Requests match routes in <code>app/routes/routes.go</code>. The chosen controller retrieves data from models and finally calls <code>views.Render</code> which writes HTML to the response.</p>
             <h2 id="deploying-to-production"><a class="anchorlink" href="#deploying-to-production" data-turbo="false"><span>14.</span> Deploying to Production</a></h2>
-            <p>Build a static binary with <code>make build</code> and run it behind a reverse proxy like Nginx. For zero-downtime restarts, see the <a href="server_management.html">Server Management guide</a>.</p>
-            <p>Bootstrap a server once with:</p>
+            <p>Build a static binary with <code>make build</code>. The provided <code>server_management/Caddyfile</code> proxies HTTPS traffic to the application.</p>
+            <p>For zero‑downtime deploys run the setup script once and thereafter use the deploy script:</p>
             <pre><code class="highlight console">$ server_management/server_setup.sh user@host example.com</code></pre>
-            <p>Deploy new releases with:</p>
             <pre><code class="highlight console">$ server_management/deploy.sh user@host</code></pre>
             <h2 id="configuration"><a class="anchorlink" href="#configuration" data-turbo="false"><span>15.</span> Configuration</a></h2>
             <p>The file <code>app/config/config.go</code> defines constants and reads environment variables such as <code>PORT</code>, <code>SECRET_KEY</code>, <code>MAILGUN_DOMAIN</code> and <code>MAILGUN_API_KEY</code>. Call <code>config.InitConfig()</code> on startup to apply defaults.</p>
