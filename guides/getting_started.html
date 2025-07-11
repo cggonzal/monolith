@@ -119,10 +119,10 @@ $ make       # or 'make run' if air is not installed</code></pre>
             <pre><code class="highlight console">$ make generator controller dashboard index</code></pre>
             <p>The generator adds <code>app/controllers/DashboardController.go</code>, <code>app/views/dashboard/index.html.tmpl</code> and updates <code>app/routes/routes.go</code>.</p>
             <p>Edit the controller to load posts and render them:</p>
-            <pre><code class="highlight go">func (dc *DashboardController) Index(w http.ResponseWriter, r *http.Request) {
-    posts, _ := models.GetAllPosts(db.GetDB())
-    views.Render(w, "dashboard/index.html.tmpl", map[string]any{"posts": posts})
-}</code></pre>
+            <pre><code class="highlight go"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">dc</span><span class="w"> </span><span class="o">*</span><span class="nx">DashboardController</span><span class="p">)</span><span class="w"> </span><span class="nx">Index</span><span class="p">(</span><span class="nx">w</span><span class="w"> </span><span class="nx">http</span><span class="p">.</span><span class="nx">ResponseWriter</span><span class="p">,</span><span class="w"> </span><span class="nx">r</span><span class="w"> </span><span class="o">*</span><span class="nx">http</span><span class="p">.</span><span class="nx">Request</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">posts</span><span class="p">,</span><span class="w"> </span><span class="nx">_</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">models</span><span class="p">.</span><span class="nx">GetAllPosts</span><span class="p">(</span><span class="nx">db</span><span class="p">.</span><span class="nx">GetDB</span><span class="p">())</span>
+<span class="w">    </span><span class="nx">views</span><span class="p">.</span><span class="nx">Render</span><span class="p">(</span><span class="nx">w</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;dashboard/index.html.tmpl&quot;</span><span class="p">,</span><span class="w"> </span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kt">any</span><span class="p">{</span><span class="s">&quot;posts&quot;</span><span class="p">:</span><span class="w"> </span><span class="nx">posts</span><span class="p">})</span>
+<span class="p">}</span></code></pre>
             <p>Next, open <code>app/views/dashboard/index.html.tmpl</code> and output the posts:</p>
             <pre><code class="highlight html">{{define "body"}}
 &lt;h1&gt;Posts&lt;/h1&gt;
@@ -148,18 +148,18 @@ $ make       # or 'make run' if air is not installed</code></pre>
             <pre><code class="highlight go"><span class="variable">payload</span> <span class="operator">:=</span> <span class="function">[]byte</span>(<span class="string">`{"message":"stats"}`</span>)
 <span class="function">jobs</span>.<span class="function">GetJobQueue</span>().<span class="function">AddJob</span>(<span class="function">models</span>.<span class="constant">JobTypeReport</span>, <span class="variable">payload</span>)</code></pre>
             <p>Fill in <code>app/jobs/report_job.go</code> like so:</p>
-            <pre><code class="highlight go">type ReportPayload struct {
-    FirstArgument string `json:"first_argument"`
-}
+            <pre><code class="highlight go"><span class="kd">type</span><span class="w"> </span><span class="nx">ReportPayload</span><span class="w"> </span><span class="kd">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">FirstArgument</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="s">`json:&quot;first_argument&quot;`</span>
+<span class="p">}</span>
 
-func ReportJob(payload []byte) error {
-    var p ReportPayload
-    if err := json.Unmarshal(payload, &p); err != nil {
-        return err
-    }
-    log.Printf("Report payload: %s", p.FirstArgument)
-    return nil
-}</code></pre>
+<span class="kd">func</span><span class="w"> </span><span class="nx">ReportJob</span><span class="p">(</span><span class="nx">payload</span><span class="w"> </span><span class="p">[]</span><span class="kt">byte</span><span class="p">)</span><span class="w"> </span><span class="kt">error</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="nx">p</span><span class="w"> </span><span class="nx">ReportPayload</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">json</span><span class="p">.</span><span class="nx">Unmarshal</span><span class="p">(</span><span class="nx">payload</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="nx">p</span><span class="p">);</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">err</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nx">log</span><span class="p">.</span><span class="nx">Printf</span><span class="p">(</span><span class="s">&quot;Report payload: %s&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">p</span><span class="p">.</span><span class="nx">FirstArgument</span><span class="p">)</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="kc">nil</span>
+<span class="p">}</span></code></pre>
             <h3 id="sending-email">Sending Email</h3>
             <p>The <code>email</code> package wraps job enqueuing for mail delivery:</p>
             <pre><code class="highlight go"><span class="function">email</span>.<span class="function">SendEmail</span>(<span class="string">"Hello"</span>, <span class="string">"Welcome!"</span>, <span class="string">"no-reply@example.com"</span>, <span class="function">[]string</span>{<span class="string">"user@example.com"</span>})</code></pre>
