@@ -25,6 +25,8 @@ If you are new, start with **Quick‑start** then come back to read the architec
    6. [Generating a resource](#generating-a-resource)
    7. [Generating authentication](#generating-authentication)
    8. [Generating an admin dashboard](#generating-an-admin-dashboard)
+   9. [Generating a model](#generating-a-model)
+   10. [Generating a controller and view](#generating-a-controller-and-view)
 5. [Core Concepts](#core-concepts)
    1. [Configuration](#configuration)
    2. [Database Layer](#database-layer)
@@ -200,6 +202,24 @@ make generator admin
 
 Creates an `/admin` dashboard with profiling helpers. If a User model does not
 exist it will be generated automatically.
+
+### Generating a model
+
+```bash
+make generator model Widget name:string price:int
+```
+
+Creates `app/models/widget.go` with a `Widget` struct and registers the model so
+it migrates automatically on startup.
+
+### Generating a controller and view
+
+```bash
+make generator controller widgets index show
+```
+
+Generates `app/controllers/widgets_controller.go` along with matching templates
+and routes for the specified actions.
 
 ---
 
