@@ -1,59 +1,54 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Controllers — Monolith Guides</title>
-  <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Controllers — Monolith Guides</title>
+<link href="stylesheets/style.css" rel="stylesheet" type="text/css"/>
 </head>
 <body class="guide">
-  <header id="page-header">
-    <div class="wrapper clearfix">
-      <nav id="feature-nav">
-        <div class="header-logo">
-          <a href="index.html">Monolith Guides</a>
-        </div>
-      </nav>
-    </div>
-  </header>
-  <main id="main">
-    <article>
-      <header id="feature">
-        <div class="wrapper">
-          <h1>Controllers</h1>
-          <p>HTTP controllers route requests and render templates.</p>
-        </div>
-      </header>
-      <div id="article-body" class="wrapper">
-        <h2 id="introduction">What Is a Controller?</h2>
-        <p>Controllers live in <code>app/controllers/</code> and are plain Go structs whose methods handle HTTP requests. Each method follows the familiar <code>func(w http.ResponseWriter, r *http.Request)</code> signature. Controllers orchestrate the flow between models and templates &mdash; they load data, apply any business rules and then render a view.</p>
-
-        <h2 id="generating-controllers">Generating Controllers</h2>
-        <p>Use the built&nbsp;in generator to scaffold a controller and optional actions. The command below creates a <code>posts</code> controller with two actions:</p>
+<header id="page-header">
+<div class="wrapper clearfix">
+<nav id="feature-nav">
+<div class="header-logo">
+<a href="index.html">Monolith Guides</a>
+</div>
+</nav>
+</div>
+</header>
+<main id="main">
+<article>
+<header id="feature">
+<div class="wrapper">
+<h1>Controllers</h1>
+<p>HTTP controllers route requests and render templates.</p>
+<nav aria-label="Chapter" class="guide-index" id="column-side"><a class="skip-link" href="#article-body" id="chapter-nav-skip-link">Skip to article body</a><h2 class="chapter"><picture aria-hidden="true"><img alt="Chapter Icon" src="images/icon_book-close-bookmark-1.svg"/></picture> Chapters</h2><ol class="chapters"><li><a href="#introduction">What Is a Controller?</a></li><li><a href="#generating-controllers">Generating Controllers</a></li><li><a href="#resources">Resource Generator</a></li><li><a href="#routes">Routes and Actions</a></li><li><a href="#rendering-views">Rendering Views</a></li><li><a href="#best-practices">Best Practices</a></li></ol></nav></div>
+</header>
+<div class="wrapper" id="article-body">
+<h2 id="introduction"><a class="anchorlink" data-turbo="false" href="#introduction"><span>1.</span> What Is a Controller?</a></h2>
+<p>Controllers live in <code>app/controllers/</code> and are plain Go structs whose methods handle HTTP requests. Each method follows the familiar <code>func(w http.ResponseWriter, r *http.Request)</code> signature. Controllers orchestrate the flow between models and templates — they load data, apply any business rules and then render a view.</p>
+<h2 id="generating-controllers"><a class="anchorlink" data-turbo="false" href="#generating-controllers"><span>2.</span> Generating Controllers</a></h2>
+<p>Use the built in generator to scaffold a controller and optional actions. The command below creates a <code>posts</code> controller with two actions:</p>
 <pre><code class="highlight console">$ make generator controller posts index show</code></pre>
-        <p>This creates <code>app/controllers/posts_controller.go</code>, matching templates under <code>app/views/posts/</code> and updates <code>app/routes/routes.go</code> with routes like <code>/posts</code> and <code>/posts/{id}</code>.</p>
-
-        <h2 id="resources">Resource Generator</h2>
-        <p>For a complete CRUD setup you can run:</p>
+<p>This creates <code>app/controllers/posts_controller.go</code>, matching templates under <code>app/views/posts/</code> and updates <code>app/routes/routes.go</code> with routes like <code>/posts</code> and <code>/posts/{id}</code>.</p>
+<h2 id="resources"><a class="anchorlink" data-turbo="false" href="#resources"><span>3.</span> Resource Generator</a></h2>
+<p>For a complete CRUD setup you can run:</p>
 <pre><code class="highlight console">$ make generator resource post title:string body:text</code></pre>
-        <p>The resource generator produces the model, controller, views and RESTful routes in one step. The resulting controller implements the standard <code>Index</code>, <code>Show</code>, <code>New</code>, <code>Create</code>, <code>Edit</code>, <code>Update</code> and <code>Destroy</code> actions.</p>
-
-        <h2 id="routes">Routes and Actions</h2>
-        <p>Routes are defined in <code>app/routes/routes.go</code> using <code>http.ServeMux</code>. When you generate a controller, new paths are inserted automatically. A typical entry looks like:</p>
+<p>The resource generator produces the model, controller, views and RESTful routes in one step. The resulting controller implements the standard <code>Index</code>, <code>Show</code>, <code>New</code>, <code>Create</code>, <code>Edit</code>, <code>Update</code> and <code>Destroy</code> actions.</p>
+<h2 id="routes"><a class="anchorlink" data-turbo="false" href="#routes"><span>4.</span> Routes and Actions</a></h2>
+<p>Routes are defined in <code>app/routes/routes.go</code> using <code>http.ServeMux</code>. When you generate a controller, new paths are inserted automatically. A typical entry looks like:</p>
 <pre><code class="highlight go"><span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /posts"</span>, <span class="function">controllers</span>.<span class="variable">PostsCtrl</span>.<span class="function">Index</span>)
 <span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /posts/{id}"</span>, <span class="function">controllers</span>.<span class="variable">PostsCtrl</span>.<span class="function">Show</span>)</code></pre>
-        <p>You can add your own handlers or wrap them with middleware for authentication and CSRF protection. Routes determine how URLs map to controller methods, so editing <code>routes.go</code> changes which actions respond to which paths.</p>
-
-        <h2 id="rendering-views">Rendering Views</h2>
-        <p>Inside an action you generally load records from the database and then call <code>views.Render</code> to execute an HTML template:</p>
+<p>You can add your own handlers or wrap them with middleware for authentication and CSRF protection. Routes determine how URLs map to controller methods, so editing <code>routes.go</code> changes which actions respond to which paths.</p>
+<h2 id="rendering-views"><a class="anchorlink" data-turbo="false" href="#rendering-views"><span>5.</span> Rendering Views</a></h2>
+<p>Inside an action you generally load records from the database and then call <code>views.Render</code> to execute an HTML template:</p>
 <pre><code class="highlight go"><span class="variable">posts</span>, <span class="variable">_</span> <span class="operator">:=</span> <span class="function">models</span>.<span class="function">GetAllPosts</span>(<span class="function">db</span>.<span class="function">GetDB</span>())
 <span class="function">views</span>.<span class="function">Render</span>(<span class="variable">w</span>, <span class="string">"posts/index.html.tmpl"</span>, <span class="function">map</span>[<span class="type">string</span>]<span class="type">any</span>{<span class="string">"posts"</span>: <span class="variable">posts</span>})</code></pre>
-        <p>Templates reside in <code>app/views</code> and layouts provide common markup. JSON APIs can simply write to <code>w</code> or use <code>encoding/json</code>.</p>
-
-        <h2 id="best-practices">Best Practices</h2>
-        <p>Keep controllers thin by delegating heavy logic to models or service packages. Generators ensure a consistent structure and update your routes automatically. When you rename or remove actions remember to adjust <code>routes.go</code> accordingly.</p>
-      </div>
-    </article>
-  </main>
+<p>Templates reside in <code>app/views</code> and layouts provide common markup. JSON APIs can simply write to <code>w</code> or use <code>encoding/json</code>.</p>
+<h2 id="best-practices"><a class="anchorlink" data-turbo="false" href="#best-practices"><span>6.</span> Best Practices</a></h2>
+<p>Keep controllers thin by delegating heavy logic to models or service packages. Generators ensure a consistent structure and update your routes automatically. When you rename or remove actions remember to adjust <code>routes.go</code> accordingly.</p>
+</div>
+</article>
+</main>
 </body>
 </html>

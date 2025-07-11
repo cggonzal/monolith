@@ -1,84 +1,75 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Generators — Monolith Guides</title>
-  <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Generators — Monolith Guides</title>
+<link href="stylesheets/style.css" rel="stylesheet" type="text/css"/>
 </head>
 <body class="guide">
-  <header id="page-header">
-    <div class="wrapper clearfix">
-      <nav id="feature-nav">
-        <div class="header-logo">
-          <a href="index.html">Monolith Guides</a>
-        </div>
-      </nav>
-    </div>
-  </header>
-  <main id="main">
-    <article>
-      <header id="feature">
-        <div class="wrapper">
-          <h1>Generators</h1>
-          <p>Scaffold code quickly.</p>
-        </div>
-      </header>
-      <div id="article-body" class="wrapper">
-        <p>Monolith ships with a set of generators that create boilerplate for common components. They can be invoked with <code>go run main.go generator</code> or through the shorter <code>make generator</code> wrapper.</p>
-        <pre><code class="highlight console">$ make generator &lt;type&gt; [...options]</code></pre>
-        <p>The following generator types are available:</p>
-        <ul>
-          <li><code>model</code></li>
-          <li><code>controller</code></li>
-          <li><code>resource</code></li>
-          <li><code>authentication</code></li>
-          <li><code>job</code></li>
-          <li><code>admin</code></li>
-        </ul>
-
-        <h2 id="model-generator">Model Generator</h2>
-        <p>The model generator creates a new struct under <code>app/models/</code> and registers it for auto migration in <code>db/db.go</code>.</p>
-        <pre><code class="highlight console">$ make generator model Widget name:string price:int</code></pre>
-        <p>This command produces <code>app/models/widget.go</code> and a test file. Hooks like <code>BeforeSave</code> and <code>AfterSave</code> are included as empty functions so you can add validations. No routes are changed but the database schema will include the new table on the next startup.</p>
-
-        <h2 id="controller-generator">Controller Generator</h2>
-        <p>Controllers glue routes to views and models. Provide the controller name followed by the actions to generate.</p>
-        <pre><code class="highlight console">$ make generator controller widgets index show</code></pre>
-        <p>Running this creates <code>app/controllers/widgets_controller.go</code>, placeholder templates in <code>app/views/widgets/</code> and updates <code>app/routes/routes.go</code> with <code>GET /widgets</code> and <code>GET /widgets/{id}</code> entries.</p>
-
-        <h2 id="resource-generator">Resource Generator</h2>
-        <p>The resource generator is a convenience that combines the model and controller generators. Pass the singular name of the model and optional fields.</p>
-        <pre><code class="highlight console">$ make generator resource widget name:string price:int</code></pre>
-        <p>It creates the <code>Widget</code> model, a <code>widgets</code> controller with all CRUD actions, templates, placeholder tests and RESTful routes like <code>/widgets/new</code>, <code>POST /widgets</code>, <code>PUT /widgets/{id}</code> and so on.</p>
-
-        <h2 id="authentication-generator">Authentication Generator</h2>
-        <p>Authentication scaffolding includes a user model, session helpers and a controller for login and signup.</p>
-        <pre><code class="highlight console">$ make generator authentication</code></pre>
-        <p>Pages for signing up and logging in are generated under <code>app/views/auth/</code>. Routes for <code>/login</code>, <code>/signup</code> and <code>/logout</code> are inserted automatically.</p>
-
-        <h2 id="job-generator">Job Generator</h2>
-        <p>Background jobs execute outside of the request cycle. Generate a new job with:</p>
-        <pre><code class="highlight console">$ make generator job Email</code></pre>
-        <p>This adds <code>app/jobs/email_job.go</code> and a test. The job is registered in <code>app/jobs/job_queue.go</code> and a new enum value is added to <code>app/models/job.go</code>. Jobs do not modify routes.</p>
-
-        <h2 id="admin-generator">Admin Generator</h2>
-        <p>The admin generator provides a simple dashboard protected by middleware. It requires authentication and will generate a user model if one does not already exist.</p>
-        <pre><code class="highlight console">$ make generator admin</code></pre>
-        <p>In addition to <code>/admin</code> routes it exposes the <code>/debug/pprof/*</code> endpoints wrapped in admin authentication.</p>
-
-        <h2 id="routes">How Routes Are Updated</h2>
-        <p>Controllers, resources, authentication and admin generation modify <code>app/routes/routes.go</code>. New <code>ServeMux</code> entries are appended only if they do not already exist. This keeps routing definitions in one place while letting the generators wire up RESTful patterns automatically.</p>
-
-        <h2 id="customising-generated-code">Customising Generated Code</h2>
-        <p>Generators create functional but minimal code. After generation you should edit the models to add validations, update controller actions to load real data and flesh out the templates. The placeholders are intended as a starting point.</p>
-
-        <h2 id="example-workflow">Example Workflow</h2>
-        <p>To create a blog post resource you might run:</p>
-        <pre><code class="highlight console">$ make generator resource post title:string body:text</code></pre>
-        <p>After editing the generated files you would have a fully functional set of CRUD pages mounted under <code>/posts</code>.</p>
-      </div>
-    </article>
-  </main>
+<header id="page-header">
+<div class="wrapper clearfix">
+<nav id="feature-nav">
+<div class="header-logo">
+<a href="index.html">Monolith Guides</a>
+</div>
+</nav>
+</div>
+</header>
+<main id="main">
+<article>
+<header id="feature">
+<div class="wrapper">
+<h1>Generators</h1>
+<p>Scaffold code quickly.</p>
+<nav aria-label="Chapter" class="guide-index" id="column-side"><a class="skip-link" href="#article-body" id="chapter-nav-skip-link">Skip to article body</a><h2 class="chapter"><picture aria-hidden="true"><img alt="Chapter Icon" src="images/icon_book-close-bookmark-1.svg"/></picture> Chapters</h2><ol class="chapters"><li><a href="#model-generator">Model Generator</a></li><li><a href="#controller-generator">Controller Generator</a></li><li><a href="#resource-generator">Resource Generator</a></li><li><a href="#authentication-generator">Authentication Generator</a></li><li><a href="#job-generator">Job Generator</a></li><li><a href="#admin-generator">Admin Generator</a></li><li><a href="#routes">How Routes Are Updated</a></li><li><a href="#customising-generated-code">Customising Generated Code</a></li><li><a href="#example-workflow">Example Workflow</a></li></ol></nav></div>
+</header>
+<div class="wrapper" id="article-body">
+<p>Monolith ships with a set of generators that create boilerplate for common components. They can be invoked with <code>go run main.go generator</code> or through the shorter <code>make generator</code> wrapper.</p>
+<pre><code class="highlight console">$ make generator &lt;type&gt; [...options]</code></pre>
+<p>The following generator types are available:</p>
+<ul>
+<li><code>model</code></li>
+<li><code>controller</code></li>
+<li><code>resource</code></li>
+<li><code>authentication</code></li>
+<li><code>job</code></li>
+<li><code>admin</code></li>
+</ul>
+<h2 id="model-generator"><a class="anchorlink" data-turbo="false" href="#model-generator"><span>1.</span> Model Generator</a></h2>
+<p>The model generator creates a new struct under <code>app/models/</code> and registers it for auto migration in <code>db/db.go</code>.</p>
+<pre><code class="highlight console">$ make generator model Widget name:string price:int</code></pre>
+<p>This command produces <code>app/models/widget.go</code> and a test file. Hooks like <code>BeforeSave</code> and <code>AfterSave</code> are included as empty functions so you can add validations. No routes are changed but the database schema will include the new table on the next startup.</p>
+<h2 id="controller-generator"><a class="anchorlink" data-turbo="false" href="#controller-generator"><span>2.</span> Controller Generator</a></h2>
+<p>Controllers glue routes to views and models. Provide the controller name followed by the actions to generate.</p>
+<pre><code class="highlight console">$ make generator controller widgets index show</code></pre>
+<p>Running this creates <code>app/controllers/widgets_controller.go</code>, placeholder templates in <code>app/views/widgets/</code> and updates <code>app/routes/routes.go</code> with <code>GET /widgets</code> and <code>GET /widgets/{id}</code> entries.</p>
+<h2 id="resource-generator"><a class="anchorlink" data-turbo="false" href="#resource-generator"><span>3.</span> Resource Generator</a></h2>
+<p>The resource generator is a convenience that combines the model and controller generators. Pass the singular name of the model and optional fields.</p>
+<pre><code class="highlight console">$ make generator resource widget name:string price:int</code></pre>
+<p>It creates the <code>Widget</code> model, a <code>widgets</code> controller with all CRUD actions, templates, placeholder tests and RESTful routes like <code>/widgets/new</code>, <code>POST /widgets</code>, <code>PUT /widgets/{id}</code> and so on.</p>
+<h2 id="authentication-generator"><a class="anchorlink" data-turbo="false" href="#authentication-generator"><span>4.</span> Authentication Generator</a></h2>
+<p>Authentication scaffolding includes a user model, session helpers and a controller for login and signup.</p>
+<pre><code class="highlight console">$ make generator authentication</code></pre>
+<p>Pages for signing up and logging in are generated under <code>app/views/auth/</code>. Routes for <code>/login</code>, <code>/signup</code> and <code>/logout</code> are inserted automatically.</p>
+<h2 id="job-generator"><a class="anchorlink" data-turbo="false" href="#job-generator"><span>5.</span> Job Generator</a></h2>
+<p>Background jobs execute outside of the request cycle. Generate a new job with:</p>
+<pre><code class="highlight console">$ make generator job Email</code></pre>
+<p>This adds <code>app/jobs/email_job.go</code> and a test. The job is registered in <code>app/jobs/job_queue.go</code> and a new enum value is added to <code>app/models/job.go</code>. Jobs do not modify routes.</p>
+<h2 id="admin-generator"><a class="anchorlink" data-turbo="false" href="#admin-generator"><span>6.</span> Admin Generator</a></h2>
+<p>The admin generator provides a simple dashboard protected by middleware. It requires authentication and will generate a user model if one does not already exist.</p>
+<pre><code class="highlight console">$ make generator admin</code></pre>
+<p>In addition to <code>/admin</code> routes it exposes the <code>/debug/pprof/*</code> endpoints wrapped in admin authentication.</p>
+<h2 id="routes"><a class="anchorlink" data-turbo="false" href="#routes"><span>7.</span> How Routes Are Updated</a></h2>
+<p>Controllers, resources, authentication and admin generation modify <code>app/routes/routes.go</code>. New <code>ServeMux</code> entries are appended only if they do not already exist. This keeps routing definitions in one place while letting the generators wire up RESTful patterns automatically.</p>
+<h2 id="customising-generated-code"><a class="anchorlink" data-turbo="false" href="#customising-generated-code"><span>8.</span> Customising Generated Code</a></h2>
+<p>Generators create functional but minimal code. After generation you should edit the models to add validations, update controller actions to load real data and flesh out the templates. The placeholders are intended as a starting point.</p>
+<h2 id="example-workflow"><a class="anchorlink" data-turbo="false" href="#example-workflow"><span>9.</span> Example Workflow</a></h2>
+<p>To create a blog post resource you might run:</p>
+<pre><code class="highlight console">$ make generator resource post title:string body:text</code></pre>
+<p>After editing the generated files you would have a fully functional set of CRUD pages mounted under <code>/posts</code>.</p>
+</div>
+</article>
+</main>
 </body>
 </html>

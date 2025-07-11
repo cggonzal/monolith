@@ -1,63 +1,63 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Database — Monolith Guides</title>
-  <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Database — Monolith Guides</title>
+<link href="stylesheets/style.css" rel="stylesheet" type="text/css"/>
 </head>
 <body class="guide">
-  <header id="page-header">
-    <div class="wrapper clearfix">
-      <nav id="feature-nav">
-        <div class="header-logo">
-          <a href="index.html">Monolith Guides</a>
-        </div>
-      </nav>
-    </div>
-  </header>
-  <main id="main">
-    <article>
-      <header id="feature">
-        <div class="wrapper">
-          <h1>Database</h1>
-          <p>Connection setup, models and migrations.</p>
-        </div>
-      </header>
-      <div id="article-body" class="wrapper">
-        <p>Monolith persists data using <a href="https://gorm.io">GORM</a>. The
+<header id="page-header">
+<div class="wrapper clearfix">
+<nav id="feature-nav">
+<div class="header-logo">
+<a href="index.html">Monolith Guides</a>
+</div>
+</nav>
+</div>
+</header>
+<main id="main">
+<article>
+<header id="feature">
+<div class="wrapper">
+<h1>Database</h1>
+<p>Connection setup, models and migrations.</p>
+<nav aria-label="Chapter" class="guide-index" id="column-side"><a class="skip-link" href="#article-body" id="chapter-nav-skip-link">Skip to article body</a><h2 class="chapter"><picture aria-hidden="true"><img alt="Chapter Icon" src="images/icon_book-close-bookmark-1.svg"/></picture> Chapters</h2><ol class="chapters"><li><a href="#using-generators">Using generators</a></li></ol></nav></div>
+</header>
+<div class="wrapper" id="article-body">
+<p>Monolith persists data using <a href="https://gorm.io">GORM</a>. The
           <code>db/</code> package bootstraps the connection. By default the
           application stores data in <code>app.db</code> using the SQLite driver
           with recommended pragmas for concurrency.</p>
-        <p>Call <code>db.InitDB()</code> on startup to open the database and run
-          auto&#8209;migration for every registered model. New tables appear the
+<p>Call <code>db.InitDB()</code> on startup to open the database and run
+          auto‑migration for every registered model. New tables appear the
           first time the server runs.</p>
-        <pre><code class="highlight go"><span class="function">db</span>.<span class="function">InitDB</span>()
+<pre><code class="highlight go"><span class="function">db</span>.<span class="function">InitDB</span>()
 <span class="variable">user</span>, <span class="variable">_</span> <span class="operator">:=</span> <span class="function">models</span>.<span class="function">CreateUser</span>(<span class="function">db</span>.<span class="function">GetDB</span>(), <span class="string">"foo@example.com"</span>, <span class="string">"secret"</span>)</code></pre>
-        <p>Switching to PostgreSQL is a one line change—import
+<p>Switching to PostgreSQL is a one line change—import
           <code>gorm.io/driver/postgres</code> and open a Postgres DSN with
           <code>gorm.Open</code>. The rest of the code remains identical.</p>
-        <h2>Using generators</h2>
-        <p>Generators keep models and the schema in sync. Create a model with:</p>
-        <pre><code class="highlight console">$ make generator model Widget name:string price:int</code></pre>
-        <p>This command writes <code>app/models/widget.go</code>, updates
+<h2 id="using-generators"><a class="anchorlink" data-turbo="false" href="#using-generators"><span>1.</span> Using generators</a></h2>
+<p>Generators keep models and the schema in sync. Create a model with:</p>
+<pre><code class="highlight console">$ make generator model Widget name:string price:int</code></pre>
+<p>This command writes <code>app/models/widget.go</code>, updates
           <code>db/db.go</code> so the <code>Widget</code> model migrates
           automatically and generates tests. Restart the server and the
           <code>widgets</code> table will be created.</p>
-        <p>To scaffold a full REST resource in one step run:</p>
-        <pre><code class="highlight console">$ make generator resource widget name:string price:int</code></pre>
-        <p>It creates the model plus a controller, routes and templates. When the
+<p>To scaffold a full REST resource in one step run:</p>
+<pre><code class="highlight console">$ make generator resource widget name:string price:int</code></pre>
+<p>It creates the model plus a controller, routes and templates. When the
           server starts the new table is migrated and you can immediately access
           the CRUD interface at <code>/widgets</code>.</p>
-        <p>Controllers and jobs obtain the database handle with
+<p>Controllers and jobs obtain the database handle with
           <code>db.GetDB()</code> and call helper functions such as
           <code>models.CreateWidget</code> or <code>models.GetAllWidgets</code> to
           query the database.</p>
-        <p>GORM&#39;s auto&#8209;migration runs each time <code>InitDB</code> executes,
+<p>GORM's auto‑migration runs each time <code>InitDB</code> executes,
           so no separate migration files are needed. Removing <code>app.db</code>
           resets the database during development.</p>
-      </div>
-    </article>
-  </main>
+</div>
+</article>
+</main>
 </body>
 </html>

@@ -1,44 +1,44 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Middleware — Monolith Guides</title>
-  <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Middleware — Monolith Guides</title>
+<link href="stylesheets/style.css" rel="stylesheet" type="text/css"/>
 </head>
 <body class="guide">
-  <header id="page-header">
-    <div class="wrapper clearfix">
-      <nav id="feature-nav">
-        <div class="header-logo">
-          <a href="index.html">Monolith Guides</a>
-        </div>
-      </nav>
-    </div>
-  </header>
-  <main id="main">
-    <article>
-      <header id="feature">
-        <div class="wrapper">
-          <h1>Middleware</h1>
-          <p>Reusable HTTP middleware.</p>
-        </div>
-      </header>
-      <div id="article-body" class="wrapper">
-        <p>Middleware in Monolith is implemented using Go's <code>http.Handler</code> interface. Each piece of middleware receives a handler and returns a new handler that wraps it, performing work before or after calling the next handler in the chain.</p>
-        <h2 id="existing-middleware">Existing Middleware</h2>
-        <p>The default project includes two middlewares located in <code>app/middleware/</code>:</p>
-        <ul>
-          <li><strong>LoggingMiddleware</strong> – records each request's method, path and response status via the structured logger.</li>
-          <li><strong>CSRFMiddleware</strong> – protects against cross-site request forgery by verifying tokens on mutating requests and responding with <code>403 Forbidden</code> when validation fails.</li>
-        </ul>
-        <p>These are composed in <code>routes.InitServerHandler</code> so that every request is logged and checked for a valid CSRF token:</p>
-        <pre><code class="highlight go"><span class="variable">logged</span> <span class="operator">:=</span> <span class="function">middleware</span>.<span class="function">LoggingMiddleware</span>(<span class="variable">mux</span>)
+<header id="page-header">
+<div class="wrapper clearfix">
+<nav id="feature-nav">
+<div class="header-logo">
+<a href="index.html">Monolith Guides</a>
+</div>
+</nav>
+</div>
+</header>
+<main id="main">
+<article>
+<header id="feature">
+<div class="wrapper">
+<h1>Middleware</h1>
+<p>Reusable HTTP middleware.</p>
+<nav aria-label="Chapter" class="guide-index" id="column-side"><a class="skip-link" href="#article-body" id="chapter-nav-skip-link">Skip to article body</a><h2 class="chapter"><picture aria-hidden="true"><img alt="Chapter Icon" src="images/icon_book-close-bookmark-1.svg"/></picture> Chapters</h2><ol class="chapters"><li><a href="#existing-middleware">Existing Middleware</a></li><li><a href="#adding-middleware">Adding New Middleware</a></li><li><a href="#middleware-and-routes">Middleware and Routes</a></li></ol></nav></div>
+</header>
+<div class="wrapper" id="article-body">
+<p>Middleware in Monolith is implemented using Go's <code>http.Handler</code> interface. Each piece of middleware receives a handler and returns a new handler that wraps it, performing work before or after calling the next handler in the chain.</p>
+<h2 id="existing-middleware"><a class="anchorlink" data-turbo="false" href="#existing-middleware"><span>1.</span> Existing Middleware</a></h2>
+<p>The default project includes two middlewares located in <code>app/middleware/</code>:</p>
+<ul>
+<li><strong>LoggingMiddleware</strong> – records each request's method, path and response status via the structured logger.</li>
+<li><strong>CSRFMiddleware</strong> – protects against cross-site request forgery by verifying tokens on mutating requests and responding with <code>403 Forbidden</code> when validation fails.</li>
+</ul>
+<p>These are composed in <code>routes.InitServerHandler</code> so that every request is logged and checked for a valid CSRF token:</p>
+<pre><code class="highlight go"><span class="variable">logged</span> <span class="operator">:=</span> <span class="function">middleware</span>.<span class="function">LoggingMiddleware</span>(<span class="variable">mux</span>)
 <span class="variable">csrfProtected</span> <span class="operator">:=</span> <span class="function">middleware</span>.<span class="function">CSRFMiddleware</span>(<span class="variable">logged</span>)
 <span class="keyword">return</span> <span class="variable">csrfProtected</span></code></pre>
-        <h2 id="adding-middleware">Adding New Middleware</h2>
-        <p>Create a new file under <code>app/middleware/</code> containing a function that takes and returns an <code>http.Handler</code>. The example below enforces authentication:</p>
-        <pre><code class="highlight go"><span class="keyword">func</span> <span class="function">RequireLogin</span>(<span class="variable">next</span> <span class="type">http</span>.<span class="type">Handler</span>) <span class="type">http</span>.<span class="type">Handler</span> {
+<h2 id="adding-middleware"><a class="anchorlink" data-turbo="false" href="#adding-middleware"><span>2.</span> Adding New Middleware</a></h2>
+<p>Create a new file under <code>app/middleware/</code> containing a function that takes and returns an <code>http.Handler</code>. The example below enforces authentication:</p>
+<pre><code class="highlight go"><span class="keyword">func</span> <span class="function">RequireLogin</span>(<span class="variable">next</span> <span class="type">http</span>.<span class="type">Handler</span>) <span class="type">http</span>.<span class="type">Handler</span> {
     <span class="keyword">return</span> <span class="function">http</span>.<span class="function">HandlerFunc</span>(<span class="keyword">func</span>(<span class="variable">w</span> <span class="type">http</span>.<span class="type">ResponseWriter</span>, <span class="variable">r</span> <span class="operator">*</span><span class="type">http</span>.<span class="type">Request</span>) {
         <span class="keyword">if</span> <span class="operator">!</span><span class="function">models</span>.<span class="function">IsLoggedIn</span>(<span class="variable">r</span>) {
             <span class="function">http</span>.<span class="function">Redirect</span>(<span class="variable">w</span>, <span class="variable">r</span>, <span class="string">"/login"</span>, <span class="function">http</span>.<span class="constant">StatusSeeOther</span>)
@@ -47,20 +47,20 @@
         <span class="variable">next</span>.<span class="function">ServeHTTP</span>(<span class="variable">w</span>, <span class="variable">r</span>)
     })
 }</code></pre>
-        <p>Write tests in <code>app/middleware/requirelogin_test.go</code> to confirm the middleware's behaviour. Once implemented, update <code>app/routes/routes.go</code> to insert the middleware into the chain. Order matters—handlers closer to the mux run later:</p>
-        <pre><code class="highlight go"><span class="variable">mux</span> <span class="operator">:=</span> <span class="function">http</span>.<span class="function">NewServeMux</span>()
+<p>Write tests in <code>app/middleware/requirelogin_test.go</code> to confirm the middleware's behaviour. Once implemented, update <code>app/routes/routes.go</code> to insert the middleware into the chain. Order matters—handlers closer to the mux run later:</p>
+<pre><code class="highlight go"><span class="variable">mux</span> <span class="operator">:=</span> <span class="function">http</span>.<span class="function">NewServeMux</span>()
 <span class="function">registerRoutes</span>(<span class="variable">mux</span>, <span class="variable">staticFiles</span>)
 <span class="variable">logged</span> <span class="operator">:=</span> <span class="function">middleware</span>.<span class="function">LoggingMiddleware</span>(<span class="variable">mux</span>)
 <span class="variable">authenticated</span> <span class="operator">:=</span> <span class="function">middleware</span>.<span class="function">RequireLogin</span>(<span class="variable">logged</span>)
 <span class="variable">csrfProtected</span> <span class="operator">:=</span> <span class="function">middleware</span>.<span class="function">CSRFMiddleware</span>(<span class="variable">authenticated</span>)
 <span class="keyword">return</span> <span class="variable">csrfProtected</span></code></pre>
-        <p>You can also wrap individual routes instead of the entire mux:</p>
-        <pre><code class="highlight go"><span class="variable">mux</span>.<span class="function">Handle</span>(<span class="string">"GET /admin"</span>, <span class="function">middleware</span>.<span class="function">RequireLogin</span>(<span class="variable">AdminCtrl</span>.<span class="function">Index</span>))</code></pre>
-        <h2 id="middleware-and-routes">Middleware and Routes</h2>
-        <p>Routes are matched by the underlying <code>ServeMux</code> after all middleware has executed. Each middleware can inspect or modify the request and response, and because they are chained sequentially, the order in which you compose them in <code>InitServerHandler</code> dictates their effect on every route.</p>
-        <p>Adding new middleware therefore involves three steps: create the middleware function and tests, import the middleware package in <code>routes.go</code>, and wrap either the mux or individual handlers. This approach allows you to reuse functionality like authentication, custom headers or logging across your entire application.</p>
-      </div>
-    </article>
-  </main>
+<p>You can also wrap individual routes instead of the entire mux:</p>
+<pre><code class="highlight go"><span class="variable">mux</span>.<span class="function">Handle</span>(<span class="string">"GET /admin"</span>, <span class="function">middleware</span>.<span class="function">RequireLogin</span>(<span class="variable">AdminCtrl</span>.<span class="function">Index</span>))</code></pre>
+<h2 id="middleware-and-routes"><a class="anchorlink" data-turbo="false" href="#middleware-and-routes"><span>3.</span> Middleware and Routes</a></h2>
+<p>Routes are matched by the underlying <code>ServeMux</code> after all middleware has executed. Each middleware can inspect or modify the request and response, and because they are chained sequentially, the order in which you compose them in <code>InitServerHandler</code> dictates their effect on every route.</p>
+<p>Adding new middleware therefore involves three steps: create the middleware function and tests, import the middleware package in <code>routes.go</code>, and wrap either the mux or individual handlers. This approach allows you to reuse functionality like authentication, custom headers or logging across your entire application.</p>
+</div>
+</article>
+</main>
 </body>
 </html>
