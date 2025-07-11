@@ -99,16 +99,16 @@ The first launch creates **app.db** and auto‑migrates the schema.
 
 ```mermaid
 flowchart TD
-    A[Client Request] --> B[Caddy proxy]
-    B --> C[App :9000]
-    C --> D[Router]
-    D --> E[Controller]
-    E -- if needed --> F[(DB)]
-    F --> E
-    E --> G[Render View]
-    G --> B
-    B --> H[Encode / gzip]
-    H --> I[Client Response]
+    A[Client Request] -->|1| B[Caddy proxy]
+    B -->|2| C[App :9000]
+    C -->|3| D[Router]
+    D -->|4| E[Controller]
+    E -- "5 if needed" --> F[(DB)]
+    F -->|6| E
+    E -->|7| G[Render View]
+    G -->|8| B
+    B -->|9| H[Encode / gzip]
+    H -->|10| I[Client Response]
 ```
 
 ---
