@@ -91,7 +91,16 @@ $ make       # or 'make run' if air is not installed</code></pre>
                 <tr><td>app/views/</td><td>HTML templates for rendering responses.</td></tr>
                 <tr><td>app/routes/</td><td>Route definitions connecting URLs to controllers.</td></tr>
                 <tr><td>app/session/</td><td>Cookie sessions and authentication helpers.</td></tr>
+                <tr><td>app/services/</td><td>Business logic helpers used by controllers and jobs.</td></tr>
+                <tr><td>app/jobs/</td><td>Background job handlers.</td></tr>
+                <tr><td>app/middleware/</td><td>Reusable HTTP middleware functions.</td></tr>
+                <tr><td>app/csrf/</td><td>CSRF protection helpers.</td></tr>
                 <tr><td>static/</td><td>Static assets served directly.</td></tr>
+                <tr><td>db/</td><td>Database initialization and connection helpers.</td></tr>
+                <tr><td>generator/</td><td>Code generation entry point and templates.</td></tr>
+                <tr><td>guides/</td><td>HTML documentation for the framework.</td></tr>
+                <tr><td>server_management/</td><td>Deployment scripts and Caddy configuration.</td></tr>
+                <tr><td>ws/</td><td>WebSocket hub and channel definitions.</td></tr>
               </tbody></table></div>
             <h3 id="model-view-controller-basics"><a class="anchorlink" href="#model-view-controller-basics" data-turbo="false"><span>3.4.</span> Model-View-Controller Basics</a></h3>
             <p>Monolith separates responsibilities: models manage data, controllers orchestrate requests, and views render templates. The generator helps you scaffold each piece quickly.</p>
@@ -109,9 +118,24 @@ $ make       # or 'make run' if air is not installed</code></pre>
             <p>Create a dashboard controller with:</p>
             <pre><code class="highlight console">$ make generator controller dashboard index</code></pre>
             <p>The generator adds <code>app/controllers/DashboardController.go</code>, <code>app/views/dashboard/index.html.tmpl</code> and updates <code>app/routes/routes.go</code>.</p>
-            <p>Edit the controller to load posts and pass them to the view:</p>
-            <pre><code class="highlight go"><span class="variable">posts</span>, <span class="variable">_</span> <span class="operator">:=</span> <span class="function">models</span>.<span class="function">GetAllPosts</span>(<span class="function">db</span>.<span class="function">GetDB</span>())
-<span class="function">views</span>.<span class="function">Render</span>(<span class="variable">w</span>, <span class="string">"dashboard/index.html.tmpl"</span>, <span class="function">map</span>[<span class="type">string</span>]<span class="type">any</span>{<span class="string">"posts"</span>: <span class="variable">posts</span>})</code></pre>
+            <p>Fill in the generated <code>Index</code> method:</p>
+            <pre><code class="highlight go">type DashboardController struct{}
+
+var DashboardCtrl = &DashboardController{}
+
+func (dc *DashboardController) Index(w http.ResponseWriter, r *http.Request) {
+    posts, _ := models.GetAllPosts(db.GetDB())
+    views.Render(w, "dashboard/index.html.tmpl", map[string]any{"posts": posts})
+}</code></pre>
+            <p>Edit <code>app/views/dashboard/index.html.tmpl</code> to display the posts:</p>
+            <pre><code class="highlight html">{{define "body"}}
+<h1>Posts</h1>
+<ul>
+{{range .posts}}
+  <li>{{.Title}}</li>
+{{end}}
+</ul>
+{{end}}</code></pre>
             <p>Visit <code>/dashboard</code> to see the list of posts.</p>
             <h2 id="routes"><a class="anchorlink" href="#routes" data-turbo="false"><span>7.</span> Routes</a></h2>
             <p>Route definitions live in <code>app/routes/routes.go</code>. The generator inserts RESTful routes for resources automatically. You can manually add custom routes using helper functions like <code>routes.Get</code>, <code>routes.Post</code>, and so on.</p>
@@ -122,7 +146,20 @@ $ make       # or 'make run' if air is not installed</code></pre>
             <h2 id="background-jobs"><a class="anchorlink" href="#background-jobs" data-turbo="false"><span>10.</span> Background Jobs</a></h2>
             <p>Long-running work executes outside the request cycle using the built-in queue. Generate a job:</p>
             <pre><code class="highlight console">$ make generator job Report</code></pre>
-            <p>This creates <code>app/jobs/report_job.go</code> and registers <code>JobTypeReport</code>. Enqueue it from a controller:</p>
+            <p>This creates <code>app/jobs/report_job.go</code> and registers <code>JobTypeReport</code>. Fill in the job function:</p>
+            <pre><code class="highlight go">type ReportPayload struct {
+    Message string `json:"message"`
+}
+
+func ReportJob(payload []byte) error {
+    var p ReportPayload
+    if err := json.Unmarshal(payload, &p); err != nil {
+        return err
+    }
+    slog.Info("ReportJob", "message", p.Message)
+    return nil
+}</code></pre>
+            <p>Enqueue it from a controller:</p>
             <pre><code class="highlight go"><span class="variable">payload</span> <span class="operator">:=</span> <span class="function">[]byte</span>(<span class="string">`{"message":"stats"}`</span>)
 <span class="function">jobs</span>.<span class="function">GetJobQueue</span>().<span class="function">AddJob</span>(<span class="function">models</span>.<span class="constant">JobTypeReport</span>, <span class="variable">payload</span>)</code></pre>
             <h3 id="sending-email">Sending Email</h3>
@@ -137,12 +174,12 @@ $ make       # or 'make run' if air is not installed</code></pre>
             <p>Generate a user model and session helpers with:</p>
             <pre><code class="highlight console">$ make generator authentication</code></pre>
             <p>This command creates signup and login pages and wires session management through encrypted cookies.</p>
-            <p>Protect routes by wrapping handlers with <code>session.RequireUser</code>:</p>
-            <pre><code class="highlight go"><span class="function">routes</span>.<span class="function">Get</span>(<span class="string">"/dashboard"</span>, <span class="function">session</span>.<span class="function">RequireUser</span>(<span class="function">DashboardCtrl</span>.<span class="function">Index</span>))</code></pre>
+            <p>Protect routes by wrapping handlers with <code>middleware.RequireLogin</code>:</p>
+            <pre><code class="highlight go"><span class="function">routes</span>.<span class="function">Get</span>(<span class="string">"/dashboard"</span>, <span class="function">middleware</span>.<span class="function">RequireLogin</span>(<span class="function">DashboardCtrl</span>.<span class="function">Index</span>))</code></pre>
             <h2 id="a-requests-response-through-monolith"><a class="anchorlink" href="#a-requests-response-through-monolith" data-turbo="false"><span>13.</span> A Request's Response Through Monolith</a></h2>
             <p>Requests match routes in <code>app/routes/routes.go</code>. The chosen controller retrieves data from models and finally calls <code>views.Render</code> which writes HTML to the response.</p>
             <h2 id="deploying-to-production"><a class="anchorlink" href="#deploying-to-production" data-turbo="false"><span>14.</span> Deploying to Production</a></h2>
-            <p>Build a static binary with <code>make build</code> and run it behind a reverse proxy like Nginx. For zero-downtime restarts, see the <a href="server_management.html">Server Management guide</a>.</p>
+            <p>Build a static binary with <code>make build</code> and serve it through Caddy. The included <code>server_management/Caddyfile</code> enables automatic HTTPS and proxies to the app on <code>127.0.0.1:9000</code>. For zero‑downtime restarts, see the <a href="server_management.html">Server Management guide</a>.</p>
             <p>Bootstrap a server once with:</p>
             <pre><code class="highlight console">$ server_management/server_setup.sh user@host example.com</code></pre>
             <p>Deploy new releases with:</p>
