@@ -529,7 +529,8 @@ jobs.RegisterHandler(models.JobTypePrint, func(j *models.Job) error {
     fmt.Println(string(j.Payload))
     return nil
 })
-jobs.Enqueue(models.JobTypePrint, []byte(`"Hello background!"`))
+jobs.GetJobQueue().AddJob(models.JobTypePrint,
+    []byte(`{"message":"Hello background!"}`))
 ```
 
 Features:
