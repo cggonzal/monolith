@@ -42,6 +42,8 @@ Monolith ships with a generator tool (`make generator`) for scaffolding code. Av
 
 Generated routes are appended to `app/routes/routes.go`. Generated models are added to the migration list in `db/db.go`. After generation, edit the files to add validations, real logic and templates.
 
+**ALWAYS** use the generators (controller, resource, job, model, etc.) when adding endpoints or adding a model or doing background processing or anything else that can be done with the generators. This will ensure uniformity across the codebase.
+
 ## Documentation
 Whenever you generate new code or modify functionality, update both `README.md` and the relevant HTML guide under `guides/`. These guides explain topics such as configuration, controllers, models, routes, jobs, and more. Keeping them current ensures the project stays as productive as frameworks like Ruby on Rails.
 
