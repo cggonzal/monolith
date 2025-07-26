@@ -1,3 +1,7 @@
+```cursor
+version: 1
+always: true
+```
 # Monolith Project Overview
 
 This rule provides a condensed overview of the Monolith application and the conventions used when developing it. Always reference this file together with `README.md` and the HTML guides in `guides/` when generating or modifying code.
