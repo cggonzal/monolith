@@ -28,6 +28,7 @@ func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
 	mux.Handle("GET /static/", staticFileServer)
 
 	mux.HandleFunc("GET /", controllers.IndexCtrl.ShowIndex)
+	mux.HandleFunc("GET /hello", controllers.HelloCtrl.Greet)
 
 	// serve websockets routes at "/ws" endpoint
 	mux.HandleFunc("GET /ws", func(w http.ResponseWriter, r *http.Request) {
