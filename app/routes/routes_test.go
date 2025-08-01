@@ -20,3 +20,19 @@ func TestRandomRouteNotFound(t *testing.T) {
 		t.Fatalf("expected status 404, got %d", w.Result().StatusCode)
 	}
 }
+
+func TestHelloEndpoint(t *testing.T) {
+	handler := InitServerHandler(embed.FS{})
+
+	req := httptest.NewRequest(http.MethodGet, "/hello", nil)
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", w.Result().StatusCode)
+	}
+	if w.Body.String() != "Hello World" {
+		t.Fatalf("expected body 'Hello World', got %q", w.Body.String())
+	}
+}
