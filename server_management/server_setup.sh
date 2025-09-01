@@ -7,6 +7,14 @@
 
 set -xeuo pipefail
 
+# Check for required SECRET_KEY environment variable
+if [ -z "${SECRET_KEY:-}" ]; then
+    echo "❌ Error: SECRET_KEY environment variable is required but not set."
+    echo "Please set the SECRET_KEY environment variable before running this script."
+    echo "Example: export SECRET_KEY='your-secret-key-here' && ./server_setup.sh user@host"
+    exit 1
+fi
+
 REMOTE="$1"                 # e.g. ubuntu@203.0.113.5
 APP_NAME="monolith"         # systemd unit prefix and directory name
 APP_DIR="/opt/$APP_NAME"    # where releases/ and current -> releaseX live
@@ -61,6 +69,7 @@ Restart=always
 RestartSec=2
 TimeoutStopSec=30
 KillMode=mixed
+Environment="SECRET_KEY=$SECRET_KEY"
 
 [Install]
 WantedBy=multi-user.target
