@@ -27,51 +27,53 @@
 <nav aria-label="Chapter" class="guide-index" id="column-side"><a class="skip-link" href="#article-body" id="chapter-nav-skip-link">Skip to article body</a><h2 class="chapter"><picture aria-hidden="true"><img alt="Chapter Icon" src="images/icon_book-close-bookmark-1.svg"/></picture> Chapters</h2><ol class="chapters"><li><a href="#server-setup">Server Setup</a></li><li><a href="#deploy-script">Deploy Script</a></li><li><a href="#zero-downtime-deploy">How Zero Downtime Works</a></li></ol></nav></div>
 </header>
 <div class="wrapper" id="article-body">
-<p>The <code>server_management/</code> directory contains everything needed to run a production instance of Monolith. It uses systemd socket activation together with the <a href="https://caddyserver.com/">Caddy</a> web server so the application can be restarted without dropping connections.</p>
+<p>The <code>server_management/</code> directory contains everything needed to run a production instance of Monolith. It keeps <a href="https://caddyserver.com/">Caddy</a> in front of a straightforward systemd service; Caddy’s reverse proxy retries provide zero‑downtime deploys without relying on systemd socket activation.</p>
 <h2 id="server-setup"><a class="anchorlink" data-turbo="false" href="#server-setup"><span>1.</span> Server Setup</a></h2>
-<p>Run <code>server_setup.sh</code> once on a fresh Ubuntu host. It installs all dependencies and prepares systemd units for zero–downtime deploys:</p>
+<p>Run <code>server_setup.sh</code> once on a fresh Ubuntu host. It installs all dependencies and prepares systemd units for zero‑downtime deploys:</p>
 <pre><code class="highlight console">$ server_management/server_setup.sh ubuntu@203.0.113.5 example.com</code></pre>
 <p>The script performs several tasks:</p>
 <ul>
 <li>Installs base packages along with Caddy from the official repository.</li>
 <li>Creates <code>/opt/monolith/releases</code> and sets ownership for the deploy user.</li>
-<li>Defines <code>monolith.socket</code> and <code>monolith.service</code> to enable socket activation.</li>
-<li>Writes a minimal Caddyfile that proxies requests to the Go binary on port <code>9000</code>.</li>
-<li>Enables and starts the socket unit and restarts Caddy so it picks up the new configuration.</li>
+<li>Defines a <code>monolith.service</code> unit that runs the Go binary from <code>/opt/monolith/current</code> and binds to <code>127.0.0.1:9000</code>.</li>
+<li>Writes a Caddyfile that proxies requests to the Go binary and enables <code>lb_try_duration</code>/<code>lb_try_interval</code> so Caddy will retry upstream dials during restarts.</li>
+<li>Enables the service so future deploys can start it, then restarts Caddy to pick up the configuration.</li>
 </ul>
 <h2 id="deploy-script"><a class="anchorlink" data-turbo="false" href="#deploy-script"><span>2.</span> Deploy Script</a></h2>
 <p>After the server has been bootstrapped, deploy new releases with <code>deploy.sh</code>:</p>
 <pre><code class="highlight console">$ server_management/deploy.sh ubuntu@203.0.113.5</code></pre>
-<p>It builds a static binary on your machine, uploads it to a timestamped directory under <code>/opt/monolith/releases/</code> and atomically updates the <code>current</code> symlink. The script then restarts <code>monolith.service</code> which causes systemd to hand over the listening socket to the new process.</p>
+<p>It builds a static binary on your machine, uploads it to a timestamped directory under <code>/opt/monolith/releases/</code> and atomically updates the <code>current</code> symlink. The script then restarts <code>monolith.service</code>; during the brief restart window Caddy keeps retrying connections until the new process begins accepting traffic.</p>
 <p>Old releases can be pruned automatically. Set <code>KEEP</code> to control how many past releases to keep and toggle pruning with <code>PRUNE</code>:</p>
 <pre><code class="highlight console">$ KEEP=10 PRUNE=true server_management/deploy.sh ubuntu@203.0.113.5</code></pre>
-<p>The Go program itself runs via <code>server_management.RunServer</code> which integrates with systemd by acquiring the inherited socket and sending a readiness notification. Together these scripts provide a simple yet robust deployment workflow.</p>
+<p>The Go program itself runs via <code>server_management.RunServer</code>, which listens on <code>127.0.0.1:9000</code> and gracefully handles <code>SIGTERM</code>. With Caddy buffering dial failures, the application behaves like a normal Go HTTP server while still providing zero‑downtime rollouts.</p>
 <h2 id="zero-downtime-deploy"><a class="anchorlink" data-turbo="false" href="#zero-downtime-deploy"><span>3.</span> How Zero Downtime Works</a></h2>
-<p>Monolith relies on systemd’s socket activation to keep the listening socket open across restarts. The <code>monolith.socket</code> unit listens on <code>127.0.0.1:9000</code> and queues incoming connections while the <code>monolith.service</code> unit is restarted. When <code>deploy.sh</code> issues <code>systemctl restart monolith.service</code>, systemd starts a new process and passes the already open socket via <code>LISTEN_FDS</code>.</p>
-<p>The running process receives a <code>SIGTERM</code>. Inside <code>RunServer</code> the signal is caught with <code>signal.Notify</code> and the HTTP server gracefully shuts down using <code>server.Shutdown</code>. Because the socket remains open, requests either continue to be served by the old process or wait in systemd’s accept queue until the new process signals readiness using the <code>NOTIFY_SOCKET</code> mechanism.</p>
-<p>The service file sets <code>Type=notify</code>, <code>Restart=always</code>, <code>KillMode=mixed</code> and <code>TimeoutStopSec=30</code>. These options give the application up to 30 seconds to drain connections before systemd forcefully terminates it. Meanwhile Caddy proxies traffic to the socket without interruption.</p>
+<p>Monolith relies on Caddy’s <code>lb_try_duration</code> and <code>lb_try_interval</code> options to bridge the gap while the service restarts. When <code>deploy.sh</code> issues <code>systemctl restart monolith.service</code>, any new connections from Caddy receive dial errors. Caddy catches those errors and retries until either the Go process is ready or the configured try duration is exceeded.</p>
+<p>Inside <code>RunServer</code> we still trap <code>SIGTERM</code> and call <code>server.Shutdown</code> so in‑flight requests finish cleanly before the process exits. Clients might experience a brief delay, but they do not see failures so long as the restart completes before Caddy’s try window elapses.</p>
+<p>The service file sets <code>Type=simple</code>, <code>Restart=always</code>, <code>KillMode=process</code> and <code>TimeoutStopSec=30</code>. These options let systemd restart the binary quickly while giving it enough time to drain connections.</p>
 <pre class="mermaid">
 graph LR
-    Clients[(Clients)] --&gt; Caddy
-    Caddy --&gt; Socket((monolith.socket))
-    Socket --&gt; App["monolith.service \n running binary"]
-    App -- "READY=1" --&gt; Systemd
-    Systemd -. signals .-&gt; App
+    Clients[(Clients)] --> Caddy
+    Caddy -- "reverse_proxy" --> App["monolith.service\n(Go binary)"]
+    Systemd[systemd] --> App
+    Caddy -. "lb_try retries" .-> App
         </pre>
-<p>During a restart, systemd launches a new instance before stopping the old one. The sequence looks like this:</p>
+<p>During a restart, the components interact like this:</p>
 <pre class="mermaid">
 sequenceDiagram
     participant D as deploy.sh
     participant S as systemd
+    participant C as Caddy
     participant O as Old Proc
     participant N as New Proc
-    D-&gt;&gt;S: systemctl restart monolith.service
-    S-&gt;&gt;N: start with socket
-    S--&gt;&gt;O: SIGTERM
-    N--&gt;&gt;S: READY=1
-    O--&gt;&gt;S: exit after shutdown
+    D->>S: systemctl restart monolith.service
+    S->>O: SIGTERM
+    O-->>C: finish in-flight requests
+    C-->C: retry dial :9000
+    S->>N: start new process
+    N->>C: begin listening on :9000
+    C->>Clients: buffered request succeeds
         </pre>
-<p>Because the socket is never closed, clients experience no connection failures while the new binary is rolled out.</p>
+<p>Because Caddy buffers dial failures, clients experience no errors while the new binary is rolled out—only a short pause while the service restarts.</p>
 </div>
 </article>
 </main>
