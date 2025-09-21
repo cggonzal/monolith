@@ -57,10 +57,10 @@ If you are new, start with **Quick‑start** then come back to read the architec
 
 * Cookie‑based sessions with built‑in login
 * GORM‑powered persistence (SQLite by default) 
-* Zero downtime deploys
+* Zero downtime deploys via Caddy retry buffering
 * A tiny background job queue  
 * Real‑time WebSocket messaging  
-* Structured logging, graceful shutdown, & systemd socket activation  
+* Structured logging & graceful shutdown
 * Embedded templates and static assets  
 * Built‑in performance profiling with the standard library  
 
@@ -347,7 +347,6 @@ Everything dynamic (port and database DSN) is read from **environment variables*
 | Variable | Default | Used in |
 | -------- | ------- | ------- |
 | `PORT` | `9000` | HTTP listener |
-| `LISTEN_FDS`, `LISTEN_PID` | – | systemd socket activation |
 
 ### Database Layer
 
@@ -563,18 +562,13 @@ workers can talk to Mailgun.
 
 ### Server Management & Zero‑downtime Deploys
 
-`server_management/` abstracts **systemd socket activation**:
+`server_management/` packages the production HTTP runtime and automation scripts.
 
-* `SdListeners()` fetches inherited file descriptors.  
-* `SdNotifyReady()` (see `main.go`) tells systemd we reached *READY*.
+* `RunServer` listens on `127.0.0.1:$PORT` with the standard library HTTP server and performs a graceful shutdown on `SIGINT`/`SIGTERM` so in-flight requests can complete.
+* `server_setup.sh` installs Caddy, provisions a simple `monolith.service` that exports `SECRET_KEY`/`PORT`, and deploys the bundled `Caddyfile` so Caddy reverse-proxies to the app.
+* `deploy.sh` builds a Linux binary, uploads it alongside the Caddyfile, atomically flips `current -> release`, restarts the systemd service, and reloads Caddy.
 
-The `deploy.sh` and `server_setup.sh` scripts show how to:
-
-1. Build the binary with `make build`
-2. Upload & atomically switch `/opt/monolith/current -> new`
-3. `systemctl restart monolith.service` (systemd sends **SIGTERM** by default)
-
-Because the listener is handed over, the old process finishes in‑flight requests while the new one starts accepting immediately → **zero downtime**.
+Zero downtime now comes from the **Caddy** reverse proxy. The Caddyfile configures `lb_try_duration` and `lb_try_interval` so any request that lands while the service restarts is retried until the new process begins listening (or the duration expires).
 
 ### Debugging & Profiling
 
@@ -617,7 +611,7 @@ the project in VS Code and use the `Launch Package` configuration provided in
 │   └── db.go
 ├── ws/                      # WebSocket hub, client & message types
 ├── static/                  # `embed`ded public files
-├── server_management/       # systemd helpers + deployment scripts
+├── server_management/       # HTTP runtime + deployment scripts (Caddy retries)
 └── tests, Makefile, etc.
 ```
 
@@ -798,12 +792,12 @@ make build
 ```
 ---
 ## Server Setup
-Assuming you have a newly created ubuntu server that you have ssh access into, just run:
+Export a strong `SECRET_KEY` locally (the setup script refuses to run without it), then run:
 ```bash
 make server-setup root@{{ip address of server}}
 ```
 
-Edit `server_management/Caddyfile` with your domain and any desired tweaks before running the setup.
+Edit `server_management/Caddyfile` with your domain and any desired tweaks before running the setup. The script installs Caddy, writes `/etc/systemd/system/monolith.service` to launch the binary directly on `127.0.0.1:$PORT`, and uploads the Caddyfile so the proxy terminates TLS and retries upstream requests during deploys.
 
 For example,
 ```bash
@@ -826,11 +820,13 @@ For example,
 make deploy root@203.0.113.5
 ```
 
-This will do a zero downtime deploy by calling,
-```bash
-./server_management/deploy.sh
-```
-By default the script prunes old releases after deployment. Set `PRUNE=false` to skip pruning.
+`make deploy` wraps `server_management/deploy.sh`, which:
+
+1. Builds a Linux/amd64 binary with `go build`.
+2. Uploads the binary and the repository's Caddyfile into a timestamped release directory.
+3. Atomically flips `/opt/monolith/current` to the new release, restarts `monolith.service`, and reloads Caddy.
+
+Zero downtime is achieved because Caddy's `lb_try_duration`/`lb_try_interval` settings keep retrying upstream connections while the service restarts. By default the script prunes old releases after deployment; set `PRUNE=false` to skip pruning or override `KEEP` to change how many releases are retained.
 
 ---
 
@@ -840,7 +836,7 @@ By default the script prunes old releases after deployment. Set `PRUNE=false` to
 
 | Name | Description | Default |
 | ---- | ----------- | ------- |
-| `PORT` | Fallback TCP port when not using socket activation | `9000` |
+| `PORT` | TCP port the app listens on (Caddy reverse-proxies to this) | `9000` |
 | `DATABASE_URL` | Postgres DSN (if you switch drivers) | – |
 | `MAILGUN_DOMAIN` | Mailgun domain used for sending mail | – |
 | `MAILGUN_API_KEY` | Private API key for Mailgun | – |
