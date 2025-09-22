@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # This script is meant to be run from the root of the monolith project.
 # Boot‑straps a fresh Ubuntu server for zero‑downtime Go deploys. Assumes that the ssh command can find your ssh key by default.
-# This script sets up a server with Caddy and systemd socket activation.
+# This script sets up Caddy and a simple systemd service; zero downtime comes
+# from Caddy retrying upstream requests during app restarts.
 # It uploads the Caddyfile from server_management/Caddyfile in this repo.
 # Usage: ./server_setup.sh user@host
 
@@ -18,7 +19,7 @@ fi
 REMOTE="$1"                 # e.g. ubuntu@203.0.113.5
 APP_NAME="monolith"         # systemd unit prefix and directory name
 APP_DIR="/opt/$APP_NAME"    # where releases/ and current -> releaseX live
-BIN_PORT="9000"             # must match systemd socket + Caddy reverse_proxy
+BIN_PORT="9000"             # must match the Caddy reverse_proxy upstream
 
 ssh "$REMOTE" bash -s <<EOF
 set -xeuo pipefail
@@ -43,41 +44,28 @@ fi
 sudo mkdir -p $APP_DIR/releases
 sudo chown -R \$(whoami): \$(dirname $APP_DIR)
 
-# ----- 4. systemd socket + service ----------------------------------------
-sudo tee /etc/systemd/system/$APP_NAME.socket >/dev/null <<UNIT
-[Unit]
-Description=$APP_NAME listener (socket activation)
-
-[Socket]
-ListenStream=127.0.0.1:$BIN_PORT
-NoDelay=true
-
-[Install]
-WantedBy=sockets.target
-UNIT
-
+# ----- 4. systemd service --------------------------------------------------
 sudo tee /etc/systemd/system/$APP_NAME.service >/dev/null <<UNIT
 [Unit]
 Description=$APP_NAME service (Go static binary)
-Requires=$APP_NAME.socket
 After=network.target
 
 [Service]
-Type=notify
-ExecStart=$APP_DIR/current/$APP_NAME -listen-fd
+Type=simple
+ExecStart=$APP_DIR/current/$APP_NAME
 Restart=always
 RestartSec=2
 TimeoutStopSec=30
-KillMode=mixed
 Environment="SECRET_KEY=$SECRET_KEY"
+Environment="PORT=$BIN_PORT"
 
 [Install]
 WantedBy=multi-user.target
 UNIT
 
-# ----- 5. Enable services -------------------------------------------------
+# ----- 5. Enable service --------------------------------------------------
 sudo systemctl daemon-reload
-sudo systemctl enable --now $APP_NAME.socket
+sudo systemctl enable $APP_NAME.service
 echo "✅ Base server setup complete."
 EOF
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Build & deploy the latest Go binary with zero‑downtime rollout.
+# Build & deploy the latest Go binary with zero‑downtime rollout. Caddy buffers
+# requests while the systemd service restarts.
 # If PRUNE=true it also deletes all but the newest $KEEP releases.
 #
 # Usage examples:
@@ -44,7 +45,7 @@ APP_DIR="$1"; APP_NAME="$2"; RELEASE_DIR="$3"; KEEP="$4"; PRUNE="$5"
 # 1) Atomic symlink swap
 sudo ln -sfn "$RELEASE_DIR" "$APP_DIR/current"
 
-# 2) Zero‑downtime restart
+# 2) Restart service (Caddy retries requests during the restart)
 sudo systemctl restart "$APP_NAME.service"
 sudo systemctl reload caddy    # reload updated Caddyfile
 
