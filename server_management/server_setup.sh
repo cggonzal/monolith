@@ -56,7 +56,6 @@ ExecStart=$APP_DIR/current/$APP_NAME
 Restart=always
 RestartSec=2
 TimeoutStopSec=30
-KillMode=process
 Environment="SECRET_KEY=$SECRET_KEY"
 Environment="PORT=$BIN_PORT"
 

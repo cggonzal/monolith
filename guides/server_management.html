@@ -49,7 +49,7 @@
 <h2 id="zero-downtime-deploy"><a class="anchorlink" data-turbo="false" href="#zero-downtime-deploy"><span>3.</span> How Zero Downtime Works</a></h2>
 <p>Monolith relies on Caddy’s <code>lb_try_duration</code> and <code>lb_try_interval</code> options to bridge the gap while the service restarts. When <code>deploy.sh</code> issues <code>systemctl restart monolith.service</code>, any new connections from Caddy receive dial errors. Caddy catches those errors and retries until either the Go process is ready or the configured try duration is exceeded.</p>
 <p>Inside <code>RunServer</code> we still trap <code>SIGTERM</code> and call <code>server.Shutdown</code> so in‑flight requests finish cleanly before the process exits. Clients might experience a brief delay, but they do not see failures so long as the restart completes before Caddy’s try window elapses.</p>
-<p>The service file sets <code>Type=simple</code>, <code>Restart=always</code>, <code>KillMode=process</code> and <code>TimeoutStopSec=30</code>. These options let systemd restart the binary quickly while giving it enough time to drain connections.</p>
+<p>The service file sets <code>Type=simple</code>, <code>Restart=always</code>, and <code>TimeoutStopSec=30</code>. These options let systemd restart the binary quickly while giving it enough time to drain connections.</p>
 <pre class="mermaid">
 graph LR
     Clients[(Clients)] --> Caddy
