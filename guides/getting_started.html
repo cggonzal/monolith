@@ -74,7 +74,7 @@
             <p>Monolith applications are structured around the MVC pattern, using GORM for persistence and the Go standard library whenever possible.</p>
             <h2 id="creating-a-new-monolith-app"><a class="anchorlink" href="#creating-a-new-monolith-app" data-turbo="false"><span>3.</span> Creating a New Monolith App</a></h2>
             <h3 id="prerequisites"><a class="anchorlink" href="#prerequisites" data-turbo="false"><span>3.1.</span> Prerequisites</a></h3>
-            <p>You'll need Go 1.21 or newer, <code>make</code>, and <code>git</code>. Optional tools like <a href="https://github.com/cosmtrek/air">air</a> enable hot reloading.</p>
+            <p>You'll need Go 1.25 or newer, <code>make</code>, and <code>git</code>. Optional tools like <a href="https://github.com/cosmtrek/air">air</a> enable hot reloading.</p>
             <h3 id="creating-your-first-monolith-app"><a class="anchorlink" href="#creating-your-first-monolith-app" data-turbo="false"><span>3.2.</span> Creating Your First Monolith App</a></h3>
             <p>Clone the repository and start the development server:</p>
             <pre><code class="highlight console">$ git clone &lt;repo&gt; &amp;&amp; cd monolith
@@ -94,8 +94,7 @@ $ make       # or 'make run' if air is not installed</code></pre>
                 <tr><td>static/</td><td>Static assets served directly.</td></tr>
                 <tr><td>app/jobs/</td><td>Background job handlers executed by the queue.</td></tr>
                 <tr><td>app/services/</td><td>Reusable business logic used by controllers and jobs.</td></tr>
-                <tr><td>app/middleware/</td><td>HTTP middleware for cross-cutting concerns.</td></tr>
-                <tr><td>app/csrf/</td><td>CSRF token generation and validation helpers.</td></tr>
+                <tr><td>app/middleware/</td><td>HTTP middleware for cross-cutting concerns such as logging and cross-origin protection.</td></tr>
                 <tr><td>db/</td><td>Database connection setup and model registration.</td></tr>
                 <tr><td>generator/</td><td>Scaffolding commands for new resources.</td></tr>
                 <tr><td>guides/</td><td>HTML documentation like this guide.</td></tr>

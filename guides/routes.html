@@ -25,7 +25,7 @@
 <nav aria-label="Chapter" class="guide-index" id="column-side"><a class="skip-link" href="#article-body" id="chapter-nav-skip-link">Skip to article body</a><h2 class="chapter"><picture aria-hidden="true"><img alt="Chapter Icon" src="images/icon_book-close-bookmark-1.svg"/></picture> Chapters</h2><ol class="chapters"><li><a href="#basic-route-setup">Basic Route Setup</a></li><li><a href="#using-generators">Using Generators</a></li><li><a href="#custom-routes">Custom Routes</a></li><li><a href="#websocket-and-static-routes">WebSocket and Static Routes</a></li></ol></nav></div>
 </header>
 <div class="wrapper" id="article-body">
-<p>Routes connect incoming HTTP requests to controller actions. In Monolith the <code>app/routes/routes.go</code> file builds a standard <code>ServeMux</code> and wraps it with middleware for logging, sessions and CSRF protection.</p>
+<p>Routes connect incoming HTTP requests to controller actions. In Monolith the <code>app/routes/routes.go</code> file builds a standard <code>ServeMux</code> and wraps it with middleware for logging, sessions and Go 1.25 cross-origin protection.</p>
 <h2 id="basic-route-setup"><a class="anchorlink" data-turbo="false" href="#basic-route-setup"><span>1.</span> Basic Route Setup</a></h2>
 <p>The exported <code>InitServerHandler</code> function creates the mux, registers each path and returns the resulting <code>http.Handler</code>:</p>
 <pre><code class="highlight go"><span class="variable">mux</span>.<span class="function">HandleFunc</span>(<span class="string">"GET /"</span>, <span class="function">controllers</span>.<span class="variable">IndexCtrl</span>.<span class="function">ShowIndex</span>)

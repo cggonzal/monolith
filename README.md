@@ -399,51 +399,25 @@ If `session.IsLoggedIn(r)` is **false**, the `middleware.RequireLogin` decorator
 
 ### CSRF Protection
 
-`app/csrf/` provides helpers to embed a CSRF token into HTML forms or expose it to JavaScript. `app/middleware/CSRFMiddleware` verifies the token on every mutating request and returns **403 Forbidden** if it is missing or invalid.
+Go 1.25 ships with <code>net/http.CrossOriginProtection</code>, and Monolith’s `CSRFMiddleware` wraps this helper so unsafe cross-origin browser requests are rejected automatically. Because the standard library inspects the `Origin` and `Sec-Fetch-Site` headers, controllers and templates no longer need to embed hidden tokens or meta tags.
 
-Use `csrf.GetCSRFTokenForForm` inside your controllers when rendering templates:
-
-```go
-data := map[string]any{
-    "csrf_token": csrf.GetCSRFTokenForForm(w, r),
-}
-templates.ExecuteTemplate(w, "form.html.tmpl", data)
-```
-
-In the template simply output `{{.csrf_token}}` inside the `<form>`:
-
-```html
-<form method="POST" action="/items">
-    {{.csrf_token}}
-    <!-- rest of fields -->
-</form>
-```
-
-For AJAX requests include the meta tag returned by `csrf.GetCSRFMetaTag` and send the token in the `X-CSRF-Token` header:
+Enable the protection by keeping `middleware.CSRFMiddleware` in your handler stack:
 
 ```go
-data := map[string]any{
-    "csrf_meta": csrf.GetCSRFMetaTag(w, r),
-}
-templates.ExecuteTemplate(w, "index.html.tmpl", data)
+mux := http.NewServeMux()
+registerRoutes(mux, staticFiles)
+handler := middleware.CSRFMiddleware(middleware.LoggingMiddleware(mux))
 ```
 
-```html
-<head>
-    {{.csrf_meta}}
-</head>
-<script>
-const token = document.querySelector('meta[name="csrf-token"]').content;
-fetch('/items', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'X-CSRF-Token': token,
-  },
-  body: JSON.stringify({name: 'foo'}),
-});
-</script>
+If another trusted site must submit forms to your app, add it during initialization:
+
+```go
+func init() {
+    middleware.CrossOriginProtector().AddTrustedOrigin("https://admin.example.com")
+}
 ```
+
+The middleware responds with **403 Forbidden** when a request fails validation. You can customize the error payload by calling `CrossOriginProtector().SetDenyHandler(...)`.
 
 ### Middleware
 
@@ -453,7 +427,7 @@ Three middlewares are shipped:
 | ---- | -------- | ----------- |
 | `app/middleware/logging.go` | `LoggingMiddleware` | Structured request log using `log/slog` |
 | `app/middleware/auth.go` | `RequireLogin` | Gate routes behind authentication |
-| `app/middleware/csrf.go` | `CSRFMiddleware` | Validate CSRF token for unsafe requests |
+| `app/middleware/csrf.go` | `CSRFMiddleware` | Block unsafe cross-origin requests using Go 1.25 protections |
 
 Compose them like:
 
@@ -466,7 +440,7 @@ http.ListenAndServe(":9000", handler)
 
 ### Routing & HTTP controllers
 
-All controllers are in `app/controllers/` and are wired inside `main.go` using the **new routing syntax** (Go 1.23+):
+All controllers are in `app/controllers/` and are wired inside `main.go` using the **new routing syntax** (Go 1.25+):
 
 ```go
 mux.HandleFunc("GET /", controllers.Home)
@@ -599,9 +573,8 @@ the project in VS Code and use the `Launch Package` configuration provided in
 ├── app/
 │   ├── config/             # Compile‑time configuration knobs
 │   ├── controllers/        # HTTP controllers (HTML + auth callbacks)
-│   ├── middleware/         # Reusable HTTP middleware
+│   ├── middleware/         # Reusable HTTP middleware (logging, cross-origin protection, auth)
 │   ├── session/            # Session helpers
-│   ├── csrf/               # CSRF helpers
 │   ├── routes/             # Route definitions
 │   ├── services/           # Business logic helpers
 │   ├── jobs/               # Simple in‑process job queue

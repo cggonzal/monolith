@@ -1,8 +1,8 @@
 module monolith
 
-go 1.23
+go 1.25
 
-toolchain go1.23.5
+toolchain go1.25.3
 
 require (
 	github.com/glebarez/sqlite v1.11.0
