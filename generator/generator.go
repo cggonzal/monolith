@@ -1093,7 +1093,6 @@ func createAuthControllerFile() error {
 	buf.WriteString("package controllers\n\n")
 	buf.WriteString("import (\n")
 	buf.WriteString("\t\"net/http\"\n\n")
-	buf.WriteString("\t\"monolith/app/csrf\"\n")
 	buf.WriteString("\t\"monolith/db\"\n")
 	buf.WriteString("\t\"monolith/app/models\"\n")
 	buf.WriteString("\t\"monolith/app/views\"\n")
@@ -1101,20 +1100,10 @@ func createAuthControllerFile() error {
 	buf.WriteString("type AuthController struct{}\n\n")
 	buf.WriteString("var AuthCtrl = &AuthController{}\n\n")
 	buf.WriteString("func (ac *AuthController) ShowLoginForm(w http.ResponseWriter, r *http.Request) {\n")
-	buf.WriteString("\tcsrfToken, csrfMeta := csrf.GetCSRFTokens(w, r)\n")
-	buf.WriteString("\tdata := map[string]any{\n")
-	buf.WriteString("\t\t\"csrf_token\": csrfToken,\n")
-	buf.WriteString("\t\t\"csrf_meta\":  csrfMeta,\n")
-	buf.WriteString("\t}\n")
-	buf.WriteString("\tviews.Render(w, \"auth_login.html.tmpl\", data)\n")
+	buf.WriteString("\tviews.Render(w, \"auth_login.html.tmpl\", nil)\n")
 	buf.WriteString("}\n\n")
 	buf.WriteString("func (ac *AuthController) ShowSignupForm(w http.ResponseWriter, r *http.Request) {\n")
-	buf.WriteString("\tcsrfToken, csrfMeta := csrf.GetCSRFTokens(w, r)\n")
-	buf.WriteString("\tdata := map[string]any{\n")
-	buf.WriteString("\t\t\"csrf_token\": csrfToken,\n")
-	buf.WriteString("\t\t\"csrf_meta\":  csrfMeta,\n")
-	buf.WriteString("\t}\n")
-	buf.WriteString("\tviews.Render(w, \"auth_signup.html.tmpl\", data)\n")
+	buf.WriteString("\tviews.Render(w, \"auth_signup.html.tmpl\", nil)\n")
 	buf.WriteString("}\n\n")
 	buf.WriteString("func (ac *AuthController) Signup(w http.ResponseWriter, r *http.Request) {\n")
 	buf.WriteString("\tif err := r.ParseForm(); err != nil {\n")
@@ -1178,7 +1167,6 @@ func createLoginTemplate() error {
 	buf.WriteString(`{{define "title"}}<title>Login</title>{{end}}
 
 {{define "meta"}}
-    {{.csrf_meta}}
 {{end}}
 
 {{define "header"}}
@@ -1194,10 +1182,9 @@ func createLoginTemplate() error {
 
 {{define "body"}}
     <h1>Login</h1>
-    <form method="POST" action="/login">
-        {{.csrf_token}}
-        <label>Email: <input type="email" name="email"></label><br>
-        <label>Password: <input type="password" name="password"></label><br>
+<form method="POST" action="/login">
+<label>Email: <input type="email" name="email"></label><br>
+<label>Password: <input type="password" name="password"></label><br>
         <button type="submit">Login</button>
     </form>
     <a href="/signup">Sign up</a>
@@ -1230,7 +1217,6 @@ func createSignupTemplate() error {
 	buf.WriteString(`{{define "title"}}<title>Sign Up</title>{{end}}
 
 {{define "meta"}}
-    {{.csrf_meta}}
 {{end}}
 
 {{define "header"}}
@@ -1246,9 +1232,8 @@ func createSignupTemplate() error {
 
 {{define "body"}}
     <h1>Sign Up</h1>
-    <form method="POST" action="/signup">
-        {{.csrf_token}}
-        <label>Email: <input type="email" name="email"></label><br>
+<form method="POST" action="/signup">
+<label>Email: <input type="email" name="email"></label><br>
         <label>Password: <input type="password" name="password"></label><br>
         <button type="submit">Create Account</button>
     </form>
@@ -1703,7 +1688,6 @@ func createAdminControllerFile() error {
 	buf.WriteString("package controllers\n\n")
 	buf.WriteString("import (\n")
 	buf.WriteString("\t\"net/http\"\n")
-	buf.WriteString("\t\"monolith/app/csrf\"\n")
 	buf.WriteString("\t\"monolith/db\"\n")
 	buf.WriteString("\t\"monolith/app/views\"\n")
 	buf.WriteString(")\n\n")
@@ -1718,7 +1702,7 @@ func createAdminControllerFile() error {
 	buf.WriteString("\t\t\tif model != \"\" {\n")
 	buf.WriteString("\t\t\t\tvals := map[string]any{}\n")
 	buf.WriteString("\t\t\t\tfor k, v := range r.PostForm {\n")
-	buf.WriteString("\t\t\t\t\tif k == \"model\" || k == \"action\" || k == \"id\" || k == \"csrf_token\" {\n")
+	buf.WriteString("\t\t\t\t\tif k == \"model\" || k == \"action\" || k == \"id\" {\n")
 	buf.WriteString("\t\t\t\t\t\tcontinue\n")
 	buf.WriteString("\t\t\t\t\t}\n")
 	buf.WriteString("\t\t\t\t\tif len(v) > 0 && v[0] != \"\" { vals[k] = v[0] }\n")
@@ -1757,9 +1741,7 @@ func createAdminControllerFile() error {
 	buf.WriteString("\t}\n")
 	buf.WriteString("\tmodels, _ := dbHandle.Migrator().GetTables()\n")
 	buf.WriteString("\tdata := map[string]any{\n")
-	buf.WriteString("\t\t\"csrf_token\": csrf.GetCSRFTokenForForm(w, r),\n")
-	buf.WriteString("\t\t\"csrf_meta\": csrf.GetCSRFMetaTag(w, r),\n")
-	buf.WriteString("\t\t\"models\":     models,\n")
+	buf.WriteString("\t\t\"models\": models,\n")
 	buf.WriteString("\t}\n")
 	buf.WriteString("\tmodel := r.URL.Query().Get(\"model\")\n")
 	buf.WriteString("\tif model != \"\" {\n")
@@ -1802,7 +1784,6 @@ func createAdminTemplate() error {
 	buf.WriteString(`{{define "title"}}<title>Admin Dashboard</title>{{end}}
 
 {{define "meta"}}
-    {{.csrf_meta}}
 {{end}}
 
 {{define "stylesheet"}}
@@ -1838,12 +1819,11 @@ func createAdminTemplate() error {
             {{range $.columns}}
             <td>{{index $row .}}</td>
             {{end}}
-            <td>
-                <form method="POST" style="display:inline">
-                    {{$.csrf_token}}
-                    <input type="hidden" name="model" value="{{$.current_model}}">
-                    <input type="hidden" name="action" value="delete">
-                    <input type="hidden" name="id" value="{{index $row "id"}}">
+<td>
+<form method="POST" style="display:inline">
+<input type="hidden" name="model" value="{{$.current_model}}">
+<input type="hidden" name="action" value="delete">
+<input type="hidden" name="id" value="{{index $row "id"}}">
                     <button type="submit">Delete</button>
                 </form>
             </td>
@@ -1854,8 +1834,7 @@ func createAdminTemplate() error {
 
 <h3>Add / Update {{.current_model}}</h3>
 <form method="POST">
-    {{.csrf_token}}
-    <input type="hidden" name="model" value="{{.current_model}}">
+<input type="hidden" name="model" value="{{.current_model}}">
     <label>Action:
         <select name="action">
             <option value="create">Create</option>
@@ -1875,7 +1854,6 @@ func createAdminTemplate() error {
 
 <h2>Download Profile</h2>
 <form method="POST">
-    {{.csrf_token}}
     <label>Profile Type:
         <select name="profile_type">
             <option value="cpu">CPU</option>

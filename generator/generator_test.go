@@ -170,7 +170,7 @@ func registerRoutes(mux *http.ServeMux, staticFiles embed.FS) {
 	os.MkdirAll(filepath.Join(dir, "app/views"), 0755)
 	os.MkdirAll(filepath.Join(dir, "app/session"), 0755)
 	os.MkdirAll(filepath.Join(dir, "app/middleware"), 0755)
-	writeFile(t, filepath.Join(dir, "go.mod"), "module monolith\n\ngo 1.23\n")
+	writeFile(t, filepath.Join(dir, "go.mod"), "module monolith\n\ngo 1.25\n")
 }
 
 func TestRunResource(t *testing.T) {
