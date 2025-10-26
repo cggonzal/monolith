@@ -23,6 +23,11 @@ var staticFiles embed.FS
 var templateFiles embed.FS
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "--guides" {
+		server_management.RunGuidesServer()
+		return
+	}
+
 	// Dispatch to generators if requested
 	if len(os.Args) > 1 && (os.Args[1] == "generator" || os.Args[1] == "generators") {
 		args := os.Args[2:]
