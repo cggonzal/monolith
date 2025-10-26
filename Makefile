@@ -12,6 +12,9 @@ dev:
 run:
 	go run main.go
 
+guides:
+	go run main.go --guides
+
 # Build the application
 build:
 	go build -o monolith main.go
@@ -68,4 +71,4 @@ g:
 	@:
 
 
-.PHONY: dev run build test deploy generator g doc
+.PHONY: dev run build test deploy generator g doc guides

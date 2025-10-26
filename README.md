@@ -89,6 +89,9 @@ make       # hot reload during development
 make run
 
 # open http://localhost:9000
+
+# 3. browse the product guides without running the full app
+make guides  # serves ./guides at http://localhost:9000
 ```
 
 Set the `SECRET_KEY` environment variable to a random string before running the server.
