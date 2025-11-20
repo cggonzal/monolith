@@ -3,6 +3,7 @@ package main
 
 import (
 	"embed"
+	"flag"
 	"log/slog"
 	"os"
 
@@ -23,18 +24,20 @@ var staticFiles embed.FS
 var templateFiles embed.FS
 
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == "--guides" {
+	guides := flag.Bool("guides", false, "Run guides server")
+	g := flag.Bool("g", false, "Run guides server (shorthand)")
+	flag.Parse()
+
+	if *guides || *g {
 		server_management.RunGuidesServer()
 		return
 	}
 
-	// Dispatch to generators if requested
-	if len(os.Args) > 1 && (os.Args[1] == "generator" || os.Args[1] == "generators") {
-		args := os.Args[2:]
-		if os.Args[1] == "generators" {
-			args = append([]string{"help"}, args...)
-		}
-		if err := generator.Run(args); err != nil {
+	// Dispatch to generator if requested
+	args := flag.Args()
+	if len(args) > 0 && args[0] == "generator" {
+		genArgs := args[1:]
+		if err := generator.Run(genArgs); err != nil {
 			slog.Error("generator failed", "error", err)
 		}
 		return
