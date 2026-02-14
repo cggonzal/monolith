@@ -4,6 +4,8 @@ These skills follow the open skills layout (`.agents/skills/<skill>/SKILL.md`) s
 
 The repository root `AGENTS.md` is configured to auto-discover these skills on every task, so users do not need to explicitly ask agents to use them.
 
+Claude Code compatibility: see `CLAUDE.md` at repo root for identical auto-discovery instructions.
+
 ## Skills
 - `monolith-project-overview`
 - `monolith-command-reference`
